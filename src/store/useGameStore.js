@@ -38,6 +38,8 @@ export const useGameStore = create((set) => {
       clockCount: snapshot.clockCount,
       boostLevel: snapshot.boostLevel,
       timeDust: snapshot.timeDust,
+      prestigePoints: snapshot.prestigePoints,
+      canPrestige: snapshot.canPrestige,
       extraClockSpeedFactor: snapshot.extraClockSpeedFactor,
       nextExtraClockSpeedFactor: snapshot.nextExtraClockSpeedFactor,
       extraAngles: snapshot.extraAngles,
@@ -74,6 +76,8 @@ export const useGameStore = create((set) => {
     clockCount: 1,
     boostLevel: 0,
     timeDust: 0,
+    prestigePoints: 0,
+    canPrestige: false,
     extraClockSpeedFactor: 0.1,
     nextExtraClockSpeedFactor: 0.1,
     extraAngles: [],
@@ -129,6 +133,10 @@ export const useGameStore = create((set) => {
      */
     saveGame: () => {
       gameEngine.save();
+    },
+
+    prestige: () => {
+      gameEngine.prestige();
     },
 
     resetGame: () => {

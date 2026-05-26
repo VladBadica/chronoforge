@@ -1,12 +1,15 @@
+import { useState } from 'react';
 import { useGameEngine } from './hooks/useGameEngine.js';
 import { useGameStore } from './store/useGameStore.js';
 import { Clock } from './components/Clock.jsx';
 import { EnergyDisplay } from './components/EnergyDisplay.jsx';
 import { UpgradePanel } from './components/UpgradePanel.jsx';
 import { StatsBar } from './components/StatsBar.jsx';
+import { PrestigeModal } from './components/PrestigeModal.jsx';
 
 export default function App() {
   useGameEngine();
+  const [showPrestige, setShowPrestige] = useState(false);
 
   const {
     angle,
@@ -44,6 +47,9 @@ export default function App() {
     buyClockUpgrade,
     buyBoostUpgrade,
     buyStabilityUpgrade,
+    prestigePoints,
+    canPrestige,
+    prestige,
     addSecond,
     resetGame,
     debugAddEnergy,
@@ -156,6 +162,22 @@ export default function App() {
         onBuyStabilityUpgrade={buyStabilityUpgrade}
       />
 
+      <button
+        onClick={() => setShowPrestige(true)}
+        className="px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200"
+        style={{
+          background: canPrestige
+            ? 'linear-gradient(135deg, #9d8fffcc, #7c6ff7)'
+            : 'transparent',
+          border: `1px solid ${canPrestige ? 'rgba(124,111,247,0.6)' : 'var(--color-border)'}`,
+          color: canPrestige ? '#fff' : 'var(--color-muted)',
+          cursor: 'pointer',
+          boxShadow: canPrestige ? '0 0 20px rgba(124,111,247,0.25)' : 'none',
+        }}
+      >
+        ✦ Prestige{prestigePoints > 0 ? ` · ${prestigePoints} PP` : ''}
+      </button>
+
       <div className="flex gap-2">
         <button
           onClick={debugAddEnergy}
@@ -201,6 +223,16 @@ export default function App() {
           Reset Game
         </button>
       </div>
+
+      {showPrestige && (
+        <PrestigeModal
+          timeDust={timeDust}
+          prestigePoints={prestigePoints}
+          canPrestige={canPrestige}
+          onPrestige={() => { prestige(); setShowPrestige(false); }}
+          onClose={() => setShowPrestige(false)}
+        />
+      )}
     </div>
   );
 }

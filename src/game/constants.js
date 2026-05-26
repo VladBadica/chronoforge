@@ -66,6 +66,9 @@ export const SURGE_SPEED_MULTIPLIER = 5;        // speed multiplier during surge
 export const SURGE_ENERGY_MULTIPLIER = 3;       // TE/rev multiplier during surge
 export const SURGE_THRESHOLD_DEG = 3;           // proximity for all three hands to count as aligned
 
+// Prestige
+export const PRESTIGE_COST_TD = 10;    // minimum TD required to prestige
+
 // Autosave interval in milliseconds
 export const AUTOSAVE_INTERVAL_MS = 5_000;
 

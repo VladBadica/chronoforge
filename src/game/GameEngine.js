@@ -15,6 +15,7 @@ import {
   AUTOSAVE_INTERVAL_MS,
   SAVE_KEY,
   MAX_OFFLINE_MS,
+  PRESTIGE_COST_TD,
   UPGRADE_BASE_COST,
   UPGRADE_COST_EXPONENT,
   UPGRADE_SPEED_BONUS,
@@ -83,6 +84,9 @@ export class GameEngine {
     // TimeDust — saved
     this._timeDust = 0;
 
+    // Prestige — saved, never reset by prestige itself
+    this._prestigePoints = 0;
+
     // --- loop bookkeeping ---
     this._rafId = null;
     this._lastTimestamp = null;
@@ -147,10 +151,38 @@ export class GameEngine {
     this._prevHourMinNear = [true];
     this._prevSurgeNear = [true];
     this._timeDust = 0;
+    this._prestigePoints = 0;
     try {
       localStorage.removeItem(SAVE_KEY);
     } catch { /* ignore */ }
     this._emitSnapshot();
+  }
+
+  /** Prestige — converts TD to PP and resets all non-prestige progress */
+  prestige() {
+    if (this._timeDust < PRESTIGE_COST_TD) return false;
+    this._prestigePoints += Math.floor(this._timeDust);
+    this._angle = 0;
+    this._energy = 0;
+    this._speedLevel = 0;
+    this._energyLevel = 0;
+    this._clockCount = 1;
+    this._boostLevel = 0;
+    this._stabilityLevel = 0;
+    this._extraAngles = [];
+    this._extraRevolutions = [];
+    this._totalRevolutions = 0;
+    this._fastTimeRemaining = 0;
+    this._fastTimeIsDebuff = false;
+    this._fractureFlash = 0;
+    this._surgeRemaining = 0;
+    this._prevNear = [true];
+    this._prevHourMinNear = [true];
+    this._prevSurgeNear = [true];
+    this._timeDust = 0;
+    this.save();
+    this._emitSnapshot();
+    return true;
   }
 
   /** Buy one level of the speed upgrade — returns false if not enough energy */
@@ -339,6 +371,7 @@ export class GameEngine {
       boostLevel: this._boostLevel,
       stabilityLevel: this._stabilityLevel,
       timeDust: this._timeDust,
+      prestigePoints: this._prestigePoints,
       totalRevolutions: this._totalRevolutions,
       extraRevolutions: this._extraRevolutions,
       savedAt: Date.now(),
@@ -368,6 +401,7 @@ export class GameEngine {
         ? data.extraRevolutions.slice()
         : Array(extras).fill(0);
       this._timeDust = data.timeDust ?? 0;
+      this._prestigePoints = data.prestigePoints ?? 0;
       this._fastTimeRemaining = 0;
       this._surgeRemaining = 0;
       this._prevNear = Array(this._clockCount).fill(true);
@@ -576,6 +610,8 @@ export class GameEngine {
         fastTimeRemaining: this._fastTimeRemaining,
         totalRevolutions: this._totalRevolutions,
         timeDust: this._timeDust,
+        prestigePoints: this._prestigePoints,
+        canPrestige: this._timeDust >= PRESTIGE_COST_TD,
         entropy: this.getEntropy(),
         nextEntropy: this._entropyAt(this._stabilityLevel + 1),
         stabilityLevel: this._stabilityLevel,
