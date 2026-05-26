@@ -50,15 +50,16 @@ export default function App() {
     prestigePoints,
     canPrestige,
     prestige,
-    prestigeSpeedLevel,  prestigeSpeedCost,   buyPrestigeSpeed,
-    prestigeEnergyLevel, prestigeEnergyCost,  buyPrestigeEnergy,
-    prestigeClockLevel,  prestigeClockCost,   buyPrestigeClock,
-    prestigeBoostLevel,  prestigeBoostCost,   buyPrestigeBoost,
-    prestigeAnchorLevel, prestigeAnchorCost,  buyPrestigeAnchor,
-    prestigeMirrorLevel, prestigeMirrorCost,  buyPrestigeMirror,
+    prestigeSpeedLevel, prestigeSpeedCost, buyPrestigeSpeed,
+    prestigeEnergyLevel, prestigeEnergyCost, buyPrestigeEnergy,
+    prestigeClockLevel, prestigeClockCost, buyPrestigeClock,
+    prestigeBoostLevel, prestigeBoostCost, buyPrestigeBoost,
+    prestigeAnchorLevel, prestigeAnchorCost, buyPrestigeAnchor,
+    prestigeMirrorLevel, prestigeMirrorCost, buyPrestigeMirror,
     addSecond,
     resetGame,
     debugAddEnergy,
+    debugAddTimeDust,
   } = useGameStore();
 
   // Scale clocks down as more are added so they all fit comfortably
@@ -66,8 +67,8 @@ export default function App() {
 
   return (
     <div
-      className="min-h-screen flex flex-col items-center justify-center gap-8 px-4 py-12"
-      style={{ background: 'var(--color-bg)' }}
+      className="min-h-screen flex flex-col items-center justify-center gap-8"
+      style={{ background: 'var(--color-bg)', paddingTop: '3rem', paddingBottom: '3rem' }}
     >
       <header className="flex flex-col items-center gap-1">
         <h1
@@ -207,6 +208,27 @@ export default function App() {
         </button>
 
         <button
+          onClick={debugAddTimeDust}
+          className="text-xs px-3 py-1.5 rounded-md transition-colors duration-150"
+          style={{
+            background: 'transparent',
+            border: '1px solid var(--color-border)',
+            color: 'var(--color-muted)',
+            cursor: 'pointer',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = '#5ecfb0';
+            e.currentTarget.style.color = '#5ecfb0';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = 'var(--color-border)';
+            e.currentTarget.style.color = 'var(--color-muted)';
+          }}
+        >
+          +100 TD
+        </button>
+
+        <button
           onClick={() => {
             if (window.confirm('Reset all progress and start fresh?')) resetGame();
           }}
@@ -237,10 +259,10 @@ export default function App() {
           canPrestige={canPrestige}
           onPrestige={() => { prestige(); setShowPrestige(false); }}
           onClose={() => setShowPrestige(false)}
-          prestigeSpeedLevel={prestigeSpeedLevel}   prestigeSpeedCost={prestigeSpeedCost}   buyPrestigeSpeed={buyPrestigeSpeed}
+          prestigeSpeedLevel={prestigeSpeedLevel} prestigeSpeedCost={prestigeSpeedCost} buyPrestigeSpeed={buyPrestigeSpeed}
           prestigeEnergyLevel={prestigeEnergyLevel} prestigeEnergyCost={prestigeEnergyCost} buyPrestigeEnergy={buyPrestigeEnergy}
-          prestigeClockLevel={prestigeClockLevel}   prestigeClockCost={prestigeClockCost}   buyPrestigeClock={buyPrestigeClock}
-          prestigeBoostLevel={prestigeBoostLevel}   prestigeBoostCost={prestigeBoostCost}   buyPrestigeBoost={buyPrestigeBoost}
+          prestigeClockLevel={prestigeClockLevel} prestigeClockCost={prestigeClockCost} buyPrestigeClock={buyPrestigeClock}
+          prestigeBoostLevel={prestigeBoostLevel} prestigeBoostCost={prestigeBoostCost} buyPrestigeBoost={buyPrestigeBoost}
           prestigeAnchorLevel={prestigeAnchorLevel} prestigeAnchorCost={prestigeAnchorCost} buyPrestigeAnchor={buyPrestigeAnchor}
           prestigeMirrorLevel={prestigeMirrorLevel} prestigeMirrorCost={prestigeMirrorCost} buyPrestigeMirror={buyPrestigeMirror}
         />

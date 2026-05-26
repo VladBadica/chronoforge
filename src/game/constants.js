@@ -70,18 +70,18 @@ export const SURGE_THRESHOLD_DEG = 3;           // proximity for all three hands
 export const PRESTIGE_COST_TD = 10;    // minimum TD required to prestige
 
 // Prestige upgrades — costs paid in PrestigePoints; scale exponentially per level
-export const PRESTIGE_SPEED_BASE_COST = 1;    // P1: Start with Accelerate Time +1 lv
-export const PRESTIGE_SPEED_SCALING = 2.0;
-export const PRESTIGE_ENERGY_BASE_COST = 1;    // P2: Start with Improve Time +1 lv
-export const PRESTIGE_ENERGY_SCALING = 2.0;
-export const PRESTIGE_CLOCK_BASE_COST = 3;    // P3: Start with Add Clock +1 lv
-export const PRESTIGE_CLOCK_SCALING = 3.0;
+export const PRESTIGE_SPEED_BASE_COST = 2;    // P1: Start with Accelerate Time +1 lv
+export const PRESTIGE_SPEED_SCALING = 1.3;
+export const PRESTIGE_ENERGY_BASE_COST = 2;    // P2: Start with Improve Time +1 lv
+export const PRESTIGE_ENERGY_SCALING = 1.3;
+export const PRESTIGE_CLOCK_BASE_COST = 10;    // P3: Start with Add Clock +1 lv
+export const PRESTIGE_CLOCK_SCALING = 5.0;
 export const PRESTIGE_BOOST_BASE_COST = 2;    // P4: Start with Boost Clocks +1 lv
 export const PRESTIGE_BOOST_SCALING = 2.5;
 export const PRESTIGE_ANCHOR_BASE_COST = 2;    // P5: Start with Anchor Time +1 lv
 export const PRESTIGE_ANCHOR_SCALING = 2.0;
-export const PRESTIGE_MIRROR_BASE_COST = 5;    // Mirror Clocks: backward hand per clock
-export const PRESTIGE_MIRROR_SCALING = 3.0;
+export const PRESTIGE_MIRROR_BASE_COST = 15;    // Mirror Clocks: backward hand per clock
+export const PRESTIGE_MIRROR_SCALING = 5.0;
 
 // Autosave interval in milliseconds
 export const AUTOSAVE_INTERVAL_MS = 5_000;

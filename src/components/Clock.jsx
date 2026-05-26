@@ -38,7 +38,7 @@ export function Clock({ angle, totalRevolutions, size = 240, showMirror = false 
   // Each game revolution advances the hour hand 0.5° (720 revs = full circle).
   const hourAngle = ((totalRevolutions % 720) + angle / 360) * 0.5;
   return (
-    <div className="clock-container relative flex items-center justify-center">
+    <div className="clock-container relative flex items-center justify-center" style={{ userSelect: 'none' }}>
       {/* Outer ambient glow ring */}
       <div
         className="absolute rounded-full pointer-events-none"

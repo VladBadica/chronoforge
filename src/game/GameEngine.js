@@ -143,6 +143,12 @@ export class GameEngine {
     this._emitSnapshot();
   }
 
+  /** Debug: inject time dust directly */
+  addTimeDust(amount) {
+    this._timeDust += amount;
+    this._emitSnapshot();
+  }
+
   /** Wipe all state and localStorage — returns the engine to a fresh start */
   reset() {
     this._angle = 0;
@@ -205,11 +211,12 @@ export class GameEngine {
 
   // ---- Prestige upgrade buy/cost helpers (one pair per upgrade) ----
 
-  _buyPrestigeUpgrade(costFn, levelProp) {
+  _buyPrestigeUpgrade(costFn, levelProp, onBuy = null) {
     const cost = costFn.call(this);
     if (this._prestigePoints < cost) return false;
     this._prestigePoints -= cost;
     this[levelProp] += 1;
+    if (onBuy) onBuy.call(this);
     this._emitSnapshot();
     return true;
   }
@@ -218,12 +225,44 @@ export class GameEngine {
     return Math.ceil(base * Math.pow(scaling, level));
   }
 
-  buyPrestigeSpeed()  { return this._buyPrestigeUpgrade(this.getPrestigeSpeedCost,  '_prestigeSpeedLevel');  }
-  buyPrestigeEnergy() { return this._buyPrestigeUpgrade(this.getPrestigeEnergyCost, '_prestigeEnergyLevel'); }
-  buyPrestigeClock()  { return this._buyPrestigeUpgrade(this.getPrestigeClockCost,  '_prestigeClockLevel');  }
-  buyPrestigeBoost()  { return this._buyPrestigeUpgrade(this.getPrestigeBoostCost,  '_prestigeBoostLevel');  }
-  buyPrestigeAnchor() { return this._buyPrestigeUpgrade(this.getPrestigeAnchorCost, '_prestigeAnchorLevel'); }
-  buyPrestigeMirror() { return this._buyPrestigeUpgrade(this.getPrestigeMirrorCost, '_prestigeMirrorLevel'); }
+  buyPrestigeSpeed() {
+    return this._buyPrestigeUpgrade(this.getPrestigeSpeedCost, '_prestigeSpeedLevel', function() {
+      this._speedLevel += 1;
+    });
+  }
+
+  buyPrestigeEnergy() {
+    return this._buyPrestigeUpgrade(this.getPrestigeEnergyCost, '_prestigeEnergyLevel', function() {
+      this._energyLevel += 1;
+    });
+  }
+
+  buyPrestigeClock() {
+    return this._buyPrestigeUpgrade(this.getPrestigeClockCost, '_prestigeClockLevel', function() {
+      this._clockCount += 1;
+      this._extraAngles.push(0);
+      this._extraRevolutions.push(0);
+      this._prevNear.push(true);
+      this._prevHourMinNear.push(true);
+      this._prevSurgeNear.push(true);
+    });
+  }
+
+  buyPrestigeBoost() {
+    return this._buyPrestigeUpgrade(this.getPrestigeBoostCost, '_prestigeBoostLevel', function() {
+      this._boostLevel += 1;
+    });
+  }
+
+  buyPrestigeAnchor() {
+    return this._buyPrestigeUpgrade(this.getPrestigeAnchorCost, '_prestigeAnchorLevel', function() {
+      this._stabilityLevel += 1;
+    });
+  }
+
+  buyPrestigeMirror() {
+    return this._buyPrestigeUpgrade(this.getPrestigeMirrorCost, '_prestigeMirrorLevel');
+  }
 
   getPrestigeSpeedCost()  { return this._prestigeCost(PRESTIGE_SPEED_BASE_COST,  PRESTIGE_SPEED_SCALING,  this._prestigeSpeedLevel);  }
   getPrestigeEnergyCost() { return this._prestigeCost(PRESTIGE_ENERGY_BASE_COST, PRESTIGE_ENERGY_SCALING, this._prestigeEnergyLevel); }
@@ -245,7 +284,7 @@ export class GameEngine {
   /** Computed upgrade cost for the *next* Accelerate Time purchase */
   getUpgradeCost() {
     return Math.floor(
-      UPGRADE_BASE_COST * Math.pow(UPGRADE_COST_EXPONENT, this._speedLevel)
+      UPGRADE_BASE_COST * Math.pow(UPGRADE_COST_EXPONENT, this._speedLevel - this._prestigeSpeedLevel)
     );
   }
 
@@ -280,9 +319,9 @@ export class GameEngine {
 
   /** Computed cost for the next clock purchase */
   getClockUpgradeCost() {
-    const extraClocks = this._clockCount - 1; // already-purchased extras
+    const boughtExtras = (this._clockCount - 1) - this._prestigeClockLevel;
     return Math.floor(
-      CLOCK_UPGRADE_BASE_COST * Math.pow(CLOCK_UPGRADE_COST_EXPONENT, extraClocks)
+      CLOCK_UPGRADE_BASE_COST * Math.pow(CLOCK_UPGRADE_COST_EXPONENT, boughtExtras)
     );
   }
 
@@ -299,7 +338,7 @@ export class GameEngine {
   /** Computed cost for the next Boost Clocks purchase */
   getBoostUpgradeCost() {
     return Math.floor(
-      BOOST_UPGRADE_BASE_COST * Math.pow(BOOST_UPGRADE_COST_EXPONENT, this._boostLevel)
+      BOOST_UPGRADE_BASE_COST * Math.pow(BOOST_UPGRADE_COST_EXPONENT, this._boostLevel - this._prestigeBoostLevel)
     );
   }
 
@@ -332,7 +371,7 @@ export class GameEngine {
   /** Computed cost for the next Anchor Time purchase */
   getStabilityUpgradeCost() {
     return Math.floor(
-      STABILITY_UPGRADE_BASE_COST * Math.pow(STABILITY_UPGRADE_COST_EXPONENT, this._stabilityLevel)
+      STABILITY_UPGRADE_BASE_COST * Math.pow(STABILITY_UPGRADE_COST_EXPONENT, this._stabilityLevel - this._prestigeAnchorLevel)
     );
   }
 
@@ -367,7 +406,7 @@ export class GameEngine {
   /** Computed upgrade cost for the *next* Improve Time purchase */
   getEnergyUpgradeCost() {
     return Math.floor(
-      ENERGY_UPGRADE_BASE_COST * Math.pow(ENERGY_UPGRADE_COST_EXPONENT, this._energyLevel)
+      ENERGY_UPGRADE_BASE_COST * Math.pow(ENERGY_UPGRADE_COST_EXPONENT, this._energyLevel - this._prestigeEnergyLevel)
     );
   }
 

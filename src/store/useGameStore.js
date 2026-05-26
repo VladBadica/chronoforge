@@ -177,5 +177,9 @@ export const useGameStore = create((set) => {
     debugAddEnergy: () => {
       gameEngine.addEnergy(1000);
     },
+
+    debugAddTimeDust: () => {
+      gameEngine.addTimeDust(100);
+    },
   };
 });

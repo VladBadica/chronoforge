@@ -1,9 +1,7 @@
-import React from 'react';
-
 const UPGRADES = [
   {
     key: 'speed',
-    label: 'P1: Accelerate Time',
+    label: 'Boost Accelerate Time',
     desc: 'Start each run with Accelerate Time +1 lv',
     costKey: 'prestigeSpeedCost',
     levelKey: 'prestigeSpeedLevel',
@@ -11,7 +9,7 @@ const UPGRADES = [
   },
   {
     key: 'energy',
-    label: 'P2: Improve Time',
+    label: 'Boost Improve Time',
     desc: 'Start each run with Improve Time +1 lv',
     costKey: 'prestigeEnergyCost',
     levelKey: 'prestigeEnergyLevel',
@@ -19,7 +17,7 @@ const UPGRADES = [
   },
   {
     key: 'clock',
-    label: 'P3: Add Clock',
+    label: 'Boost Add Clock',
     desc: 'Start each run with Add Clock +1 lv',
     costKey: 'prestigeClockCost',
     levelKey: 'prestigeClockLevel',
@@ -27,7 +25,7 @@ const UPGRADES = [
   },
   {
     key: 'boost',
-    label: 'P4: Boost Clocks',
+    label: 'Boost Clocks',
     desc: 'Start each run with Boost Clocks +1 lv',
     costKey: 'prestigeBoostCost',
     levelKey: 'prestigeBoostLevel',
@@ -35,7 +33,7 @@ const UPGRADES = [
   },
   {
     key: 'anchor',
-    label: 'P5: Anchor Time',
+    label: 'Boost Anchor Time',
     desc: 'Start each run with Anchor Time +1 lv',
     costKey: 'prestigeAnchorCost',
     levelKey: 'prestigeAnchorLevel',
@@ -57,29 +55,31 @@ export function PrestigeModal({
   canPrestige,
   onPrestige,
   onClose,
-  prestigeSpeedLevel,  prestigeSpeedCost,   buyPrestigeSpeed,
-  prestigeEnergyLevel, prestigeEnergyCost,  buyPrestigeEnergy,
-  prestigeClockLevel,  prestigeClockCost,   buyPrestigeClock,
-  prestigeBoostLevel,  prestigeBoostCost,   buyPrestigeBoost,
-  prestigeAnchorLevel, prestigeAnchorCost,  buyPrestigeAnchor,
-  prestigeMirrorLevel, prestigeMirrorCost,  buyPrestigeMirror,
+  prestigeSpeedLevel, prestigeSpeedCost, buyPrestigeSpeed,
+  prestigeEnergyLevel, prestigeEnergyCost, buyPrestigeEnergy,
+  prestigeClockLevel, prestigeClockCost, buyPrestigeClock,
+  prestigeBoostLevel, prestigeBoostCost, buyPrestigeBoost,
+  prestigeAnchorLevel, prestigeAnchorCost, buyPrestigeAnchor,
+  prestigeMirrorLevel, prestigeMirrorCost, buyPrestigeMirror,
 }) {
   const ppGain = Math.floor(timeDust);
   const totalAfter = prestigePoints + ppGain;
 
-  const levels  = { prestigeSpeedLevel, prestigeEnergyLevel, prestigeClockLevel, prestigeBoostLevel, prestigeAnchorLevel, prestigeMirrorLevel };
-  const costs   = { prestigeSpeedCost,  prestigeEnergyCost,  prestigeClockCost,  prestigeBoostCost,  prestigeAnchorCost,  prestigeMirrorCost  };
-  const actions = { buyPrestigeSpeed,   buyPrestigeEnergy,   buyPrestigeClock,   buyPrestigeBoost,   buyPrestigeAnchor,   buyPrestigeMirror   };
+  const levels = { prestigeSpeedLevel, prestigeEnergyLevel, prestigeClockLevel, prestigeBoostLevel, prestigeAnchorLevel, prestigeMirrorLevel };
+  const costs = { prestigeSpeedCost, prestigeEnergyCost, prestigeClockCost, prestigeBoostCost, prestigeAnchorCost, prestigeMirrorCost };
+  const actions = { buyPrestigeSpeed, buyPrestigeEnergy, buyPrestigeClock, buyPrestigeBoost, buyPrestigeAnchor, buyPrestigeMirror };
 
   return (
     <div
-      className="fixed inset-0 flex items-center justify-center z-50 p-8"
+      className="fixed inset-0 flex items-center justify-center z-50"
       style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)' }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
-        className="w-full max-w-md flex flex-col gap-6 rounded-2xl p-12"
+        className="w-full max-w-md flex flex-col gap-6 rounded-2xl overflow-y-auto"
         style={{
+          padding: '1rem',
+          maxHeight: '90vh',
           background: 'var(--color-surface)',
           border: '1px solid rgba(168,143,255,0.3)',
           boxShadow: '0 0 60px rgba(124,111,247,0.2)',
@@ -115,7 +115,7 @@ export function PrestigeModal({
         {/* Stats */}
         <div
           className="flex justify-between rounded-xl px-6 py-4"
-          style={{ background: 'rgba(124,111,247,0.06)', border: '1px solid rgba(124,111,247,0.15)' }}
+          style={{ background: 'rgba(124,111,247,0.06)', border: '1px solid rgba(124,111,247,0.15)', padding: '5px' }}
         >
           <div className="flex flex-col items-center gap-1">
             <span className="text-xs uppercase tracking-widest" style={{ color: 'var(--color-muted)' }}>
@@ -154,7 +154,7 @@ export function PrestigeModal({
           <div className="flex flex-col gap-2">
             {UPGRADES.map((u) => {
               const level = levels[u.levelKey];
-              const cost  = costs[u.costKey];
+              const cost = costs[u.costKey];
               const canAfford = prestigePoints >= cost;
               return (
                 <div
@@ -163,6 +163,7 @@ export function PrestigeModal({
                   style={{
                     background: 'rgba(124,111,247,0.04)',
                     border: '1px solid rgba(124,111,247,0.12)',
+                    padding: '5px'
                   }}
                 >
                   <div className="flex flex-col gap-0.5">
@@ -188,6 +189,7 @@ export function PrestigeModal({
                       cursor: canAfford ? 'pointer' : 'not-allowed',
                       border: 'none',
                       whiteSpace: 'nowrap',
+                      padding: '5px'
                     }}
                   >
                     {cost} PP
