@@ -32,6 +32,7 @@ export default function App() {
     energyUpgradeCost,
     clockCount,
     boostLevel,
+    timeDust,
     extraClockSpeedFactor,
     extraAngles,
     extraRevolutions,
@@ -45,6 +46,7 @@ export default function App() {
     buyBoostUpgrade,
     addSecond,
     resetGame,
+    debugAddEnergy,
   } = useGameStore();
 
   // Scale clocks down as more are added so they all fit comfortably
@@ -92,7 +94,7 @@ export default function App() {
         ))}
       </div>
 
-      <EnergyDisplay energy={energy} energyPerSecond={energyPerSecond} />
+      <EnergyDisplay energy={energy} energyPerSecond={energyPerSecond} timeDust={timeDust} />
 
       <div
         className="w-48 h-px"
@@ -118,28 +120,51 @@ export default function App() {
         onBuyBoostUpgrade={buyBoostUpgrade}
       />
 
-      <button
-        onClick={() => {
-          if (window.confirm('Reset all progress and start fresh?')) resetGame();
-        }}
-        className="text-xs px-3 py-1.5 rounded-md transition-colors duration-150"
-        style={{
-          background: 'transparent',
-          border: '1px solid var(--color-border)',
-          color: 'var(--color-muted)',
-          cursor: 'pointer',
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.borderColor = '#c0392b';
-          e.currentTarget.style.color = '#e74c3c';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.borderColor = 'var(--color-border)';
-          e.currentTarget.style.color = 'var(--color-muted)';
-        }}
-      >
-        Reset Game
-      </button>
+      <div className="flex gap-2">
+        <button
+          onClick={debugAddEnergy}
+          className="text-xs px-3 py-1.5 rounded-md transition-colors duration-150"
+          style={{
+            background: 'transparent',
+            border: '1px solid var(--color-border)',
+            color: 'var(--color-muted)',
+            cursor: 'pointer',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = 'var(--color-accent)';
+            e.currentTarget.style.color = 'var(--color-accent)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = 'var(--color-border)';
+            e.currentTarget.style.color = 'var(--color-muted)';
+          }}
+        >
+          +1k TE
+        </button>
+
+        <button
+          onClick={() => {
+            if (window.confirm('Reset all progress and start fresh?')) resetGame();
+          }}
+          className="text-xs px-3 py-1.5 rounded-md transition-colors duration-150"
+          style={{
+            background: 'transparent',
+            border: '1px solid var(--color-border)',
+            color: 'var(--color-muted)',
+            cursor: 'pointer',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = '#c0392b';
+            e.currentTarget.style.color = '#e74c3c';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = 'var(--color-border)';
+            e.currentTarget.style.color = 'var(--color-muted)';
+          }}
+        >
+          Reset Game
+        </button>
+      </div>
     </div>
   );
 }

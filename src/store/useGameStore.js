@@ -35,6 +35,7 @@ export const useGameStore = create((set) => {
       energyUpgradeCost: snapshot.energyUpgradeCost,
       clockCount: snapshot.clockCount,
       boostLevel: snapshot.boostLevel,
+      timeDust: snapshot.timeDust,
       extraClockSpeedFactor: snapshot.extraClockSpeedFactor,
       extraAngles: snapshot.extraAngles,
       extraRevolutions: snapshot.extraRevolutions,
@@ -59,6 +60,7 @@ export const useGameStore = create((set) => {
     energyUpgradeCost: 15,
     clockCount: 1,
     boostLevel: 0,
+    timeDust: 0,
     extraClockSpeedFactor: 0.1,
     extraAngles: [],
     extraRevolutions: [],
@@ -105,6 +107,10 @@ export const useGameStore = create((set) => {
 
     resetGame: () => {
       gameEngine.reset();
+    },
+
+    debugAddEnergy: () => {
+      gameEngine.addEnergy(1000);
     },
   };
 });

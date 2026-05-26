@@ -29,6 +29,9 @@ export const BOOST_UPGRADE_BASE_COST = 75;       // cost of the first boost
 export const BOOST_UPGRADE_COST_EXPONENT = 1.80; // steep — this is very powerful
 export const BOOST_SPEED_BONUS = 0.10;           // +0.10 added to base speed factor per level
 
+// TimeDust — earned when the minute and hour hands overlap on any clock
+export const TIMEDUST_THRESHOLD_DEG = 5;       // angular proximity to count as overlap (degrees)
+
 // Fast Time — triggered when second and minute hands overlap on any clock
 export const FAST_TIME_DURATION_MS = 3_000;     // how long the boost lasts (ms)
 export const FAST_TIME_MULTIPLIER = 1.5;         // speed multiplier while active

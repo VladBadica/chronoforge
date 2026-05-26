@@ -30,6 +30,7 @@ import {
   FAST_TIME_DURATION_MS,
   FAST_TIME_MULTIPLIER,
   FAST_TIME_THRESHOLD_DEG,
+  TIMEDUST_THRESHOLD_DEG,
 } from './constants.js';
 
 export class GameEngine {
@@ -46,10 +47,14 @@ export class GameEngine {
     this._totalRevolutions = 0;
 
     // Fast Time state — transient, not saved
-    this._fastTimeRemaining = 0;  // ms remaining of Fast Time boost
+    this._fastTimeRemaining = 0;
     // Start all clocks as "already near" so the initial 12-o'clock position
     // doesn't immediately fire the event on the first frame.
-    this._prevNear = [true];      // index 0 = main clock, i+1 = extra clock i
+    this._prevNear = [true];         // second vs minute; index 0 = main, i+1 = extra i
+    this._prevHourMinNear = [true];  // minute vs hour;   same indexing
+
+    // TimeDust — saved
+    this._timeDust = 0;
 
     // --- loop bookkeeping ---
     this._rafId = null;
@@ -89,6 +94,12 @@ export class GameEngine {
     this._update(1000);
   }
 
+  /** Debug: inject energy directly */
+  addEnergy(amount) {
+    this._energy += amount;
+    this._emitSnapshot();
+  }
+
   /** Wipe all state and localStorage — returns the engine to a fresh start */
   reset() {
     this._angle = 0;
@@ -102,6 +113,8 @@ export class GameEngine {
     this._totalRevolutions = 0;
     this._fastTimeRemaining = 0;
     this._prevNear = [true];
+    this._prevHourMinNear = [true];
+    this._timeDust = 0;
     try {
       localStorage.removeItem(SAVE_KEY);
     } catch { /* ignore */ }
@@ -138,9 +151,9 @@ export class GameEngine {
     this._clockCount += 1;
     this._extraAngles.push(0);
     this._extraRevolutions.push(0);
-    // New clock starts at 0 (hands overlapping) — mark as near so it doesn't
-    // immediately fire Fast Time.
+    // New clock starts at 0 (all hands overlapping) — mark near so no immediate trigger.
     this._prevNear.push(true);
+    this._prevHourMinNear.push(true);
     this._emitSnapshot();
     return true;
   }
@@ -218,6 +231,7 @@ export class GameEngine {
       energyLevel: this._energyLevel,
       clockCount: this._clockCount,
       boostLevel: this._boostLevel,
+      timeDust: this._timeDust,
       totalRevolutions: this._totalRevolutions,
       savedAt: Date.now(),
     };
@@ -242,8 +256,10 @@ export class GameEngine {
       const extras = this._clockCount - 1;
       this._extraAngles = Array(extras).fill(0);
       this._extraRevolutions = Array(extras).fill(0);
+      this._timeDust = data.timeDust ?? 0;
       this._fastTimeRemaining = 0;
       this._prevNear = Array(this._clockCount).fill(true);
+      this._prevHourMinNear = Array(this._clockCount).fill(true);
       this._totalRevolutions = data.totalRevolutions ?? 0;
 
       // --- Offline progress ---
@@ -334,14 +350,32 @@ export class GameEngine {
       }
     }
 
-    // Fast Time overlap detection — check each clock's second vs minute hand.
-    // A rising edge (was not near → now near) resets the timer to full duration.
+    // Fast Time: second vs minute hand overlap — resets timer on rising edge.
     this._checkOverlap(0, this._angle, this._totalRevolutions);
     for (let i = 0; i < this._extraAngles.length; i++) {
       this._checkOverlap(i + 1, this._extraAngles[i], this._extraRevolutions[i]);
     }
 
+    // TimeDust: minute vs hour hand overlap — awards 1 TD on rising edge.
+    this._checkHourMinuteOverlap(0, this._angle, this._totalRevolutions);
+    for (let i = 0; i < this._extraAngles.length; i++) {
+      this._checkHourMinuteOverlap(i + 1, this._extraAngles[i], this._extraRevolutions[i]);
+    }
+
     this._emitSnapshot();
+  }
+
+  _checkHourMinuteOverlap(slotIndex, secondAngle, totalRevs) {
+    const minuteAngle = ((totalRevs % 60) + secondAngle / 360) * 6;
+    const hourAngle = ((totalRevs % 720) + secondAngle / 360) * 0.5;
+    const diff = Math.abs(minuteAngle - hourAngle) % 360;
+    const distance = Math.min(diff, 360 - diff);
+    const isNear = distance < TIMEDUST_THRESHOLD_DEG;
+
+    if (isNear && !this._prevHourMinNear[slotIndex]) {
+      this._timeDust += 1;
+    }
+    this._prevHourMinNear[slotIndex] = isNear;
   }
 
   _checkOverlap(slotIndex, secondAngle, totalRevs) {
