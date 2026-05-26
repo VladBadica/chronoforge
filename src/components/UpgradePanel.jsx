@@ -1,6 +1,4 @@
 // Upgrade panel — lists all available upgrades
-// Currently only "Accelerate Time" but structured for future upgrades
-import React from 'react';
 
 function formatNumber(n) {
   if (n >= 1_000_000) return (n / 1_000_000).toFixed(2) + 'M';
@@ -85,14 +83,11 @@ function UpgradeCard({ title, description, level, statLabel, statCurrent, statNe
 
 export function UpgradePanel({
   energy,
-  upgradeCost, speedLevel, speedMultiplier, onBuyUpgrade,
-  energyUpgradeCost, energyLevel, energyPerRevolution, onBuyEnergyUpgrade,
+  upgradeCost, speedLevel, speedMultiplier, nextSpeedMultiplier, onBuyUpgrade,
+  energyUpgradeCost, energyLevel, energyPerRevolution, nextEnergyPerRevolution, onBuyEnergyUpgrade,
   clockCount, clockUpgradeCost, onBuyClockUpgrade,
-  boostLevel, extraClockSpeedFactor, boostUpgradeCost, onBuyBoostUpgrade,
+  boostLevel, extraClockSpeedFactor, nextExtraClockSpeedFactor, boostUpgradeCost, onBuyBoostUpgrade,
 }) {
-  const nextSpeedMultiplier = ((1 + (speedLevel + 1) * 0.10) * 100).toFixed(0);
-  const nextEnergyPerRev = (energyPerRevolution + 0.50).toFixed(2);
-  const nextBoostFactor = ((extraClockSpeedFactor + 0.10) * 100).toFixed(0);
 
   return (
     <div className="w-full max-w-lg flex flex-col gap-3">
@@ -107,11 +102,11 @@ export function UpgradePanel({
 
         <UpgradeCard
           title="Accelerate Time"
-          description="Clock speed +10% per level"
+          description="Clock speed increase"
           level={speedLevel}
           statLabel="Speed"
           statCurrent={`${(speedMultiplier * 100).toFixed(0)}%`}
-          statNext={`${nextSpeedMultiplier}%`}
+          statNext={`${(nextSpeedMultiplier * 100).toFixed(0)}%`}
           statNextColor="#9d8fff"
           cost={upgradeCost}
           canAfford={energy >= upgradeCost}
@@ -122,11 +117,11 @@ export function UpgradePanel({
 
         <UpgradeCard
           title="Improve Time"
-          description="+0.5 TE per revolution per level"
+          description="Increase TE yield"
           level={energyLevel}
           statLabel="TE/rev"
           statCurrent={energyPerRevolution.toFixed(2)}
-          statNext={nextEnergyPerRev}
+          statNext={nextEnergyPerRevolution.toFixed(2)}
           statNextColor="#f0c060"
           cost={energyUpgradeCost}
           canAfford={energy >= energyUpgradeCost}
@@ -137,7 +132,7 @@ export function UpgradePanel({
 
         <UpgradeCard
           title="Add Clock"
-          description="Extra clock at 10% speed, earns full TE/rev"
+          description="Extra clocks earn more TE & TD"
           level={clockCount - 1}
           statLabel="Clocks"
           statCurrent={String(clockCount)}
@@ -152,11 +147,11 @@ export function UpgradePanel({
 
         <UpgradeCard
           title="Boost Clocks"
-          description="+10% base speed to all extra clocks per level"
+          description="Increase base speed to all extra clocks"
           level={boostLevel}
           statLabel="Factor"
           statCurrent={`${(extraClockSpeedFactor * 100).toFixed(0)}%`}
-          statNext={`${nextBoostFactor}%`}
+          statNext={`${(nextExtraClockSpeedFactor * 100).toFixed(0)}%`}
           statNextColor="#f08080"
           cost={boostUpgradeCost}
           canAfford={energy >= boostUpgradeCost}

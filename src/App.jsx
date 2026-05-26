@@ -26,14 +26,17 @@ export default function App() {
     energyPerSecond,
     speedLevel,
     speedMultiplier,
+    nextSpeedMultiplier,
     upgradeCost,
     energyLevel,
     energyPerRevolution,
+    nextEnergyPerRevolution,
     energyUpgradeCost,
     clockCount,
     boostLevel,
     timeDust,
     extraClockSpeedFactor,
+    nextExtraClockSpeedFactor,
     extraAngles,
     extraRevolutions,
     clockUpgradeCost,
@@ -106,16 +109,19 @@ export default function App() {
         upgradeCost={upgradeCost}
         speedLevel={speedLevel}
         speedMultiplier={speedMultiplier}
+        nextSpeedMultiplier={nextSpeedMultiplier}
         onBuyUpgrade={buyUpgrade}
         energyUpgradeCost={energyUpgradeCost}
         energyLevel={energyLevel}
         energyPerRevolution={energyPerRevolution}
+        nextEnergyPerRevolution={nextEnergyPerRevolution}
         onBuyEnergyUpgrade={buyEnergyUpgrade}
         clockCount={clockCount}
         clockUpgradeCost={clockUpgradeCost}
         onBuyClockUpgrade={buyClockUpgrade}
         boostLevel={boostLevel}
         extraClockSpeedFactor={extraClockSpeedFactor}
+        nextExtraClockSpeedFactor={nextExtraClockSpeedFactor}
         boostUpgradeCost={boostUpgradeCost}
         onBuyBoostUpgrade={buyBoostUpgrade}
       />

@@ -10,24 +10,28 @@ export const BASE_REVOLUTION_MS = 60_000;
 export const ENERGY_PER_REVOLUTION = 1;
 
 // Accelerate Time upgrade
-export const UPGRADE_BASE_COST = 2;        // cost of the first purchase
-export const UPGRADE_COST_EXPONENT = 1.35;  // exponential growth factor
-export const UPGRADE_SPEED_BONUS = 0.20;    // +20% clock speed per level
+export const UPGRADE_BASE_COST = 2;              // cost of the first purchase
+export const UPGRADE_COST_EXPONENT = 1.35;        // exponential growth factor
+export const UPGRADE_SPEED_BONUS = 0.20;          // base speed bonus for level 1
+export const UPGRADE_SPEED_BONUS_SCALING = 1.05;  // each level's bonus is 5% larger than the last
 
 // Improve Time upgrade
-export const ENERGY_UPGRADE_BASE_COST = 2;       // cost of the first purchase
-export const ENERGY_UPGRADE_COST_EXPONENT = 1.50; // steeper curve — TE income is powerful
-export const ENERGY_UPGRADE_VALUE_BONUS = 0.50;   // +0.5 TE per revolution per level
+export const ENERGY_UPGRADE_BASE_COST = 2;              // cost of the first purchase
+export const ENERGY_UPGRADE_COST_EXPONENT = 1.50;       // steeper curve — TE income is powerful
+export const ENERGY_UPGRADE_VALUE_BONUS = 0.60;         // base TE/rev bonus for level 1
+export const ENERGY_UPGRADE_VALUE_SCALING = 1.05;       // each level's bonus is 5% larger than the last
 
 // Add Clock upgrade
-export const CLOCK_UPGRADE_BASE_COST = 100;      // cost of the first extra clock
-export const CLOCK_UPGRADE_COST_EXPONENT = 5.0;
+export const CLOCK_UPGRADE_BASE_COST = 200;      // cost of the first extra clock
+export const CLOCK_UPGRADE_COST_EXPONENT = 13.0;
 export const CLOCK_SPEED_FACTOR = 0.1;           // base speed ratio between adjacent extra clocks
+export const CLOCK_YIELD_MULTIPLIER = 10;        // Each successive clock earns this many times more TE and TimeDust than the previous one.
 
 // Boost Clocks upgrade — increases the base speed factor for all extra clocks
-export const BOOST_UPGRADE_BASE_COST = 75;       // cost of the first boost
-export const BOOST_UPGRADE_COST_EXPONENT = 1.80; // steep — this is very powerful
-export const BOOST_SPEED_BONUS = 0.10;           // +0.10 added to base speed factor per level
+export const BOOST_UPGRADE_BASE_COST = 75;             // cost of the first boost
+export const BOOST_UPGRADE_COST_EXPONENT = 1.80;        // steep — this is very powerful
+export const BOOST_SPEED_BONUS = 0.10;                  // base factor bonus for level 1
+export const BOOST_SPEED_BONUS_SCALING = 1.05;          // each level's bonus is 5% larger than the last
 
 // TimeDust — earned when the minute and hour hands overlap on any clock
 export const TIMEDUST_THRESHOLD_DEG = 5;       // angular proximity to count as overlap (degrees)

@@ -12,25 +12,29 @@
 import {
   BASE_REVOLUTION_MS,
   ENERGY_PER_REVOLUTION,
-  UPGRADE_SPEED_BONUS,
   AUTOSAVE_INTERVAL_MS,
   SAVE_KEY,
   MAX_OFFLINE_MS,
   UPGRADE_BASE_COST,
   UPGRADE_COST_EXPONENT,
+  UPGRADE_SPEED_BONUS,
+  UPGRADE_SPEED_BONUS_SCALING,
   ENERGY_UPGRADE_BASE_COST,
   ENERGY_UPGRADE_COST_EXPONENT,
   ENERGY_UPGRADE_VALUE_BONUS,
+  ENERGY_UPGRADE_VALUE_SCALING,
   CLOCK_UPGRADE_BASE_COST,
   CLOCK_UPGRADE_COST_EXPONENT,
   CLOCK_SPEED_FACTOR,
   BOOST_UPGRADE_BASE_COST,
   BOOST_UPGRADE_COST_EXPONENT,
   BOOST_SPEED_BONUS,
+  BOOST_SPEED_BONUS_SCALING,
   FAST_TIME_DURATION_MS,
   FAST_TIME_MULTIPLIER,
   FAST_TIME_THRESHOLD_DEG,
   TIMEDUST_THRESHOLD_DEG,
+  CLOCK_YIELD_MULTIPLIER,
 } from './constants.js';
 
 export class GameEngine {
@@ -138,9 +142,17 @@ export class GameEngine {
     );
   }
 
-  /** Clock speed multiplier (1 + 10% per level) */
+  /** Clock speed multiplier — bonus per level scales by UPGRADE_SPEED_BONUS_SCALING */
   getSpeedMultiplier() {
-    return 1 + this._speedLevel * UPGRADE_SPEED_BONUS;
+    return this._speedMultiplierAt(this._speedLevel);
+  }
+
+  _speedMultiplierAt(level) {
+    let bonus = 0;
+    for (let i = 0; i < level; i++) {
+      bonus += UPGRADE_SPEED_BONUS * Math.pow(UPGRADE_SPEED_BONUS_SCALING, i);
+    }
+    return 1 + bonus;
   }
 
   /** Purchase one additional clock — returns false if not enough energy */
@@ -184,12 +196,19 @@ export class GameEngine {
   }
 
   /**
-   * Base speed factor for extra clocks.
-   * Extra clock i runs at getExtraClockSpeedFactor() * CLOCK_SPEED_FACTOR^i:
-   *   clock 2 → factor * 1, clock 3 → factor * 0.1, clock 4 → factor * 0.01, …
+   * Base speed factor for extra clocks — bonus per level scales by BOOST_SPEED_BONUS_SCALING.
+   * Extra clock i runs at getExtraClockSpeedFactor() * CLOCK_SPEED_FACTOR^i.
    */
   getExtraClockSpeedFactor() {
-    return CLOCK_SPEED_FACTOR + this._boostLevel * BOOST_SPEED_BONUS;
+    return this._extraClockFactorAt(this._boostLevel);
+  }
+
+  _extraClockFactorAt(level) {
+    let bonus = 0;
+    for (let i = 0; i < level; i++) {
+      bonus += BOOST_SPEED_BONUS * Math.pow(BOOST_SPEED_BONUS_SCALING, i);
+    }
+    return CLOCK_SPEED_FACTOR + bonus;
   }
 
   /** Buy one level of the Improve Time upgrade — returns false if not enough energy */
@@ -209,9 +228,17 @@ export class GameEngine {
     );
   }
 
-  /** TE earned per full revolution at the current Improve Time level */
+  /** TE earned per full revolution — bonus per level scales by ENERGY_UPGRADE_VALUE_SCALING */
   getEnergyPerRevolution() {
-    return ENERGY_PER_REVOLUTION + this._energyLevel * ENERGY_UPGRADE_VALUE_BONUS;
+    return this._energyPerRevAt(this._energyLevel);
+  }
+
+  _energyPerRevAt(level) {
+    let bonus = 0;
+    for (let i = 0; i < level; i++) {
+      bonus += ENERGY_UPGRADE_VALUE_BONUS * Math.pow(ENERGY_UPGRADE_VALUE_SCALING, i);
+    }
+    return ENERGY_PER_REVOLUTION + bonus;
   }
 
   /** Energy produced per real second at the current upgrade levels */
@@ -343,8 +370,9 @@ export class GameEngine {
       const prevExtra = this._extraAngles[i];
       this._extraAngles[i] = (prevExtra + extraDelta) % 360;
       const extraCrossings = Math.floor((prevExtra + extraDelta) / 360);
+      const yieldMult = Math.pow(CLOCK_YIELD_MULTIPLIER, i + 1);
       if (extraCrossings > 0) {
-        this._energy += extraCrossings * this.getEnergyPerRevolution();
+        this._energy += extraCrossings * this.getEnergyPerRevolution() * yieldMult;
         this._totalRevolutions += extraCrossings;
         this._extraRevolutions[i] += extraCrossings;
       }
@@ -356,16 +384,17 @@ export class GameEngine {
       this._checkOverlap(i + 1, this._extraAngles[i], this._extraRevolutions[i]);
     }
 
-    // TimeDust: minute vs hour hand overlap — awards 1 TD on rising edge.
-    this._checkHourMinuteOverlap(0, this._angle, this._totalRevolutions);
+    // TimeDust: minute vs hour hand overlap — awards TD on rising edge.
+    this._checkHourMinuteOverlap(0, this._angle, this._totalRevolutions, 1);
     for (let i = 0; i < this._extraAngles.length; i++) {
-      this._checkHourMinuteOverlap(i + 1, this._extraAngles[i], this._extraRevolutions[i]);
+      const yieldMult = Math.pow(CLOCK_YIELD_MULTIPLIER, i + 1);
+      this._checkHourMinuteOverlap(i + 1, this._extraAngles[i], this._extraRevolutions[i], yieldMult);
     }
 
     this._emitSnapshot();
   }
 
-  _checkHourMinuteOverlap(slotIndex, secondAngle, totalRevs) {
+  _checkHourMinuteOverlap(slotIndex, secondAngle, totalRevs, yieldMult = 1) {
     const minuteAngle = ((totalRevs % 60) + secondAngle / 360) * 6;
     const hourAngle = ((totalRevs % 720) + secondAngle / 360) * 0.5;
     const diff = Math.abs(minuteAngle - hourAngle) % 360;
@@ -373,7 +402,7 @@ export class GameEngine {
     const isNear = distance < TIMEDUST_THRESHOLD_DEG;
 
     if (isNear && !this._prevHourMinNear[slotIndex]) {
-      this._timeDust += 1;
+      this._timeDust += yieldMult;
     }
     this._prevHourMinNear[slotIndex] = isNear;
   }
@@ -399,14 +428,17 @@ export class GameEngine {
         energy: this._energy,
         speedLevel: this._speedLevel,
         speedMultiplier: this.getSpeedMultiplier(),
+        nextSpeedMultiplier: this._speedMultiplierAt(this._speedLevel + 1),
         energyPerSecond: this.getEnergyPerSecond(),
         upgradeCost: this.getUpgradeCost(),
         energyLevel: this._energyLevel,
         energyPerRevolution: this.getEnergyPerRevolution(),
+        nextEnergyPerRevolution: this._energyPerRevAt(this._energyLevel + 1),
         energyUpgradeCost: this.getEnergyUpgradeCost(),
         clockCount: this._clockCount,
         boostLevel: this._boostLevel,
         extraClockSpeedFactor: this.getExtraClockSpeedFactor(),
+        nextExtraClockSpeedFactor: this._extraClockFactorAt(this._boostLevel + 1),
         extraAngles: this._extraAngles.slice(),
         extraRevolutions: this._extraRevolutions.slice(),
         clockUpgradeCost: this.getClockUpgradeCost(),
