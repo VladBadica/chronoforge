@@ -37,6 +37,10 @@ import {
   ENTROPY_DEBUFF_THRESHOLD,
   ENTROPY_DEBUFF_CHANCE_MIN,
   ENTROPY_DEBUFF_CHANCE_MAX,
+  FRACTURE_ENTROPY_THRESHOLD,
+  FRACTURE_LOSS_AT_THRESHOLD,
+  FRACTURE_LOSS_AT_MAX,
+  FRACTURE_FLASH_MS,
   TIMEDUST_THRESHOLD_DEG,
   CLOCK_YIELD_MULTIPLIER,
   ENTROPY_BASE_STABILITY,
@@ -62,6 +66,7 @@ export class GameEngine {
     // Fast Time state — transient, not saved
     this._fastTimeRemaining = 0;
     this._fastTimeIsDebuff = false;
+    this._fractureFlash = 0;
     // Start all clocks as "already near" so the initial 12-o'clock position
     // doesn't immediately fire the event on the first frame.
     this._prevNear = [true];         // second vs minute; index 0 = main, i+1 = extra i
@@ -128,6 +133,7 @@ export class GameEngine {
     this._totalRevolutions = 0;
     this._fastTimeRemaining = 0;
     this._fastTimeIsDebuff = false;
+    this._fractureFlash = 0;
     this._prevNear = [true];
     this._prevHourMinNear = [true];
     this._timeDust = 0;
@@ -321,6 +327,7 @@ export class GameEngine {
       stabilityLevel: this._stabilityLevel,
       timeDust: this._timeDust,
       totalRevolutions: this._totalRevolutions,
+      extraRevolutions: this._extraRevolutions,
       savedAt: Date.now(),
     };
     try {
@@ -344,7 +351,9 @@ export class GameEngine {
       this._stabilityLevel = data.stabilityLevel ?? 0;
       const extras = this._clockCount - 1;
       this._extraAngles = Array(extras).fill(0);
-      this._extraRevolutions = Array(extras).fill(0);
+      this._extraRevolutions = Array.isArray(data.extraRevolutions) && data.extraRevolutions.length === extras
+        ? data.extraRevolutions.slice()
+        : Array(extras).fill(0);
       this._timeDust = data.timeDust ?? 0;
       this._fastTimeRemaining = 0;
       this._prevNear = Array(this._clockCount).fill(true);
@@ -405,6 +414,7 @@ export class GameEngine {
     // Decrement fast time before this frame's physics so the multiplier reflects
     // the state at the start of the frame.
     this._fastTimeRemaining = Math.max(0, this._fastTimeRemaining - deltaMs);
+    this._fractureFlash = Math.max(0, this._fractureFlash - deltaMs);
     const isFastTime = this._fastTimeRemaining > 0;
     const fastTimeMult = isFastTime
       ? (this._fastTimeIsDebuff ? FAST_TIME_DEBUFF_MULTIPLIER : FAST_TIME_MULTIPLIER)
@@ -468,6 +478,14 @@ export class GameEngine {
 
     if (isNear && !this._prevHourMinNear[slotIndex]) {
       this._timeDust += yieldMult;
+
+      const entropy = this.getEntropy();
+      if (entropy >= FRACTURE_ENTROPY_THRESHOLD) {
+        const t = (entropy - FRACTURE_ENTROPY_THRESHOLD) / (1 - FRACTURE_ENTROPY_THRESHOLD);
+        const lossRate = FRACTURE_LOSS_AT_THRESHOLD + t * (FRACTURE_LOSS_AT_MAX - FRACTURE_LOSS_AT_THRESHOLD);
+        this._energy = Math.max(0, this._energy * (1 - lossRate));
+        this._fractureFlash = FRACTURE_FLASH_MS;
+      }
     }
     this._prevHourMinNear[slotIndex] = isNear;
   }
@@ -513,6 +531,7 @@ export class GameEngine {
         clockUpgradeCost: this.getClockUpgradeCost(),
         boostUpgradeCost: this.getBoostUpgradeCost(),
         isFastTime: this._fastTimeRemaining > 0,
+        isFracture: this._fractureFlash > 0,
         fastTimeIsDebuff: this._fastTimeIsDebuff,
         fastTimeRemaining: this._fastTimeRemaining,
         totalRevolutions: this._totalRevolutions,

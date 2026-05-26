@@ -31,6 +31,7 @@ export default function App() {
     boostUpgradeCost,
     isFastTime,
     fastTimeIsDebuff,
+    isFracture,
     totalRevolutions,
     entropy,
     nextEntropy,
@@ -103,9 +104,11 @@ export default function App() {
         onClick={addSecond}
         style={{
           cursor: 'pointer',
-          filter: isFastTime
-            ? (fastTimeIsDebuff ? 'drop-shadow(0 0 24px rgba(231,76,60,0.65))' : 'drop-shadow(0 0 24px rgba(255,200,80,0.55))')
-            : 'none',
+          filter: isFracture
+            ? 'drop-shadow(0 0 32px rgba(231,76,60,0.9))'
+            : isFastTime
+              ? (fastTimeIsDebuff ? 'drop-shadow(0 0 24px rgba(231,76,60,0.65))' : 'drop-shadow(0 0 24px rgba(255,200,80,0.55))')
+              : 'none',
           transition: 'filter 0.4s ease',
         }}
       >

@@ -36,8 +36,14 @@ export const BOOST_SPEED_BONUS_SCALING = 1.05;          // each level's bonus is
 // Time Entropy — chaos that grows with speed; resisted by the Anchor Time upgrade
 export const ENTROPY_BASE_STABILITY = 4;             // stability denominator at level 0
 export const ENTROPY_STABILITY_SCALING = 1.5;        // each stability level multiplies stability by this
-export const STABILITY_UPGRADE_BASE_COST = 50;       // cost of first Anchor Time purchase
+export const STABILITY_UPGRADE_BASE_COST = 100;       // cost of first Anchor Time purchase
 export const STABILITY_UPGRADE_COST_EXPONENT = 2.5;  // steep — stability fights a powerful force
+
+// Time Fracture — TE loss triggered when minute and hour hands overlap at high entropy
+export const FRACTURE_ENTROPY_THRESHOLD = 0.4;    // entropy below this causes no fracture
+export const FRACTURE_LOSS_AT_THRESHOLD = 0.10;   // 10% TE lost at threshold entropy
+export const FRACTURE_LOSS_AT_MAX = 0.40;         // 40% TE lost at entropy 1.0
+export const FRACTURE_FLASH_MS = 2_000;           // duration of the fracture visual flash
 
 // TimeDust — earned when the minute and hour hands overlap on any clock
 export const TIMEDUST_THRESHOLD_DEG = 5;       // angular proximity to count as overlap (degrees)
