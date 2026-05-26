@@ -32,6 +32,8 @@ export default function App() {
     isFastTime,
     fastTimeIsDebuff,
     isFracture,
+    isSurge,
+    surgeRemaining,
     totalRevolutions,
     entropy,
     nextEntropy,
@@ -75,7 +77,7 @@ export default function App() {
         </p>
       </header>
 
-      <StatsBar totalRevolutions={totalRevolutions} speedMultiplier={speedMultiplier} isFastTime={isFastTime} fastTimeIsDebuff={fastTimeIsDebuff} />
+      <StatsBar totalRevolutions={totalRevolutions} speedMultiplier={speedMultiplier} isFastTime={isFastTime} fastTimeIsDebuff={fastTimeIsDebuff} isSurge={isSurge} surgeRemaining={surgeRemaining} />
 
       <div className="w-full max-w-lg flex flex-col gap-1">
         <div className="flex justify-between text-xs" style={{ color: 'var(--color-muted)' }}>
@@ -106,9 +108,11 @@ export default function App() {
           cursor: 'pointer',
           filter: isFracture
             ? 'drop-shadow(0 0 32px rgba(231,76,60,0.9))'
-            : isFastTime
-              ? (fastTimeIsDebuff ? 'drop-shadow(0 0 24px rgba(231,76,60,0.65))' : 'drop-shadow(0 0 24px rgba(255,200,80,0.55))')
-              : 'none',
+            : isSurge
+              ? 'drop-shadow(0 0 40px rgba(168,143,255,0.85))'
+              : isFastTime
+                ? (fastTimeIsDebuff ? 'drop-shadow(0 0 24px rgba(231,76,60,0.65))' : 'drop-shadow(0 0 24px rgba(255,200,80,0.55))')
+                : 'none',
           transition: 'filter 0.4s ease',
         }}
       >

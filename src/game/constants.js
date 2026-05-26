@@ -59,6 +59,12 @@ export const ENTROPY_DEBUFF_THRESHOLD = 0.4;
 export const ENTROPY_DEBUFF_CHANCE_MIN = 0.10;
 export const ENTROPY_DEBUFF_CHANCE_MAX = 0.70;
 
+// Temporal Surge — triggered when all three hands align at 12 o'clock
+export const SURGE_DURATION_MS = 30_000;       // how long the surge lasts (ms)
+export const SURGE_SPEED_MULTIPLIER = 5;        // speed multiplier during surge
+export const SURGE_ENERGY_MULTIPLIER = 3;       // TE/rev multiplier during surge
+export const SURGE_THRESHOLD_DEG = 3;           // proximity for all three hands to count as aligned
+
 // Autosave interval in milliseconds
 export const AUTOSAVE_INTERVAL_MS = 5_000;
 

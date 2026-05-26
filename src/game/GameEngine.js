@@ -41,6 +41,10 @@ import {
   FRACTURE_LOSS_AT_THRESHOLD,
   FRACTURE_LOSS_AT_MAX,
   FRACTURE_FLASH_MS,
+  SURGE_DURATION_MS,
+  SURGE_SPEED_MULTIPLIER,
+  SURGE_ENERGY_MULTIPLIER,
+  SURGE_THRESHOLD_DEG,
   TIMEDUST_THRESHOLD_DEG,
   CLOCK_YIELD_MULTIPLIER,
   ENTROPY_BASE_STABILITY,
@@ -67,6 +71,9 @@ export class GameEngine {
     this._fastTimeRemaining = 0;
     this._fastTimeIsDebuff = false;
     this._fractureFlash = 0;
+    // Temporal Surge state — transient, not saved
+    this._surgeRemaining = 0;
+    this._prevSurgeNear = [true]; // start true so the initial 12-o'clock doesn't trigger
     // Start all clocks as "already near" so the initial 12-o'clock position
     // doesn't immediately fire the event on the first frame.
     this._prevNear = [true];         // second vs minute; index 0 = main, i+1 = extra i
@@ -134,8 +141,10 @@ export class GameEngine {
     this._fastTimeRemaining = 0;
     this._fastTimeIsDebuff = false;
     this._fractureFlash = 0;
+    this._surgeRemaining = 0;
     this._prevNear = [true];
     this._prevHourMinNear = [true];
+    this._prevSurgeNear = [true];
     this._timeDust = 0;
     try {
       localStorage.removeItem(SAVE_KEY);
@@ -184,6 +193,7 @@ export class GameEngine {
     // New clock starts at 0 (all hands overlapping) — mark near so no immediate trigger.
     this._prevNear.push(true);
     this._prevHourMinNear.push(true);
+    this._prevSurgeNear.push(true);
     this._emitSnapshot();
     return true;
   }
@@ -299,15 +309,17 @@ export class GameEngine {
     const fastMult = includeFastTime && this._fastTimeRemaining > 0
       ? (this._fastTimeIsDebuff ? FAST_TIME_DEBUFF_MULTIPLIER : FAST_TIME_MULTIPLIER)
       : 1;
-    const mainRPS = (1000 / BASE_REVOLUTION_MS) * this.getSpeedMultiplier() * fastMult;
+    const surgeMult = includeFastTime && this._surgeRemaining > 0 ? SURGE_SPEED_MULTIPLIER : 1;
+    const surgeEnergyMult = includeFastTime && this._surgeRemaining > 0 ? SURGE_ENERGY_MULTIPLIER : 1;
+    const mainRPS = (1000 / BASE_REVOLUTION_MS) * this.getSpeedMultiplier() * fastMult * surgeMult;
     const energyPerRev = this.getEnergyPerRevolution();
-    let total = mainRPS * energyPerRev;
+    let total = mainRPS * energyPerRev * surgeEnergyMult;
 
     const baseFactor = this.getExtraClockSpeedFactor();
     for (let i = 0; i < this._clockCount - 1; i++) {
       const factor = baseFactor * Math.pow(CLOCK_SPEED_FACTOR, i);
       const yieldMult = Math.pow(CLOCK_YIELD_MULTIPLIER, i + 1);
-      total += mainRPS * factor * energyPerRev * yieldMult;
+      total += mainRPS * factor * energyPerRev * yieldMult * surgeEnergyMult;
     }
 
     return total;
@@ -356,8 +368,10 @@ export class GameEngine {
         : Array(extras).fill(0);
       this._timeDust = data.timeDust ?? 0;
       this._fastTimeRemaining = 0;
+      this._surgeRemaining = 0;
       this._prevNear = Array(this._clockCount).fill(true);
       this._prevHourMinNear = Array(this._clockCount).fill(true);
+      this._prevSurgeNear = Array(this._clockCount).fill(true);
       this._totalRevolutions = data.totalRevolutions ?? 0;
 
       // --- Offline progress ---
@@ -415,12 +429,15 @@ export class GameEngine {
     // the state at the start of the frame.
     this._fastTimeRemaining = Math.max(0, this._fastTimeRemaining - deltaMs);
     this._fractureFlash = Math.max(0, this._fractureFlash - deltaMs);
+    this._surgeRemaining = Math.max(0, this._surgeRemaining - deltaMs);
     const isFastTime = this._fastTimeRemaining > 0;
+    const isSurge = this._surgeRemaining > 0;
     const fastTimeMult = isFastTime
       ? (this._fastTimeIsDebuff ? FAST_TIME_DEBUFF_MULTIPLIER : FAST_TIME_MULTIPLIER)
       : 1;
 
-    const speedMult = this.getSpeedMultiplier() * fastTimeMult;
+    const speedMult = this.getSpeedMultiplier() * fastTimeMult * (isSurge ? SURGE_SPEED_MULTIPLIER : 1);
+    const surgeEnergyMult = isSurge ? SURGE_ENERGY_MULTIPLIER : 1;
     // How many degrees does the second hand travel in deltaMs?
     const degreesPerMs = 360 / (BASE_REVOLUTION_MS / speedMult);
     const deltaDegrees = degreesPerMs * deltaMs;
@@ -432,7 +449,7 @@ export class GameEngine {
     // A revolution completes whenever the angle crosses 0 from 359→0.
     const crossings = Math.floor((prevAngle + deltaDegrees) / 360);
     if (crossings > 0) {
-      this._energy += crossings * this.getEnergyPerRevolution();
+      this._energy += crossings * this.getEnergyPerRevolution() * surgeEnergyMult;
       this._totalRevolutions += crossings;
     }
 
@@ -447,7 +464,7 @@ export class GameEngine {
       const extraCrossings = Math.floor((prevExtra + extraDelta) / 360);
       const yieldMult = Math.pow(CLOCK_YIELD_MULTIPLIER, i + 1);
       if (extraCrossings > 0) {
-        this._energy += extraCrossings * this.getEnergyPerRevolution() * yieldMult;
+        this._energy += extraCrossings * this.getEnergyPerRevolution() * yieldMult * surgeEnergyMult;
         this._totalRevolutions += extraCrossings;
         this._extraRevolutions[i] += extraCrossings;
       }
@@ -464,6 +481,12 @@ export class GameEngine {
     for (let i = 0; i < this._extraAngles.length; i++) {
       const yieldMult = Math.pow(CLOCK_YIELD_MULTIPLIER, i + 1);
       this._checkHourMinuteOverlap(i + 1, this._extraAngles[i], this._extraRevolutions[i], yieldMult);
+    }
+
+    // Temporal Surge: all three hands at 12 — triggers on rising edge.
+    this._checkAllHandsAtTwelve(0, this._angle, this._totalRevolutions);
+    for (let i = 0; i < this._extraAngles.length; i++) {
+      this._checkAllHandsAtTwelve(i + 1, this._extraAngles[i], this._extraRevolutions[i]);
     }
 
     this._emitSnapshot();
@@ -507,6 +530,20 @@ export class GameEngine {
     this._prevNear[slotIndex] = isNear;
   }
 
+  _checkAllHandsAtTwelve(slotIndex, secondAngle, totalRevs) {
+    const minuteAngle = ((totalRevs % 60) + secondAngle / 360) * 6;
+    const hourAngle = ((totalRevs % 720) + secondAngle / 360) * 0.5;
+    const secondDist = Math.min(secondAngle, 360 - secondAngle);
+    const minuteDist = Math.min(minuteAngle, 360 - minuteAngle);
+    const hourDist = Math.min(hourAngle, 360 - hourAngle);
+    const isNear = secondDist < SURGE_THRESHOLD_DEG && minuteDist < SURGE_THRESHOLD_DEG && hourDist < SURGE_THRESHOLD_DEG;
+
+    if (isNear && !this._prevSurgeNear[slotIndex]) {
+      this._surgeRemaining = SURGE_DURATION_MS;
+    }
+    this._prevSurgeNear[slotIndex] = isNear;
+  }
+
   /** Push a lightweight snapshot to the store each frame */
   _emitSnapshot() {
     if (this._onTick) {
@@ -532,6 +569,8 @@ export class GameEngine {
         boostUpgradeCost: this.getBoostUpgradeCost(),
         isFastTime: this._fastTimeRemaining > 0,
         isFracture: this._fractureFlash > 0,
+        isSurge: this._surgeRemaining > 0,
+        surgeRemaining: this._surgeRemaining,
         fastTimeIsDebuff: this._fastTimeIsDebuff,
         fastTimeRemaining: this._fastTimeRemaining,
         totalRevolutions: this._totalRevolutions,
