@@ -37,6 +37,7 @@ export default function App() {
     extraRevolutions,
     clockUpgradeCost,
     boostUpgradeCost,
+    isFastTime,
     totalRevolutions,
     buyUpgrade,
     buyEnergyUpgrade,
@@ -74,9 +75,17 @@ export default function App() {
         </p>
       </header>
 
-      <StatsBar totalRevolutions={totalRevolutions} speedMultiplier={speedMultiplier} />
+      <StatsBar totalRevolutions={totalRevolutions} speedMultiplier={speedMultiplier} isFastTime={isFastTime} />
 
-      <div className="flex items-center justify-center gap-4 flex-wrap" onClick={addSecond} style={{ cursor: 'pointer' }}>
+      <div
+        className="flex items-center justify-center gap-4 flex-wrap"
+        onClick={addSecond}
+        style={{
+          cursor: 'pointer',
+          filter: isFastTime ? 'drop-shadow(0 0 24px rgba(255,200,80,0.55))' : 'none',
+          transition: 'filter 0.4s ease',
+        }}
+      >
         <Clock angle={angle} totalRevolutions={totalRevolutions} size={clockSize} />
         {extraAngles.map((a, i) => (
           <Clock key={i} angle={a} totalRevolutions={extraRevolutions[i]} size={clockSize} />

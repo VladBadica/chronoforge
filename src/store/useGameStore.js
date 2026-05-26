@@ -40,6 +40,8 @@ export const useGameStore = create((set) => {
       extraRevolutions: snapshot.extraRevolutions,
       clockUpgradeCost: snapshot.clockUpgradeCost,
       boostUpgradeCost: snapshot.boostUpgradeCost,
+      isFastTime: snapshot.isFastTime,
+      fastTimeRemaining: snapshot.fastTimeRemaining,
       totalRevolutions: snapshot.totalRevolutions,
     });
   });
@@ -62,6 +64,8 @@ export const useGameStore = create((set) => {
     extraRevolutions: [],
     clockUpgradeCost: 50,
     boostUpgradeCost: 25,
+    isFastTime: false,
+    fastTimeRemaining: 0,
     totalRevolutions: 0,
 
     // --- actions ---

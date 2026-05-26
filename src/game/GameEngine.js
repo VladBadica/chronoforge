@@ -27,6 +27,9 @@ import {
   BOOST_UPGRADE_BASE_COST,
   BOOST_UPGRADE_COST_EXPONENT,
   BOOST_SPEED_BONUS,
+  FAST_TIME_DURATION_MS,
+  FAST_TIME_MULTIPLIER,
+  FAST_TIME_THRESHOLD_DEG,
 } from './constants.js';
 
 export class GameEngine {
@@ -41,6 +44,12 @@ export class GameEngine {
     this._extraAngles = [];      // angle per extra clock
     this._extraRevolutions = []; // revolution count per extra clock (for hand display)
     this._totalRevolutions = 0;
+
+    // Fast Time state — transient, not saved
+    this._fastTimeRemaining = 0;  // ms remaining of Fast Time boost
+    // Start all clocks as "already near" so the initial 12-o'clock position
+    // doesn't immediately fire the event on the first frame.
+    this._prevNear = [true];      // index 0 = main clock, i+1 = extra clock i
 
     // --- loop bookkeeping ---
     this._rafId = null;
@@ -91,6 +100,8 @@ export class GameEngine {
     this._extraAngles = [];
     this._extraRevolutions = [];
     this._totalRevolutions = 0;
+    this._fastTimeRemaining = 0;
+    this._prevNear = [true];
     try {
       localStorage.removeItem(SAVE_KEY);
     } catch { /* ignore */ }
@@ -127,6 +138,9 @@ export class GameEngine {
     this._clockCount += 1;
     this._extraAngles.push(0);
     this._extraRevolutions.push(0);
+    // New clock starts at 0 (hands overlapping) — mark as near so it doesn't
+    // immediately fire Fast Time.
+    this._prevNear.push(true);
     this._emitSnapshot();
     return true;
   }
@@ -228,6 +242,8 @@ export class GameEngine {
       const extras = this._clockCount - 1;
       this._extraAngles = Array(extras).fill(0);
       this._extraRevolutions = Array(extras).fill(0);
+      this._fastTimeRemaining = 0;
+      this._prevNear = Array(this._clockCount).fill(true);
       this._totalRevolutions = data.totalRevolutions ?? 0;
 
       // --- Offline progress ---
@@ -281,7 +297,12 @@ export class GameEngine {
   }
 
   _update(deltaMs) {
-    const speedMult = this.getSpeedMultiplier();
+    // Decrement fast time before this frame's physics so the multiplier reflects
+    // the state at the start of the frame.
+    this._fastTimeRemaining = Math.max(0, this._fastTimeRemaining - deltaMs);
+    const isFastTime = this._fastTimeRemaining > 0;
+
+    const speedMult = this.getSpeedMultiplier() * (isFastTime ? FAST_TIME_MULTIPLIER : 1);
     // How many degrees does the second hand travel in deltaMs?
     const degreesPerMs = 360 / (BASE_REVOLUTION_MS / speedMult);
     const deltaDegrees = degreesPerMs * deltaMs;
@@ -313,7 +334,27 @@ export class GameEngine {
       }
     }
 
+    // Fast Time overlap detection — check each clock's second vs minute hand.
+    // A rising edge (was not near → now near) resets the timer to full duration.
+    this._checkOverlap(0, this._angle, this._totalRevolutions);
+    for (let i = 0; i < this._extraAngles.length; i++) {
+      this._checkOverlap(i + 1, this._extraAngles[i], this._extraRevolutions[i]);
+    }
+
     this._emitSnapshot();
+  }
+
+  _checkOverlap(slotIndex, secondAngle, totalRevs) {
+    const minuteAngle = ((totalRevs % 60) + secondAngle / 360) * 6;
+    const diff = Math.abs(secondAngle - minuteAngle) % 360;
+    const distance = Math.min(diff, 360 - diff);
+    const isNear = distance < FAST_TIME_THRESHOLD_DEG;
+
+    if (isNear && !this._prevNear[slotIndex]) {
+      // Rising edge — hands just came together
+      this._fastTimeRemaining = FAST_TIME_DURATION_MS;
+    }
+    this._prevNear[slotIndex] = isNear;
   }
 
   /** Push a lightweight snapshot to the store each frame */
@@ -336,6 +377,8 @@ export class GameEngine {
         extraRevolutions: this._extraRevolutions.slice(),
         clockUpgradeCost: this.getClockUpgradeCost(),
         boostUpgradeCost: this.getBoostUpgradeCost(),
+        isFastTime: this._fastTimeRemaining > 0,
+        fastTimeRemaining: this._fastTimeRemaining,
         totalRevolutions: this._totalRevolutions,
       });
     }
