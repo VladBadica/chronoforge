@@ -288,10 +288,23 @@ export class GameEngine {
     return ENERGY_PER_REVOLUTION + bonus;
   }
 
-  /** Energy produced per real second at the current upgrade levels */
-  getEnergyPerSecond() {
-    const revolutionsPerSecond = (1000 / BASE_REVOLUTION_MS) * this.getSpeedMultiplier();
-    return revolutionsPerSecond * this.getEnergyPerRevolution();
+  /** Energy produced per real second across all clocks at current upgrade levels */
+  getEnergyPerSecond(includeFastTime = false) {
+    const fastMult = includeFastTime && this._fastTimeRemaining > 0
+      ? (this._fastTimeIsDebuff ? FAST_TIME_DEBUFF_MULTIPLIER : FAST_TIME_MULTIPLIER)
+      : 1;
+    const mainRPS = (1000 / BASE_REVOLUTION_MS) * this.getSpeedMultiplier() * fastMult;
+    const energyPerRev = this.getEnergyPerRevolution();
+    let total = mainRPS * energyPerRev;
+
+    const baseFactor = this.getExtraClockSpeedFactor();
+    for (let i = 0; i < this._clockCount - 1; i++) {
+      const factor = baseFactor * Math.pow(CLOCK_SPEED_FACTOR, i);
+      const yieldMult = Math.pow(CLOCK_YIELD_MULTIPLIER, i + 1);
+      total += mainRPS * factor * energyPerRev * yieldMult;
+    }
+
+    return total;
   }
 
   // -------------------------------------------------------------------------
@@ -485,7 +498,7 @@ export class GameEngine {
         speedLevel: this._speedLevel,
         speedMultiplier: this.getSpeedMultiplier(),
         nextSpeedMultiplier: this._speedMultiplierAt(this._speedLevel + 1),
-        energyPerSecond: this.getEnergyPerSecond(),
+        energyPerSecond: this.getEnergyPerSecond(true),
         upgradeCost: this.getUpgradeCost(),
         energyLevel: this._energyLevel,
         energyPerRevolution: this.getEnergyPerRevolution(),
