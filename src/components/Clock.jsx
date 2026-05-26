@@ -30,7 +30,7 @@ function polarToCartesian(cx, cy, r, angleDeg) {
   };
 }
 
-export function Clock({ angle, totalRevolutions, size = 240 }) {
+export function Clock({ angle, totalRevolutions, size = 240, showMirror = false }) {
   // Each game revolution advances the minute hand 6° (60 revs = full circle).
   // The fractional revolution (angle/360) gives smooth sub-minute movement.
   const minuteAngle = ((totalRevolutions % 60) + angle / 360) * 6;
@@ -180,6 +180,20 @@ export function Clock({ angle, totalRevolutions, size = 240 }) {
             strokeLinecap="round"
           />
         </g>
+
+        {/* Mirror hand — backward-moving second hand (Mirror Clocks prestige) */}
+        {showMirror && (
+          <g transform={`rotate(${(360 - angle) % 360}, ${CX}, ${CY})`}>
+            <line
+              x1={CX} y1={CY + 12}
+              x2={CX} y2={CY - 72}
+              stroke="#e879f9"
+              strokeWidth={1.5}
+              strokeLinecap="round"
+              opacity={0.75}
+            />
+          </g>
+        )}
 
         {/* Center pivot — layered for glow effect */}
         <circle cx={CX} cy={CY} r={5} fill="#1a1a2e" />

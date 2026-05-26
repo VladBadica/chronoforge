@@ -50,6 +50,12 @@ export default function App() {
     prestigePoints,
     canPrestige,
     prestige,
+    prestigeSpeedLevel,  prestigeSpeedCost,   buyPrestigeSpeed,
+    prestigeEnergyLevel, prestigeEnergyCost,  buyPrestigeEnergy,
+    prestigeClockLevel,  prestigeClockCost,   buyPrestigeClock,
+    prestigeBoostLevel,  prestigeBoostCost,   buyPrestigeBoost,
+    prestigeAnchorLevel, prestigeAnchorCost,  buyPrestigeAnchor,
+    prestigeMirrorLevel, prestigeMirrorCost,  buyPrestigeMirror,
     addSecond,
     resetGame,
     debugAddEnergy,
@@ -122,9 +128,9 @@ export default function App() {
           transition: 'filter 0.4s ease',
         }}
       >
-        <Clock angle={angle} totalRevolutions={totalRevolutions} size={clockSize} />
+        <Clock angle={angle} totalRevolutions={totalRevolutions} size={clockSize} showMirror={prestigeMirrorLevel >= 1} />
         {extraAngles.map((a, i) => (
-          <Clock key={i} angle={a} totalRevolutions={extraRevolutions[i]} size={clockSize} />
+          <Clock key={i} angle={a} totalRevolutions={extraRevolutions[i]} size={clockSize} showMirror={prestigeMirrorLevel >= i + 2} />
         ))}
       </div>
 
@@ -231,6 +237,12 @@ export default function App() {
           canPrestige={canPrestige}
           onPrestige={() => { prestige(); setShowPrestige(false); }}
           onClose={() => setShowPrestige(false)}
+          prestigeSpeedLevel={prestigeSpeedLevel}   prestigeSpeedCost={prestigeSpeedCost}   buyPrestigeSpeed={buyPrestigeSpeed}
+          prestigeEnergyLevel={prestigeEnergyLevel} prestigeEnergyCost={prestigeEnergyCost} buyPrestigeEnergy={buyPrestigeEnergy}
+          prestigeClockLevel={prestigeClockLevel}   prestigeClockCost={prestigeClockCost}   buyPrestigeClock={buyPrestigeClock}
+          prestigeBoostLevel={prestigeBoostLevel}   prestigeBoostCost={prestigeBoostCost}   buyPrestigeBoost={buyPrestigeBoost}
+          prestigeAnchorLevel={prestigeAnchorLevel} prestigeAnchorCost={prestigeAnchorCost} buyPrestigeAnchor={buyPrestigeAnchor}
+          prestigeMirrorLevel={prestigeMirrorLevel} prestigeMirrorCost={prestigeMirrorCost} buyPrestigeMirror={buyPrestigeMirror}
         />
       )}
     </div>

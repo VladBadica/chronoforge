@@ -1,8 +1,75 @@
 import React from 'react';
 
-export function PrestigeModal({ timeDust, prestigePoints, canPrestige, onPrestige, onClose }) {
+const UPGRADES = [
+  {
+    key: 'speed',
+    label: 'P1: Accelerate Time',
+    desc: 'Start each run with Accelerate Time +1 lv',
+    costKey: 'prestigeSpeedCost',
+    levelKey: 'prestigeSpeedLevel',
+    buyKey: 'buyPrestigeSpeed',
+  },
+  {
+    key: 'energy',
+    label: 'P2: Improve Time',
+    desc: 'Start each run with Improve Time +1 lv',
+    costKey: 'prestigeEnergyCost',
+    levelKey: 'prestigeEnergyLevel',
+    buyKey: 'buyPrestigeEnergy',
+  },
+  {
+    key: 'clock',
+    label: 'P3: Add Clock',
+    desc: 'Start each run with Add Clock +1 lv',
+    costKey: 'prestigeClockCost',
+    levelKey: 'prestigeClockLevel',
+    buyKey: 'buyPrestigeClock',
+  },
+  {
+    key: 'boost',
+    label: 'P4: Boost Clocks',
+    desc: 'Start each run with Boost Clocks +1 lv',
+    costKey: 'prestigeBoostCost',
+    levelKey: 'prestigeBoostLevel',
+    buyKey: 'buyPrestigeBoost',
+  },
+  {
+    key: 'anchor',
+    label: 'P5: Anchor Time',
+    desc: 'Start each run with Anchor Time +1 lv',
+    costKey: 'prestigeAnchorCost',
+    levelKey: 'prestigeAnchorLevel',
+    buyKey: 'buyPrestigeAnchor',
+  },
+  {
+    key: 'mirror',
+    label: 'Mirror Clocks',
+    desc: 'Adds a backward-moving hand (+1 clock per level)',
+    costKey: 'prestigeMirrorCost',
+    levelKey: 'prestigeMirrorLevel',
+    buyKey: 'buyPrestigeMirror',
+  },
+];
+
+export function PrestigeModal({
+  timeDust,
+  prestigePoints,
+  canPrestige,
+  onPrestige,
+  onClose,
+  prestigeSpeedLevel,  prestigeSpeedCost,   buyPrestigeSpeed,
+  prestigeEnergyLevel, prestigeEnergyCost,  buyPrestigeEnergy,
+  prestigeClockLevel,  prestigeClockCost,   buyPrestigeClock,
+  prestigeBoostLevel,  prestigeBoostCost,   buyPrestigeBoost,
+  prestigeAnchorLevel, prestigeAnchorCost,  buyPrestigeAnchor,
+  prestigeMirrorLevel, prestigeMirrorCost,  buyPrestigeMirror,
+}) {
   const ppGain = Math.floor(timeDust);
   const totalAfter = prestigePoints + ppGain;
+
+  const levels  = { prestigeSpeedLevel, prestigeEnergyLevel, prestigeClockLevel, prestigeBoostLevel, prestigeAnchorLevel, prestigeMirrorLevel };
+  const costs   = { prestigeSpeedCost,  prestigeEnergyCost,  prestigeClockCost,  prestigeBoostCost,  prestigeAnchorCost,  prestigeMirrorCost  };
+  const actions = { buyPrestigeSpeed,   buyPrestigeEnergy,   buyPrestigeClock,   buyPrestigeBoost,   buyPrestigeAnchor,   buyPrestigeMirror   };
 
   return (
     <div
@@ -76,7 +143,7 @@ export function PrestigeModal({ timeDust, prestigePoints, canPrestige, onPrestig
           </div>
         </div>
 
-        {/* Prestige Upgrades placeholder */}
+        {/* Prestige Upgrades */}
         <div className="flex flex-col gap-2">
           <h3
             className="text-xs font-semibold uppercase tracking-widest text-center"
@@ -84,14 +151,50 @@ export function PrestigeModal({ timeDust, prestigePoints, canPrestige, onPrestig
           >
             Prestige Upgrades
           </h3>
-          <div
-            className="rounded-xl py-6 text-center text-xs"
-            style={{
-              border: '1px dashed var(--color-border)',
-              color: 'var(--color-muted)',
-            }}
-          >
-            Coming in a future age…
+          <div className="flex flex-col gap-2">
+            {UPGRADES.map((u) => {
+              const level = levels[u.levelKey];
+              const cost  = costs[u.costKey];
+              const canAfford = prestigePoints >= cost;
+              return (
+                <div
+                  key={u.key}
+                  className="flex items-center justify-between rounded-xl px-4 py-3"
+                  style={{
+                    background: 'rgba(124,111,247,0.04)',
+                    border: '1px solid rgba(124,111,247,0.12)',
+                  }}
+                >
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-sm font-semibold" style={{ color: '#c0b8ff' }}>
+                      {u.label}
+                      {level > 0 && (
+                        <span className="ml-2 text-xs font-normal" style={{ color: '#a88fff' }}>
+                          lv {level}
+                        </span>
+                      )}
+                    </span>
+                    <span className="text-xs" style={{ color: 'var(--color-muted)' }}>
+                      {u.desc}
+                    </span>
+                  </div>
+                  <button
+                    onClick={actions[u.buyKey]}
+                    disabled={!canAfford}
+                    className="ml-4 shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150"
+                    style={{
+                      background: canAfford ? 'linear-gradient(135deg, #9d8fffcc, #7c6ff7)' : 'var(--color-border)',
+                      color: canAfford ? '#fff' : 'var(--color-muted)',
+                      cursor: canAfford ? 'pointer' : 'not-allowed',
+                      border: 'none',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {cost} PP
+                  </button>
+                </div>
+              );
+            })}
           </div>
         </div>
 

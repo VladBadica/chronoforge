@@ -16,6 +16,12 @@ import {
   SAVE_KEY,
   MAX_OFFLINE_MS,
   PRESTIGE_COST_TD,
+  PRESTIGE_SPEED_BASE_COST, PRESTIGE_SPEED_SCALING,
+  PRESTIGE_ENERGY_BASE_COST, PRESTIGE_ENERGY_SCALING,
+  PRESTIGE_CLOCK_BASE_COST, PRESTIGE_CLOCK_SCALING,
+  PRESTIGE_BOOST_BASE_COST, PRESTIGE_BOOST_SCALING,
+  PRESTIGE_ANCHOR_BASE_COST, PRESTIGE_ANCHOR_SCALING,
+  PRESTIGE_MIRROR_BASE_COST, PRESTIGE_MIRROR_SCALING,
   UPGRADE_BASE_COST,
   UPGRADE_COST_EXPONENT,
   UPGRADE_SPEED_BONUS,
@@ -86,6 +92,12 @@ export class GameEngine {
 
     // Prestige — saved, never reset by prestige itself
     this._prestigePoints = 0;
+    this._prestigeSpeedLevel  = 0;
+    this._prestigeEnergyLevel = 0;
+    this._prestigeClockLevel  = 0;
+    this._prestigeBoostLevel  = 0;
+    this._prestigeAnchorLevel = 0;
+    this._prestigeMirrorLevel = 0;
 
     // --- loop bookkeeping ---
     this._rafId = null;
@@ -152,6 +164,12 @@ export class GameEngine {
     this._prevSurgeNear = [true];
     this._timeDust = 0;
     this._prestigePoints = 0;
+    this._prestigeSpeedLevel  = 0;
+    this._prestigeEnergyLevel = 0;
+    this._prestigeClockLevel  = 0;
+    this._prestigeBoostLevel  = 0;
+    this._prestigeAnchorLevel = 0;
+    this._prestigeMirrorLevel = 0;
     try {
       localStorage.removeItem(SAVE_KEY);
     } catch { /* ignore */ }
@@ -164,26 +182,55 @@ export class GameEngine {
     this._prestigePoints += Math.floor(this._timeDust);
     this._angle = 0;
     this._energy = 0;
-    this._speedLevel = 0;
-    this._energyLevel = 0;
-    this._clockCount = 1;
-    this._boostLevel = 0;
-    this._stabilityLevel = 0;
-    this._extraAngles = [];
-    this._extraRevolutions = [];
+    this._speedLevel = this._prestigeSpeedLevel;
+    this._energyLevel = this._prestigeEnergyLevel;
+    this._clockCount = 1 + this._prestigeClockLevel;
+    this._boostLevel = this._prestigeBoostLevel;
+    this._stabilityLevel = this._prestigeAnchorLevel;
+    this._extraAngles = Array(this._prestigeClockLevel).fill(0);
+    this._extraRevolutions = Array(this._prestigeClockLevel).fill(0);
     this._totalRevolutions = 0;
     this._fastTimeRemaining = 0;
     this._fastTimeIsDebuff = false;
     this._fractureFlash = 0;
     this._surgeRemaining = 0;
-    this._prevNear = [true];
-    this._prevHourMinNear = [true];
-    this._prevSurgeNear = [true];
+    this._prevNear = Array(this._clockCount).fill(true);
+    this._prevHourMinNear = Array(this._clockCount).fill(true);
+    this._prevSurgeNear = Array(this._clockCount).fill(true);
     this._timeDust = 0;
     this.save();
     this._emitSnapshot();
     return true;
   }
+
+  // ---- Prestige upgrade buy/cost helpers (one pair per upgrade) ----
+
+  _buyPrestigeUpgrade(costFn, levelProp) {
+    const cost = costFn.call(this);
+    if (this._prestigePoints < cost) return false;
+    this._prestigePoints -= cost;
+    this[levelProp] += 1;
+    this._emitSnapshot();
+    return true;
+  }
+
+  _prestigeCost(base, scaling, level) {
+    return Math.ceil(base * Math.pow(scaling, level));
+  }
+
+  buyPrestigeSpeed()  { return this._buyPrestigeUpgrade(this.getPrestigeSpeedCost,  '_prestigeSpeedLevel');  }
+  buyPrestigeEnergy() { return this._buyPrestigeUpgrade(this.getPrestigeEnergyCost, '_prestigeEnergyLevel'); }
+  buyPrestigeClock()  { return this._buyPrestigeUpgrade(this.getPrestigeClockCost,  '_prestigeClockLevel');  }
+  buyPrestigeBoost()  { return this._buyPrestigeUpgrade(this.getPrestigeBoostCost,  '_prestigeBoostLevel');  }
+  buyPrestigeAnchor() { return this._buyPrestigeUpgrade(this.getPrestigeAnchorCost, '_prestigeAnchorLevel'); }
+  buyPrestigeMirror() { return this._buyPrestigeUpgrade(this.getPrestigeMirrorCost, '_prestigeMirrorLevel'); }
+
+  getPrestigeSpeedCost()  { return this._prestigeCost(PRESTIGE_SPEED_BASE_COST,  PRESTIGE_SPEED_SCALING,  this._prestigeSpeedLevel);  }
+  getPrestigeEnergyCost() { return this._prestigeCost(PRESTIGE_ENERGY_BASE_COST, PRESTIGE_ENERGY_SCALING, this._prestigeEnergyLevel); }
+  getPrestigeClockCost()  { return this._prestigeCost(PRESTIGE_CLOCK_BASE_COST,  PRESTIGE_CLOCK_SCALING,  this._prestigeClockLevel);  }
+  getPrestigeBoostCost()  { return this._prestigeCost(PRESTIGE_BOOST_BASE_COST,  PRESTIGE_BOOST_SCALING,  this._prestigeBoostLevel);  }
+  getPrestigeAnchorCost() { return this._prestigeCost(PRESTIGE_ANCHOR_BASE_COST, PRESTIGE_ANCHOR_SCALING, this._prestigeAnchorLevel); }
+  getPrestigeMirrorCost() { return this._prestigeCost(PRESTIGE_MIRROR_BASE_COST, PRESTIGE_MIRROR_SCALING, this._prestigeMirrorLevel); }
 
   /** Buy one level of the speed upgrade — returns false if not enough energy */
   buyUpgrade() {
@@ -346,13 +393,15 @@ export class GameEngine {
     const surgeEnergyMult = includeFastTime && this._surgeRemaining > 0 ? SURGE_ENERGY_MULTIPLIER : 1;
     const mainRPS = (1000 / BASE_REVOLUTION_MS) * this.getSpeedMultiplier() * fastMult * surgeMult;
     const energyPerRev = this.getEnergyPerRevolution();
-    let total = mainRPS * energyPerRev * surgeEnergyMult;
+    const mainMirrorMult = this._prestigeMirrorLevel >= 1 ? 2 : 1;
+    let total = mainRPS * energyPerRev * surgeEnergyMult * mainMirrorMult;
 
     const baseFactor = this.getExtraClockSpeedFactor();
     for (let i = 0; i < this._clockCount - 1; i++) {
       const factor = baseFactor * Math.pow(CLOCK_SPEED_FACTOR, i);
       const yieldMult = Math.pow(CLOCK_YIELD_MULTIPLIER, i + 1);
-      total += mainRPS * factor * energyPerRev * yieldMult * surgeEnergyMult;
+      const mirrorMult = this._prestigeMirrorLevel >= i + 2 ? 2 : 1;
+      total += mainRPS * factor * energyPerRev * yieldMult * surgeEnergyMult * mirrorMult;
     }
 
     return total;
@@ -372,6 +421,12 @@ export class GameEngine {
       stabilityLevel: this._stabilityLevel,
       timeDust: this._timeDust,
       prestigePoints: this._prestigePoints,
+      prestigeSpeedLevel:  this._prestigeSpeedLevel,
+      prestigeEnergyLevel: this._prestigeEnergyLevel,
+      prestigeClockLevel:  this._prestigeClockLevel,
+      prestigeBoostLevel:  this._prestigeBoostLevel,
+      prestigeAnchorLevel: this._prestigeAnchorLevel,
+      prestigeMirrorLevel: this._prestigeMirrorLevel,
       totalRevolutions: this._totalRevolutions,
       extraRevolutions: this._extraRevolutions,
       savedAt: Date.now(),
@@ -402,6 +457,12 @@ export class GameEngine {
         : Array(extras).fill(0);
       this._timeDust = data.timeDust ?? 0;
       this._prestigePoints = data.prestigePoints ?? 0;
+      this._prestigeSpeedLevel  = data.prestigeSpeedLevel  ?? 0;
+      this._prestigeEnergyLevel = data.prestigeEnergyLevel ?? 0;
+      this._prestigeClockLevel  = data.prestigeClockLevel  ?? 0;
+      this._prestigeBoostLevel  = data.prestigeBoostLevel  ?? 0;
+      this._prestigeAnchorLevel = data.prestigeAnchorLevel ?? 0;
+      this._prestigeMirrorLevel = data.prestigeMirrorLevel ?? 0;
       this._fastTimeRemaining = 0;
       this._surgeRemaining = 0;
       this._prevNear = Array(this._clockCount).fill(true);
@@ -484,7 +545,8 @@ export class GameEngine {
     // A revolution completes whenever the angle crosses 0 from 359→0.
     const crossings = Math.floor((prevAngle + deltaDegrees) / 360);
     if (crossings > 0) {
-      this._energy += crossings * this.getEnergyPerRevolution() * surgeEnergyMult;
+      const mirrorMult = this._prestigeMirrorLevel >= 1 ? 2 : 1;
+      this._energy += crossings * this.getEnergyPerRevolution() * surgeEnergyMult * mirrorMult;
       this._totalRevolutions += crossings;
     }
 
@@ -499,7 +561,8 @@ export class GameEngine {
       const extraCrossings = Math.floor((prevExtra + extraDelta) / 360);
       const yieldMult = Math.pow(CLOCK_YIELD_MULTIPLIER, i + 1);
       if (extraCrossings > 0) {
-        this._energy += extraCrossings * this.getEnergyPerRevolution() * yieldMult * surgeEnergyMult;
+        const mirrorMult = this._prestigeMirrorLevel >= i + 2 ? 2 : 1;
+        this._energy += extraCrossings * this.getEnergyPerRevolution() * yieldMult * surgeEnergyMult * mirrorMult;
         this._totalRevolutions += extraCrossings;
         this._extraRevolutions[i] += extraCrossings;
       }
@@ -616,6 +679,18 @@ export class GameEngine {
         nextEntropy: this._entropyAt(this._stabilityLevel + 1),
         stabilityLevel: this._stabilityLevel,
         stabilityUpgradeCost: this.getStabilityUpgradeCost(),
+        prestigeSpeedLevel:  this._prestigeSpeedLevel,
+        prestigeEnergyLevel: this._prestigeEnergyLevel,
+        prestigeClockLevel:  this._prestigeClockLevel,
+        prestigeBoostLevel:  this._prestigeBoostLevel,
+        prestigeAnchorLevel: this._prestigeAnchorLevel,
+        prestigeMirrorLevel: this._prestigeMirrorLevel,
+        prestigeSpeedCost:   this.getPrestigeSpeedCost(),
+        prestigeEnergyCost:  this.getPrestigeEnergyCost(),
+        prestigeClockCost:   this.getPrestigeClockCost(),
+        prestigeBoostCost:   this.getPrestigeBoostCost(),
+        prestigeAnchorCost:  this.getPrestigeAnchorCost(),
+        prestigeMirrorCost:  this.getPrestigeMirrorCost(),
       });
     }
   }
