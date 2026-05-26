@@ -1,5 +1,3 @@
-// Upgrade panel — lists all available upgrades
-
 function formatNumber(n) {
   if (n >= 1_000_000) return (n / 1_000_000).toFixed(2) + 'M';
   if (n >= 1_000) return (n / 1_000).toFixed(2) + 'K';
@@ -12,8 +10,8 @@ function UpgradeCard({ title, description, level, statLabel, statCurrent, statNe
       className="flex-1 rounded-xl flex flex-col transition-all duration-200"
       style={{
         background: 'var(--color-surface)',
-        border: `1px solid ${canAfford ? accentColor + '66' : 'var(--color-border)'}`,
-        boxShadow: canAfford ? `0 0 20px ${accentGlow}` : 'none',
+        border: `1px solid ${canAfford ? '#2a9d8f99' : 'var(--color-border)'}`,
+        boxShadow: canAfford ? '0 0 20px rgba(42,157,143,0.12)' : 'none',
         padding: '10px',
       }}
     >
@@ -87,6 +85,7 @@ export function UpgradePanel({
   energyUpgradeCost, energyLevel, energyPerRevolution, nextEnergyPerRevolution, onBuyEnergyUpgrade,
   clockCount, clockUpgradeCost, onBuyClockUpgrade,
   boostLevel, extraClockSpeedFactor, nextExtraClockSpeedFactor, boostUpgradeCost, onBuyBoostUpgrade,
+  entropy, nextEntropy, stabilityLevel, stabilityUpgradeCost, onBuyStabilityUpgrade,
 }) {
 
   return (
@@ -107,12 +106,12 @@ export function UpgradePanel({
           statLabel="Speed"
           statCurrent={`${(speedMultiplier * 100).toFixed(0)}%`}
           statNext={`${(nextSpeedMultiplier * 100).toFixed(0)}%`}
-          statNextColor="#9d8fff"
+          statNextColor="#5ecfb0"
           cost={upgradeCost}
           canAfford={energy >= upgradeCost}
           onBuy={onBuyUpgrade}
-          accentColor="#7c6ff7"
-          accentGlow="rgba(124,111,247,0.08)"
+          accentColor="#2a9d8f"
+          accentGlow="rgba(42,157,143,0.10)"
         />
 
         <UpgradeCard
@@ -122,12 +121,12 @@ export function UpgradePanel({
           statLabel="TE/rev"
           statCurrent={energyPerRevolution.toFixed(2)}
           statNext={nextEnergyPerRevolution.toFixed(2)}
-          statNextColor="#f0c060"
+          statNextColor="#5ecfb0"
           cost={energyUpgradeCost}
           canAfford={energy >= energyUpgradeCost}
           onBuy={onBuyEnergyUpgrade}
-          accentColor="#c0902a"
-          accentGlow="rgba(240,192,96,0.10)"
+          accentColor="#2a9d8f"
+          accentGlow="rgba(42,157,143,0.10)"
         />
 
         <UpgradeCard
@@ -152,13 +151,30 @@ export function UpgradePanel({
           statLabel="Factor"
           statCurrent={`${(extraClockSpeedFactor * 100).toFixed(0)}%`}
           statNext={`${(nextExtraClockSpeedFactor * 100).toFixed(0)}%`}
-          statNextColor="#f08080"
+          statNextColor="#5ecfb0"
           cost={boostUpgradeCost}
           canAfford={energy >= boostUpgradeCost}
           onBuy={onBuyBoostUpgrade}
-          accentColor="#c0392b"
-          accentGlow="rgba(192,57,43,0.10)"
+          accentColor="#2a9d8f"
+          accentGlow="rgba(42,157,143,0.10)"
         />
+
+        <div className="col-span-2">
+          <UpgradeCard
+            title="Anchor Time"
+            description="Reduce Time Entropy — stabilize the timeline"
+            level={stabilityLevel}
+            statLabel="Entropy"
+            statCurrent={`${(entropy * 100).toFixed(1)}%`}
+            statNext={`${(nextEntropy * 100).toFixed(1)}%`}
+            statNextColor="#5ecfb0"
+            cost={stabilityUpgradeCost}
+            canAfford={energy >= stabilityUpgradeCost}
+            onBuy={onBuyStabilityUpgrade}
+            accentColor="#2a9d8f"
+            accentGlow="rgba(42,157,143,0.10)"
+          />
+        </div>
 
       </div>
     </div>

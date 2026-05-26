@@ -1,15 +1,3 @@
-// ---------------------------------------------------------------------------
-// App — root component, wires the game engine into the component tree
-//
-// Layout (dark minimalist, single-column):
-//   [Header]
-//   [StatsBar]
-//   [Clock]
-//   [EnergyDisplay]
-//   [UpgradePanel]
-// ---------------------------------------------------------------------------
-
-import React from 'react';
 import { useGameEngine } from './hooks/useGameEngine.js';
 import { useGameStore } from './store/useGameStore.js';
 import { Clock } from './components/Clock.jsx';
@@ -43,10 +31,15 @@ export default function App() {
     boostUpgradeCost,
     isFastTime,
     totalRevolutions,
+    entropy,
+    nextEntropy,
+    stabilityLevel,
+    stabilityUpgradeCost,
     buyUpgrade,
     buyEnergyUpgrade,
     buyClockUpgrade,
     buyBoostUpgrade,
+    buyStabilityUpgrade,
     addSecond,
     resetGame,
     debugAddEnergy,
@@ -81,6 +74,28 @@ export default function App() {
       </header>
 
       <StatsBar totalRevolutions={totalRevolutions} speedMultiplier={speedMultiplier} isFastTime={isFastTime} />
+
+      <div className="w-full max-w-lg flex flex-col gap-1">
+        <div className="flex justify-between text-xs" style={{ color: 'var(--color-muted)' }}>
+          <span>Time Entropy</span>
+          <span style={{ color: entropy > 0.7 ? '#e74c3c' : entropy > 0.4 ? '#e67e22' : '#5ecfb0' }}>
+            {(entropy * 100).toFixed(1)}%
+          </span>
+        </div>
+        <div className="w-full rounded-full overflow-hidden" style={{ height: 6, background: 'var(--color-border)' }}>
+          <div
+            style={{
+              height: '100%',
+              width: `${entropy * 100}%`,
+              background: 'linear-gradient(90deg, #5ecfb0 0%, #e67e22 40%, #e74c3c 70%, #c0392b 100%)',
+              backgroundSize: entropy > 0 ? `${(100 / entropy).toFixed(1)}% 100%` : '100% 100%',
+              boxShadow: entropy > 0.5 ? `0 0 8px ${entropy > 0.7 ? 'rgba(231,76,60,0.5)' : 'rgba(230,126,34,0.5)'}` : 'none',
+              transition: 'width 0.3s ease, box-shadow 0.3s ease',
+              borderRadius: 9999,
+            }}
+          />
+        </div>
+      </div>
 
       <div
         className="flex items-center justify-center gap-4 flex-wrap"
@@ -124,6 +139,11 @@ export default function App() {
         nextExtraClockSpeedFactor={nextExtraClockSpeedFactor}
         boostUpgradeCost={boostUpgradeCost}
         onBuyBoostUpgrade={buyBoostUpgrade}
+        entropy={entropy}
+        nextEntropy={nextEntropy}
+        stabilityLevel={stabilityLevel}
+        stabilityUpgradeCost={stabilityUpgradeCost}
+        onBuyStabilityUpgrade={buyStabilityUpgrade}
       />
 
       <div className="flex gap-2">

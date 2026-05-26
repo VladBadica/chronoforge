@@ -47,6 +47,10 @@ export const useGameStore = create((set) => {
       isFastTime: snapshot.isFastTime,
       fastTimeRemaining: snapshot.fastTimeRemaining,
       totalRevolutions: snapshot.totalRevolutions,
+      entropy: snapshot.entropy,
+      nextEntropy: snapshot.nextEntropy,
+      stabilityLevel: snapshot.stabilityLevel,
+      stabilityUpgradeCost: snapshot.stabilityUpgradeCost,
     });
   });
 
@@ -75,6 +79,10 @@ export const useGameStore = create((set) => {
     isFastTime: false,
     fastTimeRemaining: 0,
     totalRevolutions: 0,
+    entropy: 0,
+    nextEntropy: 0,
+    stabilityLevel: 0,
+    stabilityUpgradeCost: 50,
 
     // --- actions ---
 
@@ -101,6 +109,10 @@ export const useGameStore = create((set) => {
 
     buyBoostUpgrade: () => {
       gameEngine.buyBoostUpgrade();
+    },
+
+    buyStabilityUpgrade: () => {
+      gameEngine.buyStabilityUpgrade();
     },
 
     /**

@@ -35,6 +35,10 @@ import {
   FAST_TIME_THRESHOLD_DEG,
   TIMEDUST_THRESHOLD_DEG,
   CLOCK_YIELD_MULTIPLIER,
+  ENTROPY_BASE_STABILITY,
+  ENTROPY_STABILITY_SCALING,
+  STABILITY_UPGRADE_BASE_COST,
+  STABILITY_UPGRADE_COST_EXPONENT,
 } from './constants.js';
 
 export class GameEngine {
@@ -46,6 +50,7 @@ export class GameEngine {
     this._energyLevel = 0;     // "Improve Time" upgrade level
     this._clockCount = 1;        // total clocks (first is free)
     this._boostLevel = 0;        // "Boost Clocks" upgrade level
+    this._stabilityLevel = 0;    // "Anchor Time" upgrade level
     this._extraAngles = [];      // angle per extra clock
     this._extraRevolutions = []; // revolution count per extra clock (for hand display)
     this._totalRevolutions = 0;
@@ -112,6 +117,7 @@ export class GameEngine {
     this._energyLevel = 0;
     this._clockCount = 1;
     this._boostLevel = 0;
+    this._stabilityLevel = 0;
     this._extraAngles = [];
     this._extraRevolutions = [];
     this._totalRevolutions = 0;
@@ -211,6 +217,41 @@ export class GameEngine {
     return CLOCK_SPEED_FACTOR + bonus;
   }
 
+  /** Purchase one level of Anchor Time — returns false if not enough energy */
+  buyStabilityUpgrade() {
+    const cost = this.getStabilityUpgradeCost();
+    if (this._energy < cost) return false;
+    this._energy -= cost;
+    this._stabilityLevel += 1;
+    this._emitSnapshot();
+    return true;
+  }
+
+  /** Computed cost for the next Anchor Time purchase */
+  getStabilityUpgradeCost() {
+    return Math.floor(
+      STABILITY_UPGRADE_BASE_COST * Math.pow(STABILITY_UPGRADE_COST_EXPONENT, this._stabilityLevel)
+    );
+  }
+
+  /** Stability denominator at a given upgrade level */
+  _stabilityAt(level) {
+    return ENTROPY_BASE_STABILITY * Math.pow(ENTROPY_STABILITY_SCALING, level);
+  }
+
+  /** Entropy for a given stability level (uses current speed) */
+  _entropyAt(stabilityLevel) {
+    const excess = this.getSpeedMultiplier() - 1;
+    if (excess <= 0) return 0;
+    const stability = this._stabilityAt(stabilityLevel);
+    return excess / (excess + stability);
+  }
+
+  /** Current Time Entropy — 0 (stable) to 1 (total chaos) */
+  getEntropy() {
+    return this._entropyAt(this._stabilityLevel);
+  }
+
   /** Buy one level of the Improve Time upgrade — returns false if not enough energy */
   buyEnergyUpgrade() {
     const cost = this.getEnergyUpgradeCost();
@@ -258,6 +299,7 @@ export class GameEngine {
       energyLevel: this._energyLevel,
       clockCount: this._clockCount,
       boostLevel: this._boostLevel,
+      stabilityLevel: this._stabilityLevel,
       timeDust: this._timeDust,
       totalRevolutions: this._totalRevolutions,
       savedAt: Date.now(),
@@ -280,6 +322,7 @@ export class GameEngine {
       this._energyLevel = data.energyLevel ?? 0;
       this._clockCount = data.clockCount ?? 1;
       this._boostLevel = data.boostLevel ?? 0;
+      this._stabilityLevel = data.stabilityLevel ?? 0;
       const extras = this._clockCount - 1;
       this._extraAngles = Array(extras).fill(0);
       this._extraRevolutions = Array(extras).fill(0);
@@ -446,6 +489,11 @@ export class GameEngine {
         isFastTime: this._fastTimeRemaining > 0,
         fastTimeRemaining: this._fastTimeRemaining,
         totalRevolutions: this._totalRevolutions,
+        timeDust: this._timeDust,
+        entropy: this.getEntropy(),
+        nextEntropy: this._entropyAt(this._stabilityLevel + 1),
+        stabilityLevel: this._stabilityLevel,
+        stabilityUpgradeCost: this.getStabilityUpgradeCost(),
       });
     }
   }

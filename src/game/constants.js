@@ -33,6 +33,12 @@ export const BOOST_UPGRADE_COST_EXPONENT = 1.80;        // steep — this is ver
 export const BOOST_SPEED_BONUS = 0.10;                  // base factor bonus for level 1
 export const BOOST_SPEED_BONUS_SCALING = 1.05;          // each level's bonus is 5% larger than the last
 
+// Time Entropy — chaos that grows with speed; resisted by the Anchor Time upgrade
+export const ENTROPY_BASE_STABILITY = 4;             // stability denominator at level 0
+export const ENTROPY_STABILITY_SCALING = 1.5;        // each stability level multiplies stability by this
+export const STABILITY_UPGRADE_BASE_COST = 50;       // cost of first Anchor Time purchase
+export const STABILITY_UPGRADE_COST_EXPONENT = 2.5;  // steep — stability fights a powerful force
+
 // TimeDust — earned when the minute and hour hands overlap on any clock
 export const TIMEDUST_THRESHOLD_DEG = 5;       // angular proximity to count as overlap (degrees)
 
