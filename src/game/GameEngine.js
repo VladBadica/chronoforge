@@ -35,8 +35,8 @@ import {
   CLOCK_SPEED_FACTOR,
   BOOST_UPGRADE_BASE_COST,
   BOOST_UPGRADE_COST_EXPONENT,
-  BOOST_SPEED_BONUS,
-  BOOST_SPEED_BONUS_SCALING,
+  BOOST_MAX_LEVEL,
+  BOOST_SPEED_FACTOR_MAX,
   FAST_TIME_DURATION_MS,
   FAST_TIME_MULTIPLIER,
   FAST_TIME_DEBUFF_MULTIPLIER,
@@ -249,6 +249,7 @@ export class GameEngine {
   }
 
   buyPrestigeBoost() {
+    if (this._boostLevel >= BOOST_MAX_LEVEL) return false;
     return this._buyPrestigeUpgrade(this.getPrestigeBoostCost, '_prestigeBoostLevel', function() {
       this._boostLevel += 1;
     });
@@ -325,8 +326,9 @@ export class GameEngine {
     );
   }
 
-  /** Purchase one level of Boost Clocks — returns false if not enough energy */
+  /** Purchase one level of Boost Clocks — returns false if not enough energy or at max level */
   buyBoostUpgrade() {
+    if (this._boostLevel >= BOOST_MAX_LEVEL) return false;
     const cost = this.getBoostUpgradeCost();
     if (this._energy < cost) return false;
     this._energy -= cost;
@@ -351,11 +353,8 @@ export class GameEngine {
   }
 
   _extraClockFactorAt(level) {
-    let bonus = 0;
-    for (let i = 0; i < level; i++) {
-      bonus += BOOST_SPEED_BONUS * Math.pow(BOOST_SPEED_BONUS_SCALING, i);
-    }
-    return CLOCK_SPEED_FACTOR + bonus;
+    const clampedLevel = Math.min(level, BOOST_MAX_LEVEL);
+    return CLOCK_SPEED_FACTOR + clampedLevel * (BOOST_SPEED_FACTOR_MAX - CLOCK_SPEED_FACTOR) / BOOST_MAX_LEVEL;
   }
 
   /** Purchase one level of Anchor Time — returns false if not enough energy */
@@ -698,6 +697,7 @@ export class GameEngine {
         energyUpgradeCost: this.getEnergyUpgradeCost(),
         clockCount: this._clockCount,
         boostLevel: this._boostLevel,
+        boostAtMax: this._boostLevel >= BOOST_MAX_LEVEL,
         extraClockSpeedFactor: this.getExtraClockSpeedFactor(),
         nextExtraClockSpeedFactor: this._extraClockFactorAt(this._boostLevel + 1),
         extraAngles: this._extraAngles.slice(),

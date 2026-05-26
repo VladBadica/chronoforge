@@ -25,6 +25,7 @@ export default function App() {
     energyUpgradeCost,
     clockCount,
     boostLevel,
+    boostAtMax,
     timeDust,
     extraClockSpeedFactor,
     nextExtraClockSpeedFactor,
@@ -161,6 +162,7 @@ export default function App() {
         extraClockSpeedFactor={extraClockSpeedFactor}
         nextExtraClockSpeedFactor={nextExtraClockSpeedFactor}
         boostUpgradeCost={boostUpgradeCost}
+        boostAtMax={boostAtMax}
         onBuyBoostUpgrade={buyBoostUpgrade}
         entropy={entropy}
         nextEntropy={nextEntropy}

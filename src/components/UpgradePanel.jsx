@@ -4,14 +4,15 @@ function formatNumber(n) {
   return Math.floor(n).toString();
 }
 
-function UpgradeCard({ title, description, level, statLabel, statCurrent, statNext, statNextColor, cost, canAfford, onBuy, accentColor, accentGlow }) {
+function UpgradeCard({ title, description, level, statLabel, statCurrent, statNext, statNextColor, cost, canAfford, onBuy, accentColor, accentGlow, maxed = false }) {
+  const effectiveCanAfford = canAfford && !maxed;
   return (
     <div
       className="flex-1 rounded-xl flex flex-col transition-all duration-200"
       style={{
         background: 'var(--color-surface)',
-        border: `1px solid ${canAfford ? '#2a9d8f99' : 'var(--color-border)'}`,
-        boxShadow: canAfford ? '0 0 20px rgba(42,157,143,0.12)' : 'none',
+        border: `1px solid ${effectiveCanAfford ? '#2a9d8f99' : 'var(--color-border)'}`,
+        boxShadow: effectiveCanAfford ? '0 0 20px rgba(42,157,143,0.12)' : 'none',
         padding: '10px',
       }}
     >
@@ -43,36 +44,40 @@ function UpgradeCard({ title, description, level, statLabel, statCurrent, statNe
             {statLabel}: <span style={{ color: 'var(--color-text)' }}>{statCurrent}</span>
           </span>
           <span>
-            Next: <span style={{ color: statNextColor }}>{statNext}</span>
+            Next: <span style={{ color: statNextColor }}>{maxed ? '—' : statNext}</span>
           </span>
         </div>
 
         <button
           onClick={onBuy}
-          disabled={!canAfford}
+          disabled={!effectiveCanAfford}
           className="w-full py-2.5 px-4 rounded-lg text-sm font-semibold transition-all duration-200"
           style={{
-            background: canAfford
+            background: effectiveCanAfford
               ? `linear-gradient(135deg, ${accentColor}cc, ${accentColor})`
               : 'var(--color-border)',
-            color: canAfford ? '#fff' : 'var(--color-muted)',
-            cursor: canAfford ? 'pointer' : 'not-allowed',
+            color: effectiveCanAfford ? '#fff' : 'var(--color-muted)',
+            cursor: effectiveCanAfford ? 'pointer' : 'not-allowed',
             border: 'none',
             outline: 'none',
-            boxShadow: canAfford ? `0 4px 14px ${accentGlow}` : 'none',
+            boxShadow: effectiveCanAfford ? `0 4px 14px ${accentGlow}` : 'none',
             transform: 'translateY(0)',
           }}
           onMouseEnter={(e) => {
-            if (canAfford) e.currentTarget.style.transform = 'translateY(-1px)';
+            if (effectiveCanAfford) e.currentTarget.style.transform = 'translateY(-1px)';
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.transform = 'translateY(0)';
           }}
         >
-          <span style={{ color: 'var(--color-energy)', marginRight: 6 }}>
-            {formatNumber(cost)} TE
-          </span>
-          Buy
+          {maxed ? 'MAX LEVEL' : (
+            <>
+              <span style={{ color: 'var(--color-energy)', marginRight: 6 }}>
+                {formatNumber(cost)} TE
+              </span>
+              Buy
+            </>
+          )}
         </button>
       </div>
     </div>
@@ -84,7 +89,7 @@ export function UpgradePanel({
   upgradeCost, speedLevel, speedMultiplier, nextSpeedMultiplier, onBuyUpgrade,
   energyUpgradeCost, energyLevel, energyPerRevolution, nextEnergyPerRevolution, onBuyEnergyUpgrade,
   clockCount, clockUpgradeCost, onBuyClockUpgrade,
-  boostLevel, extraClockSpeedFactor, nextExtraClockSpeedFactor, boostUpgradeCost, onBuyBoostUpgrade,
+  boostLevel, boostAtMax, extraClockSpeedFactor, nextExtraClockSpeedFactor, boostUpgradeCost, onBuyBoostUpgrade,
   entropy, nextEntropy, stabilityLevel, stabilityUpgradeCost, onBuyStabilityUpgrade,
 }) {
 
@@ -154,6 +159,7 @@ export function UpgradePanel({
           statNextColor="#5ecfb0"
           cost={boostUpgradeCost}
           canAfford={energy >= boostUpgradeCost}
+          maxed={boostAtMax}
           onBuy={onBuyBoostUpgrade}
           accentColor="#2a9d8f"
           accentGlow="rgba(42,157,143,0.10)"

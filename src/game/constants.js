@@ -30,8 +30,8 @@ export const CLOCK_YIELD_MULTIPLIER = 10;        // Each successive clock earns 
 // Boost Clocks upgrade — increases the base speed factor for all extra clocks
 export const BOOST_UPGRADE_BASE_COST = 75;             // cost of the first boost
 export const BOOST_UPGRADE_COST_EXPONENT = 1.80;        // steep — this is very powerful
-export const BOOST_SPEED_BONUS = 0.10;                  // base factor bonus for level 1
-export const BOOST_SPEED_BONUS_SCALING = 1.05;          // each level's bonus is 5% larger than the last
+export const BOOST_MAX_LEVEL = 20;                      // hard cap on Boost Clocks level
+export const BOOST_SPEED_FACTOR_MAX = 1.0;              // extra clock speed factor at max boost level (100%)
 
 // Time Entropy — chaos that grows with speed; resisted by the Anchor Time upgrade
 export const ENTROPY_BASE_STABILITY = 4;             // stability denominator at level 0
@@ -76,8 +76,8 @@ export const PRESTIGE_ENERGY_BASE_COST = 2;    // P2: Start with Improve Time +1
 export const PRESTIGE_ENERGY_SCALING = 1.3;
 export const PRESTIGE_CLOCK_BASE_COST = 10;    // P3: Start with Add Clock +1 lv
 export const PRESTIGE_CLOCK_SCALING = 5.0;
-export const PRESTIGE_BOOST_BASE_COST = 2;    // P4: Start with Boost Clocks +1 lv
-export const PRESTIGE_BOOST_SCALING = 2.5;
+export const PRESTIGE_BOOST_BASE_COST = 3;    // P4: Start with Boost Clocks +1 lv
+export const PRESTIGE_BOOST_SCALING = 1.7;
 export const PRESTIGE_ANCHOR_BASE_COST = 2;    // P5: Start with Anchor Time +1 lv
 export const PRESTIGE_ANCHOR_SCALING = 2.0;
 export const PRESTIGE_MIRROR_BASE_COST = 15;    // Mirror Clocks: backward hand per clock
