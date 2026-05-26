@@ -30,6 +30,7 @@ export default function App() {
     clockUpgradeCost,
     boostUpgradeCost,
     isFastTime,
+    fastTimeIsDebuff,
     totalRevolutions,
     entropy,
     nextEntropy,
@@ -73,7 +74,7 @@ export default function App() {
         </p>
       </header>
 
-      <StatsBar totalRevolutions={totalRevolutions} speedMultiplier={speedMultiplier} isFastTime={isFastTime} />
+      <StatsBar totalRevolutions={totalRevolutions} speedMultiplier={speedMultiplier} isFastTime={isFastTime} fastTimeIsDebuff={fastTimeIsDebuff} />
 
       <div className="w-full max-w-lg flex flex-col gap-1">
         <div className="flex justify-between text-xs" style={{ color: 'var(--color-muted)' }}>
@@ -102,7 +103,9 @@ export default function App() {
         onClick={addSecond}
         style={{
           cursor: 'pointer',
-          filter: isFastTime ? 'drop-shadow(0 0 24px rgba(255,200,80,0.55))' : 'none',
+          filter: isFastTime
+            ? (fastTimeIsDebuff ? 'drop-shadow(0 0 24px rgba(231,76,60,0.65))' : 'drop-shadow(0 0 24px rgba(255,200,80,0.55))')
+            : 'none',
           transition: 'filter 0.4s ease',
         }}
       >

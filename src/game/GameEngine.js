@@ -32,7 +32,11 @@ import {
   BOOST_SPEED_BONUS_SCALING,
   FAST_TIME_DURATION_MS,
   FAST_TIME_MULTIPLIER,
+  FAST_TIME_DEBUFF_MULTIPLIER,
   FAST_TIME_THRESHOLD_DEG,
+  ENTROPY_DEBUFF_THRESHOLD,
+  ENTROPY_DEBUFF_CHANCE_MIN,
+  ENTROPY_DEBUFF_CHANCE_MAX,
   TIMEDUST_THRESHOLD_DEG,
   CLOCK_YIELD_MULTIPLIER,
   ENTROPY_BASE_STABILITY,
@@ -57,6 +61,7 @@ export class GameEngine {
 
     // Fast Time state — transient, not saved
     this._fastTimeRemaining = 0;
+    this._fastTimeIsDebuff = false;
     // Start all clocks as "already near" so the initial 12-o'clock position
     // doesn't immediately fire the event on the first frame.
     this._prevNear = [true];         // second vs minute; index 0 = main, i+1 = extra i
@@ -122,6 +127,7 @@ export class GameEngine {
     this._extraRevolutions = [];
     this._totalRevolutions = 0;
     this._fastTimeRemaining = 0;
+    this._fastTimeIsDebuff = false;
     this._prevNear = [true];
     this._prevHourMinNear = [true];
     this._timeDust = 0;
@@ -387,8 +393,11 @@ export class GameEngine {
     // the state at the start of the frame.
     this._fastTimeRemaining = Math.max(0, this._fastTimeRemaining - deltaMs);
     const isFastTime = this._fastTimeRemaining > 0;
+    const fastTimeMult = isFastTime
+      ? (this._fastTimeIsDebuff ? FAST_TIME_DEBUFF_MULTIPLIER : FAST_TIME_MULTIPLIER)
+      : 1;
 
-    const speedMult = this.getSpeedMultiplier() * (isFastTime ? FAST_TIME_MULTIPLIER : 1);
+    const speedMult = this.getSpeedMultiplier() * fastTimeMult;
     // How many degrees does the second hand travel in deltaMs?
     const degreesPerMs = 360 / (BASE_REVOLUTION_MS / speedMult);
     const deltaDegrees = degreesPerMs * deltaMs;
@@ -457,7 +466,11 @@ export class GameEngine {
     const isNear = distance < FAST_TIME_THRESHOLD_DEG;
 
     if (isNear && !this._prevNear[slotIndex]) {
-      // Rising edge — hands just came together
+      const entropy = this.getEntropy();
+      const debuffChance = entropy >= ENTROPY_DEBUFF_THRESHOLD
+        ? ENTROPY_DEBUFF_CHANCE_MIN + (entropy - ENTROPY_DEBUFF_THRESHOLD) / (1 - ENTROPY_DEBUFF_THRESHOLD) * (ENTROPY_DEBUFF_CHANCE_MAX - ENTROPY_DEBUFF_CHANCE_MIN)
+        : 0;
+      this._fastTimeIsDebuff = Math.random() < debuffChance;
       this._fastTimeRemaining = FAST_TIME_DURATION_MS;
     }
     this._prevNear[slotIndex] = isNear;
@@ -487,6 +500,7 @@ export class GameEngine {
         clockUpgradeCost: this.getClockUpgradeCost(),
         boostUpgradeCost: this.getBoostUpgradeCost(),
         isFastTime: this._fastTimeRemaining > 0,
+        fastTimeIsDebuff: this._fastTimeIsDebuff,
         fastTimeRemaining: this._fastTimeRemaining,
         totalRevolutions: this._totalRevolutions,
         timeDust: this._timeDust,

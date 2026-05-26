@@ -43,9 +43,15 @@ export const STABILITY_UPGRADE_COST_EXPONENT = 2.5;  // steep — stability figh
 export const TIMEDUST_THRESHOLD_DEG = 5;       // angular proximity to count as overlap (degrees)
 
 // Fast Time — triggered when second and minute hands overlap on any clock
-export const FAST_TIME_DURATION_MS = 3_000;     // how long the boost lasts (ms)
-export const FAST_TIME_MULTIPLIER = 1.5;         // speed multiplier while active
-export const FAST_TIME_THRESHOLD_DEG = 5;        // angular proximity to count as overlap (degrees)
+export const FAST_TIME_DURATION_MS = 3_000;       // how long the boost lasts (ms)
+export const FAST_TIME_MULTIPLIER = 1.5;           // speed multiplier while active (buff)
+export const FAST_TIME_DEBUFF_MULTIPLIER = 0.5;    // speed multiplier when entropy corrupts it (debuff)
+export const FAST_TIME_THRESHOLD_DEG = 5;          // angular proximity to count as overlap (degrees)
+// Debuff chance scales linearly from ENTROPY_DEBUFF_CHANCE_MIN at ENTROPY_DEBUFF_THRESHOLD
+// up to ENTROPY_DEBUFF_CHANCE_MAX at entropy 1.0
+export const ENTROPY_DEBUFF_THRESHOLD = 0.4;
+export const ENTROPY_DEBUFF_CHANCE_MIN = 0.10;
+export const ENTROPY_DEBUFF_CHANCE_MAX = 0.70;
 
 // Autosave interval in milliseconds
 export const AUTOSAVE_INTERVAL_MS = 5_000;

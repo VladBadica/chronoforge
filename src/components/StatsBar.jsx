@@ -1,17 +1,21 @@
 // Minimal stats strip shown above the clock
 import React from 'react';
 
-export function StatsBar({ totalRevolutions, speedMultiplier, isFastTime }) {
-  const effectiveMultiplier = speedMultiplier * (isFastTime ? 1.5 : 1);
+export function StatsBar({ totalRevolutions, speedMultiplier, isFastTime, fastTimeIsDebuff }) {
+  const fastMult = isFastTime ? (fastTimeIsDebuff ? 0.5 : 1.5) : 1;
+  const effectiveMultiplier = speedMultiplier * fastMult;
+  const fastColor = fastTimeIsDebuff ? '#e74c3c' : '#ffc850';
+  const fastBorder = fastTimeIsDebuff ? 'rgba(231,76,60,0.35)' : 'rgba(255,200,80,0.35)';
+  const fastShadow = fastTimeIsDebuff ? '0 0 12px rgba(231,76,60,0.20)' : '0 0 12px rgba(255,200,80,0.15)';
 
   return (
     <div
       className="flex items-center gap-6 px-6 py-2 rounded-full text-xs transition-all duration-400"
       style={{
         background: 'var(--color-surface)',
-        border: `1px solid ${isFastTime ? 'rgba(255,200,80,0.35)' : 'var(--color-border)'}`,
+        border: `1px solid ${isFastTime ? fastBorder : 'var(--color-border)'}`,
         color: 'var(--color-muted)',
-        boxShadow: isFastTime ? '0 0 12px rgba(255,200,80,0.15)' : 'none',
+        boxShadow: isFastTime ? fastShadow : 'none',
       }}
     >
       <span>
@@ -25,9 +29,9 @@ export function StatsBar({ totalRevolutions, speedMultiplier, isFastTime }) {
         Speed:{' '}
         <span
           className="font-semibold"
-          style={{ color: isFastTime ? '#ffc850' : '#9d8fff' }}
+          style={{ color: isFastTime ? fastColor : '#9d8fff' }}
         >
-          {isFastTime && '⚡ '}{(effectiveMultiplier * 100).toFixed(0)}%
+          {isFastTime && (fastTimeIsDebuff ? '🔻 ' : '⚡ ')}{(effectiveMultiplier * 100).toFixed(0)}%
         </span>
       </span>
     </div>
