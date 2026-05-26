@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+/* Custom CSS variables for the dark minimalist theme */
+:root {
+  --color-bg: #0a0a0f;
+  --color-surface: #111118;
+  --color-border: #1e1e2e;
+  --color-accent: #7c6ff7;
+  --color-accent-glow: rgba(124, 111, 247, 0.35);
+  --color-text: #e2e2f0;
+  --color-muted: #5a5a7a;
+  --color-energy: #f0c060;
+  --color-energy-glow: rgba(240, 192, 96, 0.3);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* Smooth number transitions */
+.stat-value {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* Clock glow animations */
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+@keyframes energy-tick {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+.clock-glow {
+  filter: drop-shadow(0 0 12px var(--color-accent-glow));
+}
+
+.energy-pulse {
+  animation: energy-tick 0.4s ease-out;
+}
