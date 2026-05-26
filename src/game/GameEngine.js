@@ -18,6 +18,9 @@ import {
   MAX_OFFLINE_MS,
   UPGRADE_BASE_COST,
   UPGRADE_COST_EXPONENT,
+  ENERGY_UPGRADE_BASE_COST,
+  ENERGY_UPGRADE_COST_EXPONENT,
+  ENERGY_UPGRADE_VALUE_BONUS,
 } from './constants.js';
 
 export class GameEngine {
@@ -26,6 +29,7 @@ export class GameEngine {
     this._angle = 0;           // current second-hand angle in degrees (0–360)
     this._energy = 0;          // accumulated Time Energy
     this._speedLevel = 0;      // "Accelerate Time" upgrade level
+    this._energyLevel = 0;     // "Improve Time" upgrade level
     this._totalRevolutions = 0;
 
     // --- loop bookkeeping ---
@@ -66,6 +70,19 @@ export class GameEngine {
     this._update(1000);
   }
 
+  /** Wipe all state and localStorage — returns the engine to a fresh start */
+  reset() {
+    this._angle = 0;
+    this._energy = 0;
+    this._speedLevel = 0;
+    this._energyLevel = 0;
+    this._totalRevolutions = 0;
+    try {
+      localStorage.removeItem(SAVE_KEY);
+    } catch { /* ignore */ }
+    this._emitSnapshot();
+  }
+
   /** Buy one level of the speed upgrade — returns false if not enough energy */
   buyUpgrade() {
     const cost = this.getUpgradeCost();
@@ -76,7 +93,7 @@ export class GameEngine {
     return true;
   }
 
-  /** Computed upgrade cost for the *next* purchase */
+  /** Computed upgrade cost for the *next* Accelerate Time purchase */
   getUpgradeCost() {
     return Math.floor(
       UPGRADE_BASE_COST * Math.pow(UPGRADE_COST_EXPONENT, this._speedLevel)
@@ -88,10 +105,32 @@ export class GameEngine {
     return 1 + this._speedLevel * UPGRADE_SPEED_BONUS;
   }
 
-  /** Energy produced per real second at the current upgrade level */
+  /** Buy one level of the Improve Time upgrade — returns false if not enough energy */
+  buyEnergyUpgrade() {
+    const cost = this.getEnergyUpgradeCost();
+    if (this._energy < cost) return false;
+    this._energy -= cost;
+    this._energyLevel += 1;
+    this._emitSnapshot();
+    return true;
+  }
+
+  /** Computed upgrade cost for the *next* Improve Time purchase */
+  getEnergyUpgradeCost() {
+    return Math.floor(
+      ENERGY_UPGRADE_BASE_COST * Math.pow(ENERGY_UPGRADE_COST_EXPONENT, this._energyLevel)
+    );
+  }
+
+  /** TE earned per full revolution at the current Improve Time level */
+  getEnergyPerRevolution() {
+    return ENERGY_PER_REVOLUTION + this._energyLevel * ENERGY_UPGRADE_VALUE_BONUS;
+  }
+
+  /** Energy produced per real second at the current upgrade levels */
   getEnergyPerSecond() {
     const revolutionsPerSecond = (1000 / BASE_REVOLUTION_MS) * this.getSpeedMultiplier();
-    return revolutionsPerSecond * ENERGY_PER_REVOLUTION;
+    return revolutionsPerSecond * this.getEnergyPerRevolution();
   }
 
   // -------------------------------------------------------------------------
@@ -102,6 +141,7 @@ export class GameEngine {
     const data = {
       energy: this._energy,
       speedLevel: this._speedLevel,
+      energyLevel: this._energyLevel,
       totalRevolutions: this._totalRevolutions,
       savedAt: Date.now(),
     };
@@ -120,6 +160,7 @@ export class GameEngine {
 
       this._energy = data.energy ?? 0;
       this._speedLevel = data.speedLevel ?? 0;
+      this._energyLevel = data.energyLevel ?? 0;
       this._totalRevolutions = data.totalRevolutions ?? 0;
 
       // --- Offline progress ---
@@ -185,7 +226,7 @@ export class GameEngine {
     // A revolution completes whenever the angle crosses 0 from 359→0.
     const crossings = Math.floor((prevAngle + deltaDegrees) / 360);
     if (crossings > 0) {
-      this._energy += crossings * ENERGY_PER_REVOLUTION;
+      this._energy += crossings * this.getEnergyPerRevolution();
       this._totalRevolutions += crossings;
     }
 
@@ -202,6 +243,9 @@ export class GameEngine {
         speedMultiplier: this.getSpeedMultiplier(),
         energyPerSecond: this.getEnergyPerSecond(),
         upgradeCost: this.getUpgradeCost(),
+        energyLevel: this._energyLevel,
+        energyPerRevolution: this.getEnergyPerRevolution(),
+        energyUpgradeCost: this.getEnergyUpgradeCost(),
         totalRevolutions: this._totalRevolutions,
       });
     }

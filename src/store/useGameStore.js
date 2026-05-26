@@ -30,6 +30,9 @@ export const useGameStore = create((set) => {
       speedMultiplier: snapshot.speedMultiplier,
       energyPerSecond: snapshot.energyPerSecond,
       upgradeCost: snapshot.upgradeCost,
+      energyLevel: snapshot.energyLevel,
+      energyPerRevolution: snapshot.energyPerRevolution,
+      energyUpgradeCost: snapshot.energyUpgradeCost,
       totalRevolutions: snapshot.totalRevolutions,
     });
   });
@@ -42,6 +45,9 @@ export const useGameStore = create((set) => {
     speedMultiplier: 1,
     energyPerSecond: 0,
     upgradeCost: 10,
+    energyLevel: 0,
+    energyPerRevolution: 1,
+    energyUpgradeCost: 15,
     totalRevolutions: 0,
 
     // --- actions ---
@@ -59,12 +65,20 @@ export const useGameStore = create((set) => {
       gameEngine.buyUpgrade();
     },
 
+    buyEnergyUpgrade: () => {
+      gameEngine.buyEnergyUpgrade();
+    },
+
     /**
      * Trigger a manual save (the engine autosaves on its own interval,
      * but this can be called from a UI button).
      */
     saveGame: () => {
       gameEngine.save();
+    },
+
+    resetGame: () => {
+      gameEngine.reset();
     },
   };
 });

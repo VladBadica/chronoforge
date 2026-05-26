@@ -27,9 +27,14 @@ export default function App() {
     speedLevel,
     speedMultiplier,
     upgradeCost,
+    energyLevel,
+    energyPerRevolution,
+    energyUpgradeCost,
     totalRevolutions,
     buyUpgrade,
+    buyEnergyUpgrade,
     addSecond,
+    resetGame,
   } = useGameStore();
 
   return (
@@ -74,7 +79,34 @@ export default function App() {
         speedLevel={speedLevel}
         speedMultiplier={speedMultiplier}
         onBuyUpgrade={buyUpgrade}
+        energyUpgradeCost={energyUpgradeCost}
+        energyLevel={energyLevel}
+        energyPerRevolution={energyPerRevolution}
+        onBuyEnergyUpgrade={buyEnergyUpgrade}
       />
+
+      <button
+        onClick={() => {
+          if (window.confirm('Reset all progress and start fresh?')) resetGame();
+        }}
+        className="text-xs px-3 py-1.5 rounded-md transition-colors duration-150"
+        style={{
+          background: 'transparent',
+          border: '1px solid var(--color-border)',
+          color: 'var(--color-muted)',
+          cursor: 'pointer',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.borderColor = '#c0392b';
+          e.currentTarget.style.color = '#e74c3c';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.borderColor = 'var(--color-border)';
+          e.currentTarget.style.color = 'var(--color-muted)';
+        }}
+      >
+        Reset Game
+      </button>
     </div>
   );
 }

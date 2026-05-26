@@ -10,9 +10,14 @@ export const BASE_REVOLUTION_MS = 60_000;
 export const ENERGY_PER_REVOLUTION = 1;
 
 // Accelerate Time upgrade
-export const UPGRADE_BASE_COST = 5;        // cost of the first purchase
+export const UPGRADE_BASE_COST = 2;        // cost of the first purchase
 export const UPGRADE_COST_EXPONENT = 1.35;  // exponential growth factor
-export const UPGRADE_SPEED_BONUS = 0.10;    // +10% clock speed per level
+export const UPGRADE_SPEED_BONUS = 0.20;    // +20% clock speed per level
+
+// Improve Time upgrade
+export const ENERGY_UPGRADE_BASE_COST = 2;       // cost of the first purchase
+export const ENERGY_UPGRADE_COST_EXPONENT = 1.50; // steeper curve — TE income is powerful
+export const ENERGY_UPGRADE_VALUE_BONUS = 0.50;   // +0.5 TE per revolution per level
 
 // Autosave interval in milliseconds
 export const AUTOSAVE_INTERVAL_MS = 5_000;
