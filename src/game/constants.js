@@ -47,6 +47,7 @@ export const FRACTURE_FLASH_MS = 2_000;           // duration of the fracture vi
 
 // TimeDust — earned when the minute and hour hands overlap on any clock
 export const TIMEDUST_THRESHOLD_DEG = 5;       // angular proximity to count as overlap (degrees)
+export const TIMEDUST_BASE_YIELD = 0.1;        // TD awarded to the main clock per overlap; extra clocks scale by CLOCK_YIELD_MULTIPLIER
 
 // Fast Time — triggered when second and minute hands overlap on any clock
 export const FAST_TIME_DURATION_MS = 3_000;       // how long the boost lasts (ms)

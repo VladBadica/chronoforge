@@ -46,6 +46,7 @@ import {
   SURGE_ENERGY_MULTIPLIER,
   SURGE_THRESHOLD_DEG,
   TIMEDUST_THRESHOLD_DEG,
+  TIMEDUST_BASE_YIELD,
   CLOCK_YIELD_MULTIPLIER,
   ENTROPY_BASE_STABILITY,
   ENTROPY_STABILITY_SCALING,
@@ -477,9 +478,9 @@ export class GameEngine {
     }
 
     // TimeDust: minute vs hour hand overlap — awards TD on rising edge.
-    this._checkHourMinuteOverlap(0, this._angle, this._totalRevolutions, 1);
+    this._checkHourMinuteOverlap(0, this._angle, this._totalRevolutions, TIMEDUST_BASE_YIELD);
     for (let i = 0; i < this._extraAngles.length; i++) {
-      const yieldMult = Math.pow(CLOCK_YIELD_MULTIPLIER, i + 1);
+      const yieldMult = TIMEDUST_BASE_YIELD * Math.pow(CLOCK_YIELD_MULTIPLIER, i + 1);
       this._checkHourMinuteOverlap(i + 1, this._extraAngles[i], this._extraRevolutions[i], yieldMult);
     }
 

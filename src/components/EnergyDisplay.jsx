@@ -47,7 +47,7 @@ export function EnergyDisplay({ energy, energyPerSecond, timeDust = 0 }) {
             className="stat-value text-5xl font-bold tracking-tight"
             style={{ color: '#c0b8ff' }}
           >
-            {timeDust.toLocaleString()}
+            {timeDust.toFixed(1)}
           </span>
           <span className="text-lg font-medium" style={{ color: 'var(--color-muted)' }}>
             TD
