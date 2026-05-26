@@ -30,12 +30,24 @@ export default function App() {
     energyLevel,
     energyPerRevolution,
     energyUpgradeCost,
+    clockCount,
+    boostLevel,
+    extraClockSpeedFactor,
+    extraAngles,
+    extraRevolutions,
+    clockUpgradeCost,
+    boostUpgradeCost,
     totalRevolutions,
     buyUpgrade,
     buyEnergyUpgrade,
+    buyClockUpgrade,
+    buyBoostUpgrade,
     addSecond,
     resetGame,
   } = useGameStore();
+
+  // Scale clocks down as more are added so they all fit comfortably
+  const clockSize = clockCount === 1 ? 220 : clockCount === 2 ? 180 : 140;
 
   return (
     <div
@@ -64,7 +76,12 @@ export default function App() {
 
       <StatsBar totalRevolutions={totalRevolutions} speedMultiplier={speedMultiplier} />
 
-      <Clock angle={angle} totalRevolutions={totalRevolutions} onClick={addSecond} />
+      <div className="flex items-center justify-center gap-4 flex-wrap" onClick={addSecond} style={{ cursor: 'pointer' }}>
+        <Clock angle={angle} totalRevolutions={totalRevolutions} size={clockSize} />
+        {extraAngles.map((a, i) => (
+          <Clock key={i} angle={a} totalRevolutions={extraRevolutions[i]} size={clockSize} />
+        ))}
+      </div>
 
       <EnergyDisplay energy={energy} energyPerSecond={energyPerSecond} />
 
@@ -83,6 +100,13 @@ export default function App() {
         energyLevel={energyLevel}
         energyPerRevolution={energyPerRevolution}
         onBuyEnergyUpgrade={buyEnergyUpgrade}
+        clockCount={clockCount}
+        clockUpgradeCost={clockUpgradeCost}
+        onBuyClockUpgrade={buyClockUpgrade}
+        boostLevel={boostLevel}
+        extraClockSpeedFactor={extraClockSpeedFactor}
+        boostUpgradeCost={boostUpgradeCost}
+        onBuyBoostUpgrade={buyBoostUpgrade}
       />
 
       <button

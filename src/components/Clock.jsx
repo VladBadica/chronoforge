@@ -30,7 +30,7 @@ function polarToCartesian(cx, cy, r, angleDeg) {
   };
 }
 
-export function Clock({ angle, totalRevolutions, onClick }) {
+export function Clock({ angle, totalRevolutions, size = 240 }) {
   // Each game revolution advances the minute hand 6° (60 revs = full circle).
   // The fractional revolution (angle/360) gives smooth sub-minute movement.
   const minuteAngle = ((totalRevolutions % 60) + angle / 360) * 6;
@@ -43,8 +43,8 @@ export function Clock({ angle, totalRevolutions, onClick }) {
       <div
         className="absolute rounded-full pointer-events-none"
         style={{
-          width: 260,
-          height: 260,
+          width: size + 20,
+          height: size + 20,
           background:
             'radial-gradient(circle, rgba(124,111,247,0.12) 0%, transparent 70%)',
           filter: 'blur(18px)',
@@ -53,9 +53,8 @@ export function Clock({ angle, totalRevolutions, onClick }) {
 
       <svg
         viewBox="0 0 200 200"
-        width={240}
-        height={240}
-        onClick={onClick}
+        width={size}
+        height={size}
         style={{ cursor: 'pointer' }}
         aria-label="Analog clock"
         style={{ filter: 'drop-shadow(0 0 18px rgba(124,111,247,0.25))' }}

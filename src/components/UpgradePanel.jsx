@@ -87,12 +87,15 @@ export function UpgradePanel({
   energy,
   upgradeCost, speedLevel, speedMultiplier, onBuyUpgrade,
   energyUpgradeCost, energyLevel, energyPerRevolution, onBuyEnergyUpgrade,
+  clockCount, clockUpgradeCost, onBuyClockUpgrade,
+  boostLevel, extraClockSpeedFactor, boostUpgradeCost, onBuyBoostUpgrade,
 }) {
   const nextSpeedMultiplier = ((1 + (speedLevel + 1) * 0.10) * 100).toFixed(0);
   const nextEnergyPerRev = (energyPerRevolution + 0.50).toFixed(2);
+  const nextBoostFactor = ((extraClockSpeedFactor + 0.10) * 100).toFixed(0);
 
   return (
-    <div className="w-full max-w-sm flex flex-col gap-3">
+    <div className="w-full max-w-lg flex flex-col gap-3">
       <h2
         className="text-xs font-semibold uppercase tracking-widest text-center"
         style={{ color: 'var(--color-muted)' }}
@@ -100,7 +103,7 @@ export function UpgradePanel({
         Upgrades
       </h2>
 
-      <div className="flex gap-3">
+      <div className="grid grid-cols-2 gap-3">
 
         <UpgradeCard
           title="Accelerate Time"
@@ -130,6 +133,36 @@ export function UpgradePanel({
           onBuy={onBuyEnergyUpgrade}
           accentColor="#c0902a"
           accentGlow="rgba(240,192,96,0.10)"
+        />
+
+        <UpgradeCard
+          title="Add Clock"
+          description="Extra clock at 10% speed, earns full TE/rev"
+          level={clockCount - 1}
+          statLabel="Clocks"
+          statCurrent={String(clockCount)}
+          statNext={String(clockCount + 1)}
+          statNextColor="#5ecfb0"
+          cost={clockUpgradeCost}
+          canAfford={energy >= clockUpgradeCost}
+          onBuy={onBuyClockUpgrade}
+          accentColor="#2a9d8f"
+          accentGlow="rgba(42,157,143,0.10)"
+        />
+
+        <UpgradeCard
+          title="Boost Clocks"
+          description="+10% base speed to all extra clocks per level"
+          level={boostLevel}
+          statLabel="Factor"
+          statCurrent={`${(extraClockSpeedFactor * 100).toFixed(0)}%`}
+          statNext={`${nextBoostFactor}%`}
+          statNextColor="#f08080"
+          cost={boostUpgradeCost}
+          canAfford={energy >= boostUpgradeCost}
+          onBuy={onBuyBoostUpgrade}
+          accentColor="#c0392b"
+          accentGlow="rgba(192,57,43,0.10)"
         />
 
       </div>

@@ -21,6 +21,12 @@ import {
   ENERGY_UPGRADE_BASE_COST,
   ENERGY_UPGRADE_COST_EXPONENT,
   ENERGY_UPGRADE_VALUE_BONUS,
+  CLOCK_UPGRADE_BASE_COST,
+  CLOCK_UPGRADE_COST_EXPONENT,
+  CLOCK_SPEED_FACTOR,
+  BOOST_UPGRADE_BASE_COST,
+  BOOST_UPGRADE_COST_EXPONENT,
+  BOOST_SPEED_BONUS,
 } from './constants.js';
 
 export class GameEngine {
@@ -30,6 +36,10 @@ export class GameEngine {
     this._energy = 0;          // accumulated Time Energy
     this._speedLevel = 0;      // "Accelerate Time" upgrade level
     this._energyLevel = 0;     // "Improve Time" upgrade level
+    this._clockCount = 1;        // total clocks (first is free)
+    this._boostLevel = 0;        // "Boost Clocks" upgrade level
+    this._extraAngles = [];      // angle per extra clock
+    this._extraRevolutions = []; // revolution count per extra clock (for hand display)
     this._totalRevolutions = 0;
 
     // --- loop bookkeeping ---
@@ -76,6 +86,10 @@ export class GameEngine {
     this._energy = 0;
     this._speedLevel = 0;
     this._energyLevel = 0;
+    this._clockCount = 1;
+    this._boostLevel = 0;
+    this._extraAngles = [];
+    this._extraRevolutions = [];
     this._totalRevolutions = 0;
     try {
       localStorage.removeItem(SAVE_KEY);
@@ -103,6 +117,52 @@ export class GameEngine {
   /** Clock speed multiplier (1 + 10% per level) */
   getSpeedMultiplier() {
     return 1 + this._speedLevel * UPGRADE_SPEED_BONUS;
+  }
+
+  /** Purchase one additional clock — returns false if not enough energy */
+  buyClockUpgrade() {
+    const cost = this.getClockUpgradeCost();
+    if (this._energy < cost) return false;
+    this._energy -= cost;
+    this._clockCount += 1;
+    this._extraAngles.push(0);
+    this._extraRevolutions.push(0);
+    this._emitSnapshot();
+    return true;
+  }
+
+  /** Computed cost for the next clock purchase */
+  getClockUpgradeCost() {
+    const extraClocks = this._clockCount - 1; // already-purchased extras
+    return Math.floor(
+      CLOCK_UPGRADE_BASE_COST * Math.pow(CLOCK_UPGRADE_COST_EXPONENT, extraClocks)
+    );
+  }
+
+  /** Purchase one level of Boost Clocks — returns false if not enough energy */
+  buyBoostUpgrade() {
+    const cost = this.getBoostUpgradeCost();
+    if (this._energy < cost) return false;
+    this._energy -= cost;
+    this._boostLevel += 1;
+    this._emitSnapshot();
+    return true;
+  }
+
+  /** Computed cost for the next Boost Clocks purchase */
+  getBoostUpgradeCost() {
+    return Math.floor(
+      BOOST_UPGRADE_BASE_COST * Math.pow(BOOST_UPGRADE_COST_EXPONENT, this._boostLevel)
+    );
+  }
+
+  /**
+   * Base speed factor for extra clocks.
+   * Extra clock i runs at getExtraClockSpeedFactor() * CLOCK_SPEED_FACTOR^i:
+   *   clock 2 → factor * 1, clock 3 → factor * 0.1, clock 4 → factor * 0.01, …
+   */
+  getExtraClockSpeedFactor() {
+    return CLOCK_SPEED_FACTOR + this._boostLevel * BOOST_SPEED_BONUS;
   }
 
   /** Buy one level of the Improve Time upgrade — returns false if not enough energy */
@@ -142,6 +202,8 @@ export class GameEngine {
       energy: this._energy,
       speedLevel: this._speedLevel,
       energyLevel: this._energyLevel,
+      clockCount: this._clockCount,
+      boostLevel: this._boostLevel,
       totalRevolutions: this._totalRevolutions,
       savedAt: Date.now(),
     };
@@ -161,6 +223,11 @@ export class GameEngine {
       this._energy = data.energy ?? 0;
       this._speedLevel = data.speedLevel ?? 0;
       this._energyLevel = data.energyLevel ?? 0;
+      this._clockCount = data.clockCount ?? 1;
+      this._boostLevel = data.boostLevel ?? 0;
+      const extras = this._clockCount - 1;
+      this._extraAngles = Array(extras).fill(0);
+      this._extraRevolutions = Array(extras).fill(0);
       this._totalRevolutions = data.totalRevolutions ?? 0;
 
       // --- Offline progress ---
@@ -230,6 +297,22 @@ export class GameEngine {
       this._totalRevolutions += crossings;
     }
 
+    // Extra clocks: speed = getExtraClockSpeedFactor() * CLOCK_SPEED_FACTOR^i
+    // e.g. at boost 0: 0.1, 0.01, 0.001 — at boost 1: 0.2, 0.02, 0.002
+    const baseFactor = this.getExtraClockSpeedFactor();
+    for (let i = 0; i < this._extraAngles.length; i++) {
+      const factor = baseFactor * Math.pow(CLOCK_SPEED_FACTOR, i);
+      const extraDelta = deltaDegrees * factor;
+      const prevExtra = this._extraAngles[i];
+      this._extraAngles[i] = (prevExtra + extraDelta) % 360;
+      const extraCrossings = Math.floor((prevExtra + extraDelta) / 360);
+      if (extraCrossings > 0) {
+        this._energy += extraCrossings * this.getEnergyPerRevolution();
+        this._totalRevolutions += extraCrossings;
+        this._extraRevolutions[i] += extraCrossings;
+      }
+    }
+
     this._emitSnapshot();
   }
 
@@ -246,6 +329,13 @@ export class GameEngine {
         energyLevel: this._energyLevel,
         energyPerRevolution: this.getEnergyPerRevolution(),
         energyUpgradeCost: this.getEnergyUpgradeCost(),
+        clockCount: this._clockCount,
+        boostLevel: this._boostLevel,
+        extraClockSpeedFactor: this.getExtraClockSpeedFactor(),
+        extraAngles: this._extraAngles.slice(),
+        extraRevolutions: this._extraRevolutions.slice(),
+        clockUpgradeCost: this.getClockUpgradeCost(),
+        boostUpgradeCost: this.getBoostUpgradeCost(),
         totalRevolutions: this._totalRevolutions,
       });
     }

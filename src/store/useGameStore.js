@@ -33,6 +33,13 @@ export const useGameStore = create((set) => {
       energyLevel: snapshot.energyLevel,
       energyPerRevolution: snapshot.energyPerRevolution,
       energyUpgradeCost: snapshot.energyUpgradeCost,
+      clockCount: snapshot.clockCount,
+      boostLevel: snapshot.boostLevel,
+      extraClockSpeedFactor: snapshot.extraClockSpeedFactor,
+      extraAngles: snapshot.extraAngles,
+      extraRevolutions: snapshot.extraRevolutions,
+      clockUpgradeCost: snapshot.clockUpgradeCost,
+      boostUpgradeCost: snapshot.boostUpgradeCost,
       totalRevolutions: snapshot.totalRevolutions,
     });
   });
@@ -48,6 +55,13 @@ export const useGameStore = create((set) => {
     energyLevel: 0,
     energyPerRevolution: 1,
     energyUpgradeCost: 15,
+    clockCount: 1,
+    boostLevel: 0,
+    extraClockSpeedFactor: 0.1,
+    extraAngles: [],
+    extraRevolutions: [],
+    clockUpgradeCost: 50,
+    boostUpgradeCost: 25,
     totalRevolutions: 0,
 
     // --- actions ---
@@ -67,6 +81,14 @@ export const useGameStore = create((set) => {
 
     buyEnergyUpgrade: () => {
       gameEngine.buyEnergyUpgrade();
+    },
+
+    buyClockUpgrade: () => {
+      gameEngine.buyClockUpgrade();
+    },
+
+    buyBoostUpgrade: () => {
+      gameEngine.buyBoostUpgrade();
     },
 
     /**
