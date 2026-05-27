@@ -616,8 +616,11 @@ export class GameEngine {
     const isFastTime = this._fastTimeRemaining > 0;
     const isSurge = this._surgeRemaining > 0;
     const isReverse = this._reverseTimeRemaining > 0;
+    // While reversing, the slowdown debuff inverts into a speed-up (going backwards faster).
     const fastTimeMult = isFastTime
-      ? (this._fastTimeIsDebuff ? FAST_TIME_DEBUFF_MULTIPLIER : FAST_TIME_MULTIPLIER)
+      ? (this._fastTimeIsDebuff
+          ? (isReverse ? FAST_TIME_MULTIPLIER : FAST_TIME_DEBUFF_MULTIPLIER)
+          : FAST_TIME_MULTIPLIER)
       : 1;
 
     const speedMult = (this.getSpeedMultiplier() + this._clock2SpeedBonus) * fastTimeMult * (isSurge ? SURGE_SPEED_MULTIPLIER : 1);
