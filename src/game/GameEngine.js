@@ -33,6 +33,9 @@ import {
   CLOCK_UPGRADE_BASE_COST,
   CLOCK_UPGRADE_COST_EXPONENT,
   CLOCK_SPEED_FACTOR,
+  CLOCK_MAX_EXTRA,
+  CLOCK2_SPEED_BONUS,
+  CLOCK3_ENTROPY_REDUCTION,
   BOOST_UPGRADE_BASE_COST,
   BOOST_UPGRADE_COST_EXPONENT,
   BOOST_MAX_LEVEL,
@@ -86,6 +89,10 @@ export class GameEngine {
     // doesn't immediately fire the event on the first frame.
     this._prevNear = [true];         // second vs minute; index 0 = main, i+1 = extra i
     this._prevHourMinNear = [true];  // minute vs hour;   same indexing
+
+    // Special clock bonuses — saved, reset on prestige
+    this._clock2SpeedBonus = 0;       // accumulated additive speed bonus from clock 2 revolutions
+    this._clock3EntropyReduction = 0; // accumulated entropy reduction from clock 3 revolutions
 
     // TimeDust — saved
     this._timeDust = 0;
@@ -168,6 +175,8 @@ export class GameEngine {
     this._prevNear = [true];
     this._prevHourMinNear = [true];
     this._prevSurgeNear = [true];
+    this._clock2SpeedBonus = 0;
+    this._clock3EntropyReduction = 0;
     this._timeDust = 0;
     this._prestigePoints = 0;
     this._prestigeSpeedLevel  = 0;
@@ -203,6 +212,8 @@ export class GameEngine {
     this._prevNear = Array(this._clockCount).fill(true);
     this._prevHourMinNear = Array(this._clockCount).fill(true);
     this._prevSurgeNear = Array(this._clockCount).fill(true);
+    this._clock2SpeedBonus = 0;
+    this._clock3EntropyReduction = 0;
     this._timeDust = 0;
     this.save();
     this._emitSnapshot();
@@ -238,6 +249,7 @@ export class GameEngine {
   }
 
   buyPrestigeClock() {
+    if (this._clockCount >= 1 + CLOCK_MAX_EXTRA) return false;
     return this._buyPrestigeUpgrade(this.getPrestigeClockCost, '_prestigeClockLevel', function() {
       this._clockCount += 1;
       this._extraAngles.push(0);
@@ -302,8 +314,9 @@ export class GameEngine {
     return 1 + bonus;
   }
 
-  /** Purchase one additional clock — returns false if not enough energy */
+  /** Purchase one additional clock — returns false if not enough energy or at max */
   buyClockUpgrade() {
+    if (this._clockCount >= 1 + CLOCK_MAX_EXTRA) return false;
     const cost = this.getClockUpgradeCost();
     if (this._energy < cost) return false;
     this._energy -= cost;
@@ -379,12 +392,12 @@ export class GameEngine {
     return ENTROPY_BASE_STABILITY * Math.pow(ENTROPY_STABILITY_SCALING, level);
   }
 
-  /** Entropy for a given stability level (uses current speed) */
+  /** Entropy for a given stability level (uses current effective speed) */
   _entropyAt(stabilityLevel) {
-    const excess = this.getSpeedMultiplier() - 1;
+    const excess = this.getSpeedMultiplier() + this._clock2SpeedBonus - 1;
     if (excess <= 0) return 0;
     const stability = this._stabilityAt(stabilityLevel);
-    return excess / (excess + stability);
+    return Math.max(0, excess / (excess + stability) - this._clock3EntropyReduction);
   }
 
   /** Current Time Entropy — 0 (stable) to 1 (total chaos) */
@@ -429,20 +442,10 @@ export class GameEngine {
       : 1;
     const surgeMult = includeFastTime && this._surgeRemaining > 0 ? SURGE_SPEED_MULTIPLIER : 1;
     const surgeEnergyMult = includeFastTime && this._surgeRemaining > 0 ? SURGE_ENERGY_MULTIPLIER : 1;
-    const mainRPS = (1000 / BASE_REVOLUTION_MS) * this.getSpeedMultiplier() * fastMult * surgeMult;
+    const mainRPS = (1000 / BASE_REVOLUTION_MS) * (this.getSpeedMultiplier() + this._clock2SpeedBonus) * fastMult * surgeMult;
     const energyPerRev = this.getEnergyPerRevolution();
     const mainMirrorMult = this._prestigeMirrorLevel >= 1 ? 2 : 1;
-    let total = mainRPS * energyPerRev * surgeEnergyMult * mainMirrorMult;
-
-    const baseFactor = this.getExtraClockSpeedFactor();
-    for (let i = 0; i < this._clockCount - 1; i++) {
-      const factor = baseFactor * Math.pow(CLOCK_SPEED_FACTOR, i);
-      const yieldMult = Math.pow(CLOCK_YIELD_MULTIPLIER, i + 1);
-      const mirrorMult = this._prestigeMirrorLevel >= i + 2 ? 2 : 1;
-      total += mainRPS * factor * energyPerRev * yieldMult * surgeEnergyMult * mirrorMult;
-    }
-
-    return total;
+    return mainRPS * energyPerRev * surgeEnergyMult * mainMirrorMult;
   }
 
   // -------------------------------------------------------------------------
@@ -457,6 +460,8 @@ export class GameEngine {
       clockCount: this._clockCount,
       boostLevel: this._boostLevel,
       stabilityLevel: this._stabilityLevel,
+      clock2SpeedBonus: this._clock2SpeedBonus,
+      clock3EntropyReduction: this._clock3EntropyReduction,
       timeDust: this._timeDust,
       prestigePoints: this._prestigePoints,
       prestigeSpeedLevel:  this._prestigeSpeedLevel,
@@ -493,6 +498,8 @@ export class GameEngine {
       this._extraRevolutions = Array.isArray(data.extraRevolutions) && data.extraRevolutions.length === extras
         ? data.extraRevolutions.slice()
         : Array(extras).fill(0);
+      this._clock2SpeedBonus = data.clock2SpeedBonus ?? 0;
+      this._clock3EntropyReduction = data.clock3EntropyReduction ?? 0;
       this._timeDust = data.timeDust ?? 0;
       this._prestigePoints = data.prestigePoints ?? 0;
       this._prestigeSpeedLevel  = data.prestigeSpeedLevel  ?? 0;
@@ -570,7 +577,7 @@ export class GameEngine {
       ? (this._fastTimeIsDebuff ? FAST_TIME_DEBUFF_MULTIPLIER : FAST_TIME_MULTIPLIER)
       : 1;
 
-    const speedMult = this.getSpeedMultiplier() * fastTimeMult * (isSurge ? SURGE_SPEED_MULTIPLIER : 1);
+    const speedMult = (this.getSpeedMultiplier() + this._clock2SpeedBonus) * fastTimeMult * (isSurge ? SURGE_SPEED_MULTIPLIER : 1);
     const surgeEnergyMult = isSurge ? SURGE_ENERGY_MULTIPLIER : 1;
     // How many degrees does the second hand travel in deltaMs?
     const degreesPerMs = 360 / (BASE_REVOLUTION_MS / speedMult);
@@ -597,12 +604,14 @@ export class GameEngine {
       const prevExtra = this._extraAngles[i];
       this._extraAngles[i] = (prevExtra + extraDelta) % 360;
       const extraCrossings = Math.floor((prevExtra + extraDelta) / 360);
-      const yieldMult = Math.pow(CLOCK_YIELD_MULTIPLIER, i + 1);
       if (extraCrossings > 0) {
-        const mirrorMult = this._prestigeMirrorLevel >= i + 2 ? 2 : 1;
-        this._energy += extraCrossings * this.getEnergyPerRevolution() * yieldMult * surgeEnergyMult * mirrorMult;
         this._totalRevolutions += extraCrossings;
         this._extraRevolutions[i] += extraCrossings;
+        if (i === 0) {
+          this._clock2SpeedBonus += extraCrossings * CLOCK2_SPEED_BONUS;
+        } else if (i === 1) {
+          this._clock3EntropyReduction = Math.min(1, this._clock3EntropyReduction + extraCrossings * CLOCK3_ENTROPY_REDUCTION);
+        }
       }
     }
 
@@ -687,8 +696,8 @@ export class GameEngine {
         angle: this._angle,
         energy: this._energy,
         speedLevel: this._speedLevel,
-        speedMultiplier: this.getSpeedMultiplier(),
-        nextSpeedMultiplier: this._speedMultiplierAt(this._speedLevel + 1),
+        speedMultiplier: this.getSpeedMultiplier() + this._clock2SpeedBonus,
+        nextSpeedMultiplier: this._speedMultiplierAt(this._speedLevel + 1) + this._clock2SpeedBonus,
         energyPerSecond: this.getEnergyPerSecond(true),
         upgradeCost: this.getUpgradeCost(),
         energyLevel: this._energyLevel,
@@ -696,6 +705,9 @@ export class GameEngine {
         nextEnergyPerRevolution: this._energyPerRevAt(this._energyLevel + 1),
         energyUpgradeCost: this.getEnergyUpgradeCost(),
         clockCount: this._clockCount,
+        clockAtMax: this._clockCount >= 1 + CLOCK_MAX_EXTRA,
+        clock2SpeedBonus: this._clock2SpeedBonus,
+        clock3EntropyReduction: this._clock3EntropyReduction,
         boostLevel: this._boostLevel,
         boostAtMax: this._boostLevel >= BOOST_MAX_LEVEL,
         extraClockSpeedFactor: this.getExtraClockSpeedFactor(),

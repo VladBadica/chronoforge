@@ -1,8 +1,8 @@
 // Minimal stats strip shown above the clock
 import React from 'react';
 
-export function StatsBar({ totalRevolutions, speedMultiplier, isFastTime, fastTimeIsDebuff, isSurge, surgeRemaining }) {
-  const fastMult = isFastTime ? (fastTimeIsDebuff ? 0.5 : 1.5) : 1;
+export function StatsBar({ totalRevolutions, speedMultiplier, isFastTime, fastTimeIsDebuff, fastTimeMultiplier, fastTimeDebuffMultiplier, isSurge, surgeRemaining }) {
+  const fastMult = isFastTime ? (fastTimeIsDebuff ? fastTimeDebuffMultiplier : fastTimeMultiplier) : 1;
   const surgeMult = isSurge ? 5 : 1;
   const effectiveMultiplier = speedMultiplier * fastMult * surgeMult;
 

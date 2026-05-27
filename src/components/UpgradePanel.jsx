@@ -88,7 +88,7 @@ export function UpgradePanel({
   energy,
   upgradeCost, speedLevel, speedMultiplier, nextSpeedMultiplier, onBuyUpgrade,
   energyUpgradeCost, energyLevel, energyPerRevolution, nextEnergyPerRevolution, onBuyEnergyUpgrade,
-  clockCount, clockUpgradeCost, onBuyClockUpgrade,
+  clockCount, clockAtMax, clock2SpeedBonus, clock3EntropyReduction, clockUpgradeCost, onBuyClockUpgrade,
   boostLevel, boostAtMax, extraClockSpeedFactor, nextExtraClockSpeedFactor, boostUpgradeCost, onBuyBoostUpgrade,
   entropy, nextEntropy, stabilityLevel, stabilityUpgradeCost, onBuyStabilityUpgrade,
 }) {
@@ -136,14 +136,21 @@ export function UpgradePanel({
 
         <UpgradeCard
           title="Add Clock"
-          description="Extra clocks earn more TE & TD"
+          description={
+            clockAtMax
+              ? `Clk2 +${(clock2SpeedBonus * 100).toFixed(0)}% spd | Clk3 -${(clock3EntropyReduction * 100).toFixed(0)}% ent`
+              : clockCount === 1
+                ? 'Clock 2: +10% speed per revolution'
+                : 'Clock 3: -1% entropy per revolution'
+          }
           level={clockCount - 1}
           statLabel="Clocks"
           statCurrent={String(clockCount)}
-          statNext={String(clockCount + 1)}
+          statNext={clockAtMax ? String(clockCount) : String(clockCount + 1)}
           statNextColor="#5ecfb0"
           cost={clockUpgradeCost}
           canAfford={energy >= clockUpgradeCost}
+          maxed={clockAtMax}
           onBuy={onBuyClockUpgrade}
           accentColor="#2a9d8f"
           accentGlow="rgba(42,157,143,0.10)"

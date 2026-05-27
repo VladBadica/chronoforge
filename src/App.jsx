@@ -6,6 +6,7 @@ import { EnergyDisplay } from './components/EnergyDisplay.jsx';
 import { UpgradePanel } from './components/UpgradePanel.jsx';
 import { StatsBar } from './components/StatsBar.jsx';
 import { PrestigeModal } from './components/PrestigeModal.jsx';
+import { FAST_TIME_MULTIPLIER, FAST_TIME_DEBUFF_MULTIPLIER } from './game/constants.js';
 
 export default function App() {
   useGameEngine();
@@ -24,6 +25,9 @@ export default function App() {
     nextEnergyPerRevolution,
     energyUpgradeCost,
     clockCount,
+    clockAtMax,
+    clock2SpeedBonus,
+    clock3EntropyReduction,
     boostLevel,
     boostAtMax,
     timeDust,
@@ -91,7 +95,7 @@ export default function App() {
         </p>
       </header>
 
-      <StatsBar totalRevolutions={totalRevolutions} speedMultiplier={speedMultiplier} isFastTime={isFastTime} fastTimeIsDebuff={fastTimeIsDebuff} isSurge={isSurge} surgeRemaining={surgeRemaining} />
+      <StatsBar totalRevolutions={totalRevolutions} speedMultiplier={speedMultiplier} isFastTime={isFastTime} fastTimeIsDebuff={fastTimeIsDebuff} fastTimeMultiplier={FAST_TIME_MULTIPLIER} fastTimeDebuffMultiplier={FAST_TIME_DEBUFF_MULTIPLIER} isSurge={isSurge} surgeRemaining={surgeRemaining} />
 
       <div className="w-full max-w-lg flex flex-col gap-1">
         <div className="flex justify-between text-xs" style={{ color: 'var(--color-muted)' }}>
@@ -156,6 +160,9 @@ export default function App() {
         nextEnergyPerRevolution={nextEnergyPerRevolution}
         onBuyEnergyUpgrade={buyEnergyUpgrade}
         clockCount={clockCount}
+        clockAtMax={clockAtMax}
+        clock2SpeedBonus={clock2SpeedBonus}
+        clock3EntropyReduction={clock3EntropyReduction}
         clockUpgradeCost={clockUpgradeCost}
         onBuyClockUpgrade={buyClockUpgrade}
         boostLevel={boostLevel}
