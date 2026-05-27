@@ -29,7 +29,6 @@ export const ENERGY_UPGRADE_VALUE_SCALING = 1.05;
 export const CLOCK_UPGRADE_BASE_COST = 200;
 export const CLOCK_UPGRADE_COST_EXPONENT = 13.0;
 export const CLOCK_SPEED_FACTOR = 0.1;            // clock 2 base speed (reference for boost normalisation)
-export const CLOCK_YIELD_MULTIPLIER = 10;         // each successive clock earns this many times more TD
 export const CLOCK_MAX_EXTRA = 3;                 // hard cap on purchasable extra clocks
 // Per-clock base speeds (fraction of main clock speed at boost 0)
 export const CLOCK2_BASE_SPEED = 0.10;
@@ -75,7 +74,7 @@ export const FRACTURE_FLASH_MS = 2_000;
 
 // TimeDust — earned when minute and hour hands overlap on any clock
 export const TIMEDUST_THRESHOLD_DEG = 5;
-export const TIMEDUST_BASE_YIELD = 0.1;           // TD awarded to main clock per overlap; extra clocks scale by CLOCK_YIELD_MULTIPLIER
+export const TIMEDUST_BASE_YIELD = 1;           // TD awarded to main clock per overlap
 
 // Temporal Surge — triggered when all three hands align at 12 o'clock
 export const SURGE_THRESHOLD_DEG = 3;

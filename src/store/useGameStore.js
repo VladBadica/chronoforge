@@ -76,6 +76,7 @@ export const useGameStore = create((set) => {
       prestigeMirrorCost: snapshot.prestigeMirrorCost,
       prestigeClockAtMax: snapshot.prestigeClockAtMax,
       prestigeBoostAtMax: snapshot.prestigeBoostAtMax,
+      prestigeMirrorAtMax: snapshot.prestigeMirrorAtMax,
     });
   });
 
@@ -133,6 +134,7 @@ export const useGameStore = create((set) => {
     prestigeMirrorCost: 5,
     prestigeClockAtMax: false,
     prestigeBoostAtMax: false,
+    prestigeMirrorAtMax: false,
 
     // --- actions ---
 

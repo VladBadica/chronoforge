@@ -61,7 +61,6 @@ import {
   SURGE_THRESHOLD_DEG,
   TIMEDUST_THRESHOLD_DEG,
   TIMEDUST_BASE_YIELD,
-  CLOCK_YIELD_MULTIPLIER,
   ENTROPY_BASE_STABILITY,
   ENTROPY_STABILITY_SCALING,
   STABILITY_UPGRADE_BASE_COST,
@@ -200,7 +199,7 @@ export class GameEngine {
   /** Prestige — converts TD to PP and resets all non-prestige progress */
   prestige() {
     if (this._timeDust < PRESTIGE_COST_TD) return false;
-    this._prestigePoints += Math.floor(this._timeDust);
+    this._prestigePoints += Math.floor(this._timeDust * (1 + this.getEntropy()));
     this._angle = 0;
     this._energy = 0;
     this._speedLevel = this._prestigeSpeedLevel;
@@ -281,6 +280,7 @@ export class GameEngine {
   }
 
   buyPrestigeMirror() {
+    if (this._prestigeMirrorLevel >= CLOCK_MAX_EXTRA) return false;
     return this._buyPrestigeUpgrade(this.getPrestigeMirrorCost, '_prestigeMirrorLevel');
   }
 
@@ -626,24 +626,10 @@ export class GameEngine {
       }
     }
 
-    // Fast Time: second vs minute hand overlap — resets timer on rising edge.
+    // Fast Time, TimeDust, Temporal Surge — main clock only.
     this._checkOverlap(0, this._angle, this._totalRevolutions);
-    for (let i = 0; i < this._extraAngles.length; i++) {
-      this._checkOverlap(i + 1, this._extraAngles[i], this._extraRevolutions[i]);
-    }
-
-    // TimeDust: minute vs hour hand overlap — awards TD on rising edge.
     this._checkHourMinuteOverlap(0, this._angle, this._totalRevolutions, TIMEDUST_BASE_YIELD);
-    for (let i = 0; i < this._extraAngles.length; i++) {
-      const yieldMult = TIMEDUST_BASE_YIELD * Math.pow(CLOCK_YIELD_MULTIPLIER, i + 1);
-      this._checkHourMinuteOverlap(i + 1, this._extraAngles[i], this._extraRevolutions[i], yieldMult);
-    }
-
-    // Temporal Surge: all three hands at 12 — triggers on rising edge.
     this._checkAllHandsAtTwelve(0, this._angle, this._totalRevolutions);
-    for (let i = 0; i < this._extraAngles.length; i++) {
-      this._checkAllHandsAtTwelve(i + 1, this._extraAngles[i], this._extraRevolutions[i]);
-    }
 
     this._emitSnapshot();
   }
@@ -756,6 +742,7 @@ export class GameEngine {
         prestigeMirrorCost:  this.getPrestigeMirrorCost(),
         prestigeClockAtMax:  this._prestigeClockLevel >= CLOCK_MAX_EXTRA,
         prestigeBoostAtMax:  this._prestigeBoostLevel >= BOOST_MAX_LEVEL,
+        prestigeMirrorAtMax: this._prestigeMirrorLevel >= CLOCK_MAX_EXTRA,
       });
     }
   }

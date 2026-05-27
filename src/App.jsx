@@ -61,7 +61,7 @@ export default function App() {
     prestigeClockLevel, prestigeClockCost, buyPrestigeClock, prestigeClockAtMax,
     prestigeBoostLevel, prestigeBoostCost, buyPrestigeBoost, prestigeBoostAtMax,
     prestigeAnchorLevel, prestigeAnchorCost, buyPrestigeAnchor,
-    prestigeMirrorLevel, prestigeMirrorCost, buyPrestigeMirror,
+    prestigeMirrorLevel, prestigeMirrorCost, buyPrestigeMirror, prestigeMirrorAtMax,
     addSecond,
     resetGame,
     debugAddEnergy,
@@ -266,6 +266,7 @@ export default function App() {
       {showPrestige && (
         <PrestigeModal
           timeDust={timeDust}
+          entropy={entropy}
           prestigePoints={prestigePoints}
           canPrestige={canPrestige}
           onPrestige={() => { prestige(); }}
@@ -275,7 +276,7 @@ export default function App() {
           prestigeClockLevel={prestigeClockLevel} prestigeClockCost={prestigeClockCost} buyPrestigeClock={buyPrestigeClock} prestigeClockAtMax={prestigeClockAtMax}
           prestigeBoostLevel={prestigeBoostLevel} prestigeBoostCost={prestigeBoostCost} buyPrestigeBoost={buyPrestigeBoost} prestigeBoostAtMax={prestigeBoostAtMax}
           prestigeAnchorLevel={prestigeAnchorLevel} prestigeAnchorCost={prestigeAnchorCost} buyPrestigeAnchor={buyPrestigeAnchor}
-          prestigeMirrorLevel={prestigeMirrorLevel} prestigeMirrorCost={prestigeMirrorCost} buyPrestigeMirror={buyPrestigeMirror}
+          prestigeMirrorLevel={prestigeMirrorLevel} prestigeMirrorCost={prestigeMirrorCost} buyPrestigeMirror={buyPrestigeMirror} prestigeMirrorAtMax={prestigeMirrorAtMax}
         />
       )}
     </div>

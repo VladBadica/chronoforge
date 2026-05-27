@@ -48,11 +48,13 @@ const UPGRADES = [
     costKey: 'prestigeMirrorCost',
     levelKey: 'prestigeMirrorLevel',
     buyKey: 'buyPrestigeMirror',
+    atMaxKey: 'prestigeMirrorAtMax',
   },
 ];
 
 export function PrestigeModal({
   timeDust,
+  entropy,
   prestigePoints,
   canPrestige,
   onPrestige,
@@ -62,15 +64,17 @@ export function PrestigeModal({
   prestigeClockLevel, prestigeClockCost, buyPrestigeClock, prestigeClockAtMax,
   prestigeBoostLevel, prestigeBoostCost, buyPrestigeBoost, prestigeBoostAtMax,
   prestigeAnchorLevel, prestigeAnchorCost, buyPrestigeAnchor,
-  prestigeMirrorLevel, prestigeMirrorCost, buyPrestigeMirror,
+  prestigeMirrorLevel, prestigeMirrorCost, buyPrestigeMirror, prestigeMirrorAtMax,
 }) {
-  const ppGain = Math.floor(timeDust);
+  const ppBase = Math.floor(timeDust);
+  const ppBonus = Math.floor(timeDust * entropy);
+  const ppGain = ppBase + ppBonus;
   const totalAfter = prestigePoints + ppGain;
 
   const levels = { prestigeSpeedLevel, prestigeEnergyLevel, prestigeClockLevel, prestigeBoostLevel, prestigeAnchorLevel, prestigeMirrorLevel };
   const costs = { prestigeSpeedCost, prestigeEnergyCost, prestigeClockCost, prestigeBoostCost, prestigeAnchorCost, prestigeMirrorCost };
   const actions = { buyPrestigeSpeed, buyPrestigeEnergy, buyPrestigeClock, buyPrestigeBoost, buyPrestigeAnchor, buyPrestigeMirror };
-  const atMaxMap = { prestigeClockAtMax, prestigeBoostAtMax };
+  const atMaxMap = { prestigeClockAtMax, prestigeBoostAtMax, prestigeMirrorAtMax };
 
   return (
     <div
@@ -134,6 +138,9 @@ export function PrestigeModal({
             </span>
             <span className="text-xl font-bold" style={{ color: '#c0b8ff' }}>
               +{ppGain} PP
+            </span>
+            <span className="text-xs" style={{ color: 'var(--color-muted)' }}>
+              {ppBase} + {ppBonus} entropy
             </span>
           </div>
           <div className="flex flex-col items-center gap-1">
