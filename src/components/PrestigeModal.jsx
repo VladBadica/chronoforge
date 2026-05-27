@@ -66,9 +66,9 @@ export function PrestigeModal({
   prestigeAnchorLevel, prestigeAnchorCost, buyPrestigeAnchor,
   prestigeMirrorLevel, prestigeMirrorCost, buyPrestigeMirror, prestigeMirrorAtMax,
 }) {
+  const ppGain = Math.floor(timeDust * (1 + entropy));
   const ppBase = Math.floor(timeDust);
-  const ppBonus = Math.floor(timeDust * entropy);
-  const ppGain = ppBase + ppBonus;
+  const ppBonus = ppGain - ppBase;
   const totalAfter = prestigePoints + ppGain;
 
   const levels = { prestigeSpeedLevel, prestigeEnergyLevel, prestigeClockLevel, prestigeBoostLevel, prestigeAnchorLevel, prestigeMirrorLevel };
@@ -117,6 +117,10 @@ export function PrestigeModal({
           <span style={{ color: '#c0b8ff' }}>Prestige Points</span> and{' '}
           <span style={{ color: '#c0b8ff' }}>Prestige Upgrades</span> persist across every age.
           Requires <span style={{ color: '#5ecfb0' }}>10 TD</span> to prestige.
+        </p>
+        <p className="text-xs text-center leading-relaxed" style={{ color: 'var(--color-muted)', opacity: 0.7 }}>
+          Every point spent on prestige upgrades makes time more unstable —{' '}
+          <span style={{ color: '#e67e22' }}>increasing entropy</span> across all future runs.
         </p>
 
         {/* Stats */}

@@ -16,6 +16,7 @@ import {
   SAVE_KEY,
   MAX_OFFLINE_MS,
   PRESTIGE_COST_TD,
+  PRESTIGE_ENTROPY_PP_SCALING,
   PRESTIGE_SPEED_BASE_COST, PRESTIGE_SPEED_SCALING,
   PRESTIGE_ENERGY_BASE_COST, PRESTIGE_ENERGY_SCALING,
   PRESTIGE_CLOCK_BASE_COST, PRESTIGE_CLOCK_SCALING,
@@ -51,6 +52,9 @@ import {
   ENTROPY_DEBUFF_THRESHOLD,
   ENTROPY_DEBUFF_CHANCE_MIN,
   ENTROPY_DEBUFF_CHANCE_MAX,
+  ENTROPY_TE_PENALTY_THRESHOLD,
+  ENTROPY_TE_PENALTY_AT_THRESHOLD,
+  ENTROPY_TE_PENALTY_AT_MAX,
   FRACTURE_ENTROPY_THRESHOLD,
   FRACTURE_LOSS_AT_THRESHOLD,
   FRACTURE_LOSS_AT_MAX,
@@ -103,6 +107,7 @@ export class GameEngine {
 
     // Prestige — saved, never reset by prestige itself
     this._prestigePoints = 0;
+    this._lifetimePPSpent = 0;  // cumulative PP invested in upgrades across all runs
     this._prestigeSpeedLevel  = 0;
     this._prestigeEnergyLevel = 0;
     this._prestigeClockLevel  = 0;
@@ -184,6 +189,7 @@ export class GameEngine {
     this._clock4EntropyReduction = 0;
     this._timeDust = 0;
     this._prestigePoints = 0;
+    this._lifetimePPSpent = 0;
     this._prestigeSpeedLevel  = 0;
     this._prestigeEnergyLevel = 0;
     this._prestigeClockLevel  = 0;
@@ -232,6 +238,7 @@ export class GameEngine {
     const cost = costFn.call(this);
     if (this._prestigePoints < cost) return false;
     this._prestigePoints -= cost;
+    this._lifetimePPSpent += cost;
     this[levelProp] += 1;
     if (onBuy) onBuy.call(this);
     this._emitSnapshot();
@@ -399,17 +406,32 @@ export class GameEngine {
     return ENTROPY_BASE_STABILITY * Math.pow(ENTROPY_STABILITY_SCALING, level);
   }
 
-  /** Entropy for a given stability level (uses current effective speed) */
-  _entropyAt(stabilityLevel) {
+  /** Raw entropy for a given stability level, before PP scaling */
+  _rawEntropyAt(stabilityLevel) {
     const excess = this.getSpeedMultiplier() + this._clock2SpeedBonus - 1;
     if (excess <= 0) return 0;
     const stability = this._stabilityAt(stabilityLevel);
     return Math.max(0, excess / (excess + stability) - this._clock4EntropyReduction);
   }
 
+  /** Effective entropy = 1 − (1 − raw)^(1 + ppSpent × K) — stays in [0, 1] */
+  _entropyAt(stabilityLevel) {
+    const raw = this._rawEntropyAt(stabilityLevel);
+    const exponent = 1 + this._lifetimePPSpent * PRESTIGE_ENTROPY_PP_SCALING;
+    return 1 - Math.pow(1 - raw, exponent);
+  }
+
   /** Current Time Entropy — 0 (stable) to 1 (total chaos) */
   getEntropy() {
     return this._entropyAt(this._stabilityLevel);
+  }
+
+  /** TE multiplier penalty from entropy — 0 (no penalty) to ENTROPY_TE_PENALTY_AT_MAX */
+  getEntropyTePenalty() {
+    const entropy = this.getEntropy();
+    if (entropy < ENTROPY_TE_PENALTY_THRESHOLD) return 0;
+    const t = (entropy - ENTROPY_TE_PENALTY_THRESHOLD) / (1 - ENTROPY_TE_PENALTY_THRESHOLD);
+    return ENTROPY_TE_PENALTY_AT_THRESHOLD + t * (ENTROPY_TE_PENALTY_AT_MAX - ENTROPY_TE_PENALTY_AT_THRESHOLD);
   }
 
   /** Buy one level of the Improve Time upgrade — returns false if not enough energy */
@@ -452,7 +474,7 @@ export class GameEngine {
     const mainRPS = (1000 / BASE_REVOLUTION_MS) * (this.getSpeedMultiplier() + this._clock2SpeedBonus) * fastMult * surgeMult;
     const energyPerRev = this.getEnergyPerRevolution();
     const mainMirrorMult = this._prestigeMirrorLevel >= 1 ? 2 : 1;
-    return mainRPS * energyPerRev * surgeEnergyMult * mainMirrorMult;
+    return mainRPS * energyPerRev * surgeEnergyMult * mainMirrorMult * (1 - this.getEntropyTePenalty());
   }
 
   // -------------------------------------------------------------------------
@@ -472,6 +494,7 @@ export class GameEngine {
       clock4EntropyReduction: this._clock4EntropyReduction,
       timeDust: this._timeDust,
       prestigePoints: this._prestigePoints,
+      lifetimePPSpent: this._lifetimePPSpent,
       prestigeSpeedLevel:  this._prestigeSpeedLevel,
       prestigeEnergyLevel: this._prestigeEnergyLevel,
       prestigeClockLevel:  this._prestigeClockLevel,
@@ -511,6 +534,7 @@ export class GameEngine {
       this._clock4EntropyReduction = data.clock4EntropyReduction ?? 0;
       this._timeDust = data.timeDust ?? 0;
       this._prestigePoints = data.prestigePoints ?? 0;
+      this._lifetimePPSpent = data.lifetimePPSpent ?? 0;
       this._prestigeSpeedLevel  = data.prestigeSpeedLevel  ?? 0;
       this._prestigeEnergyLevel = data.prestigeEnergyLevel ?? 0;
       this._prestigeClockLevel  = data.prestigeClockLevel  ?? 0;
@@ -600,7 +624,8 @@ export class GameEngine {
     const crossings = Math.floor((prevAngle + deltaDegrees) / 360);
     if (crossings > 0) {
       const mirrorMult = this._prestigeMirrorLevel >= 1 ? 2 : 1;
-      this._energy += crossings * this.getEnergyPerRevolution() * surgeEnergyMult * mirrorMult;
+      const teMult = (1 - this.getEntropyTePenalty()) * surgeEnergyMult * mirrorMult;
+      this._energy += crossings * this.getEnergyPerRevolution() * teMult;
       this._totalRevolutions += crossings;
     }
 
@@ -723,9 +748,11 @@ export class GameEngine {
         totalRevolutions: this._totalRevolutions,
         timeDust: this._timeDust,
         prestigePoints: this._prestigePoints,
+        lifetimePPSpent: this._lifetimePPSpent,
         canPrestige: this._timeDust >= PRESTIGE_COST_TD,
         entropy: this.getEntropy(),
         nextEntropy: this._entropyAt(this._stabilityLevel + 1),
+        entropyTePenalty: this.getEntropyTePenalty(),
         stabilityLevel: this._stabilityLevel,
         stabilityUpgradeCost: this.getStabilityUpgradeCost(),
         prestigeSpeedLevel:  this._prestigeSpeedLevel,

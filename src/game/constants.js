@@ -48,8 +48,8 @@ export const BOOST_SPEED_FACTOR_MAX = 1.0;        // extra clock speed factor at
 // Anchor Time — reduces Time Entropy by increasing stability
 export const ENTROPY_BASE_STABILITY = 4;
 export const ENTROPY_STABILITY_SCALING = 1.5;
-export const STABILITY_UPGRADE_BASE_COST = 100;
-export const STABILITY_UPGRADE_COST_EXPONENT = 2.5;
+export const STABILITY_UPGRADE_BASE_COST = 400;
+export const STABILITY_UPGRADE_COST_EXPONENT = 3;
 
 // ── Entropy ───────────────────────────────────────────────────────────────────
 
@@ -57,6 +57,11 @@ export const STABILITY_UPGRADE_COST_EXPONENT = 2.5;
 export const ENTROPY_DEBUFF_THRESHOLD = 0.4;
 export const ENTROPY_DEBUFF_CHANCE_MIN = 0.10;
 export const ENTROPY_DEBUFF_CHANCE_MAX = 0.70;
+
+// TE penalty — linear reduction applied to every main-clock revolution above threshold
+export const ENTROPY_TE_PENALTY_THRESHOLD = 0.4;   // entropy below this: no penalty
+export const ENTROPY_TE_PENALTY_AT_THRESHOLD = 0.05; // -5% TE at threshold
+export const ENTROPY_TE_PENALTY_AT_MAX = 0.25;       // -25% TE at entropy 1.0
 
 // ── Events ────────────────────────────────────────────────────────────────────
 
@@ -85,6 +90,7 @@ export const SURGE_ENERGY_MULTIPLIER = 3;
 // ── Prestige ──────────────────────────────────────────────────────────────────
 
 export const PRESTIGE_COST_TD = 10;               // minimum TD required to prestige
+export const PRESTIGE_ENTROPY_PP_SCALING = 0.01;  // K in: effectiveEntropy = 1 - (1 - raw)^(1 + ppSpent * K)
 
 // Costs paid in Prestige Points; scale exponentially per level
 export const PRESTIGE_SPEED_BASE_COST = 2;        // P1: Start with Accelerate Time +1 lv
