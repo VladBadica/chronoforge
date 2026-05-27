@@ -33,7 +33,7 @@ export const CLOCK_MAX_EXTRA = 3;                 // hard cap on purchasable ext
 // Per-clock base speeds (fraction of main clock speed at boost 0)
 export const CLOCK2_BASE_SPEED = 0.10;
 export const CLOCK3_BASE_SPEED = 0.05;
-export const CLOCK4_BASE_SPEED = 0.01;
+export const CLOCK4_BASE_SPEED = 0.001;
 // Per-clock special effects — accumulated permanently each revolution
 export const CLOCK2_SPEED_BONUS = 0.10;           // clock 2: +10% additive speed per revolution (uncapped)
 export const CLOCK3_TE_BONUS = 1;              // clock 3: +0.10 TE/rev per revolution (uncapped)
@@ -82,7 +82,7 @@ export const TIMEDUST_THRESHOLD_DEG = 5;
 export const TIMEDUST_BASE_YIELD = 1;           // TD awarded to main clock per overlap
 
 // Temporal Surge — triggered when all three hands align at 12 o'clock
-export const SURGE_THRESHOLD_DEG = 3;
+export const SURGE_THRESHOLD_DEG = 5;
 export const SURGE_DURATION_MS = 30_000;
 export const SURGE_SPEED_MULTIPLIER = 5;
 export const SURGE_ENERGY_MULTIPLIER = 3;

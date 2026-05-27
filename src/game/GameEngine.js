@@ -155,9 +155,9 @@ export class GameEngine {
     }
   }
 
-  /** Simulate one second of game time passing instantly */
+  /** Simulate one second of game time passing instantly — main clock only */
   addSecond() {
-    this._update(1000);
+    this._update(1000, true);
   }
 
   /** Debug: inject energy directly */
@@ -607,7 +607,7 @@ export class GameEngine {
     this._rafId = requestAnimationFrame(this._loop.bind(this));
   }
 
-  _update(deltaMs) {
+  _update(deltaMs, skipExtraClocks = false) {
     // Decrement timers before this frame's physics.
     this._fastTimeRemaining = Math.max(0, this._fastTimeRemaining - deltaMs);
     this._fractureFlash = Math.max(0, this._fractureFlash - deltaMs);
@@ -674,24 +674,25 @@ export class GameEngine {
       this._checkAllHandsAtTwelve(0, this._angle, this._totalRevolutions);
     }
 
-    // Extra clocks: base speeds are [0.1, 0.05, 0.01] scaled by boost ratio
-    const EXTRA_BASE_SPEEDS = [CLOCK2_BASE_SPEED, CLOCK3_BASE_SPEED, CLOCK4_BASE_SPEED];
-    const boostRatio = this.getExtraClockSpeedFactor() / CLOCK_SPEED_FACTOR;
-    for (let i = 0; i < this._extraAngles.length; i++) {
-      const factor = EXTRA_BASE_SPEEDS[i] * boostRatio;
-      const extraDelta = deltaDegrees * factor;
-      const prevExtra = this._extraAngles[i];
-      this._extraAngles[i] = (prevExtra + extraDelta) % 360;
-      const extraCrossings = Math.floor((prevExtra + extraDelta) / 360);
-      if (extraCrossings > 0) {
-        this._totalRevolutions += extraCrossings;
-        this._extraRevolutions[i] += extraCrossings;
-        if (i === 0) {
-          this._clock2SpeedBonus += extraCrossings * CLOCK2_SPEED_BONUS;
-        } else if (i === 1) {
-          this._clock3TeBonus += extraCrossings * CLOCK3_TE_BONUS;
-        } else if (i === 2) {
-          this._clock4EntropyReduction = Math.min(1, this._clock4EntropyReduction + extraCrossings * CLOCK4_ENTROPY_REDUCTION);
+    if (!skipExtraClocks) {
+      // Extra clocks: base speeds are [0.1, 0.05, 0.01] scaled by boost ratio
+      const EXTRA_BASE_SPEEDS = [CLOCK2_BASE_SPEED, CLOCK3_BASE_SPEED, CLOCK4_BASE_SPEED];
+      const boostRatio = this.getExtraClockSpeedFactor() / CLOCK_SPEED_FACTOR;
+      for (let i = 0; i < this._extraAngles.length; i++) {
+        const factor = EXTRA_BASE_SPEEDS[i] * boostRatio;
+        const extraDelta = deltaDegrees * factor;
+        const prevExtra = this._extraAngles[i];
+        this._extraAngles[i] = (prevExtra + extraDelta) % 360;
+        const extraCrossings = Math.floor((prevExtra + extraDelta) / 360);
+        if (extraCrossings > 0) {
+          this._extraRevolutions[i] += extraCrossings;
+          if (i === 0) {
+            this._clock2SpeedBonus += extraCrossings * CLOCK2_SPEED_BONUS;
+          } else if (i === 1) {
+            this._clock3TeBonus += extraCrossings * CLOCK3_TE_BONUS;
+          } else if (i === 2) {
+            this._clock4EntropyReduction = Math.min(1, this._clock4EntropyReduction + extraCrossings * CLOCK4_ENTROPY_REDUCTION);
+          }
         }
       }
     }
