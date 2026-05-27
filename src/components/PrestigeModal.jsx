@@ -22,6 +22,7 @@ const UPGRADES = [
     costKey: 'prestigeClockCost',
     levelKey: 'prestigeClockLevel',
     buyKey: 'buyPrestigeClock',
+    atMaxKey: 'prestigeClockAtMax',
   },
   {
     key: 'boost',
@@ -30,6 +31,7 @@ const UPGRADES = [
     costKey: 'prestigeBoostCost',
     levelKey: 'prestigeBoostLevel',
     buyKey: 'buyPrestigeBoost',
+    atMaxKey: 'prestigeBoostAtMax',
   },
   {
     key: 'anchor',
@@ -57,8 +59,8 @@ export function PrestigeModal({
   onClose,
   prestigeSpeedLevel, prestigeSpeedCost, buyPrestigeSpeed,
   prestigeEnergyLevel, prestigeEnergyCost, buyPrestigeEnergy,
-  prestigeClockLevel, prestigeClockCost, buyPrestigeClock,
-  prestigeBoostLevel, prestigeBoostCost, buyPrestigeBoost,
+  prestigeClockLevel, prestigeClockCost, buyPrestigeClock, prestigeClockAtMax,
+  prestigeBoostLevel, prestigeBoostCost, buyPrestigeBoost, prestigeBoostAtMax,
   prestigeAnchorLevel, prestigeAnchorCost, buyPrestigeAnchor,
   prestigeMirrorLevel, prestigeMirrorCost, buyPrestigeMirror,
 }) {
@@ -68,6 +70,7 @@ export function PrestigeModal({
   const levels = { prestigeSpeedLevel, prestigeEnergyLevel, prestigeClockLevel, prestigeBoostLevel, prestigeAnchorLevel, prestigeMirrorLevel };
   const costs = { prestigeSpeedCost, prestigeEnergyCost, prestigeClockCost, prestigeBoostCost, prestigeAnchorCost, prestigeMirrorCost };
   const actions = { buyPrestigeSpeed, buyPrestigeEnergy, buyPrestigeClock, buyPrestigeBoost, buyPrestigeAnchor, buyPrestigeMirror };
+  const atMaxMap = { prestigeClockAtMax, prestigeBoostAtMax };
 
   return (
     <div
@@ -155,7 +158,8 @@ export function PrestigeModal({
             {UPGRADES.map((u) => {
               const level = levels[u.levelKey];
               const cost = costs[u.costKey];
-              const canAfford = prestigePoints >= cost;
+              const maxed = u.atMaxKey ? atMaxMap[u.atMaxKey] : false;
+              const canAfford = !maxed && prestigePoints >= cost;
               return (
                 <div
                   key={u.key}
@@ -166,11 +170,11 @@ export function PrestigeModal({
                     padding: '5px'
                   }}
                 >
-                  <div className="flex flex-col gap-0.5">
+                  <div className="flex flex-col gap-0.5" >
                     <span className="text-sm font-semibold" style={{ color: '#c0b8ff' }}>
                       {u.label}
                       {level > 0 && (
-                        <span className="ml-2 text-xs font-normal" style={{ color: '#a88fff' }}>
+                        <span className="ml-2 text-xs font-normal" style={{ color: '#a88fff', paddingLeft: '4px' }}>
                           lv {level}
                         </span>
                       )}
@@ -180,7 +184,7 @@ export function PrestigeModal({
                     </span>
                   </div>
                   <button
-                    onClick={actions[u.buyKey]}
+                    onClick={canAfford ? actions[u.buyKey] : undefined}
                     disabled={!canAfford}
                     className="ml-4 shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150"
                     style={{
@@ -192,7 +196,7 @@ export function PrestigeModal({
                       padding: '5px'
                     }}
                   >
-                    {cost} PP
+                    {maxed ? 'MAX' : `${cost} PP`}
                   </button>
                 </div>
               );

@@ -88,7 +88,7 @@ export function UpgradePanel({
   energy,
   upgradeCost, speedLevel, speedMultiplier, nextSpeedMultiplier, onBuyUpgrade,
   energyUpgradeCost, energyLevel, energyPerRevolution, nextEnergyPerRevolution, onBuyEnergyUpgrade,
-  clockCount, clockAtMax, clock2SpeedBonus, clock3EntropyReduction, clockUpgradeCost, onBuyClockUpgrade,
+  clockCount, clockAtMax, clock2SpeedBonus, clock3TeBonus, clock4EntropyReduction, clockUpgradeCost, onBuyClockUpgrade,
   boostLevel, boostAtMax, extraClockSpeedFactor, nextExtraClockSpeedFactor, boostUpgradeCost, onBuyBoostUpgrade,
   entropy, nextEntropy, stabilityLevel, stabilityUpgradeCost, onBuyStabilityUpgrade,
 }) {
@@ -138,10 +138,12 @@ export function UpgradePanel({
           title="Add Clock"
           description={
             clockAtMax
-              ? `Clk2 +${(clock2SpeedBonus * 100).toFixed(0)}% spd | Clk3 -${(clock3EntropyReduction * 100).toFixed(0)}% ent`
+              ? `Clk2 +${(clock2SpeedBonus * 100).toFixed(0)}% spd | Clk3 +${clock3TeBonus.toFixed(2)} TE/rev | Clk4 -${(clock4EntropyReduction * 100).toFixed(0)}% ent`
               : clockCount === 1
                 ? 'Clock 2: +10% speed per revolution'
-                : 'Clock 3: -1% entropy per revolution'
+                : clockCount === 2
+                  ? 'Clock 3: +1 TE/rev per revolution'
+                  : 'Clock 4: -1% entropy per revolution'
           }
           level={clockCount - 1}
           statLabel="Clocks"

@@ -38,7 +38,8 @@ export const useGameStore = create((set) => {
       clockCount: snapshot.clockCount,
       clockAtMax: snapshot.clockAtMax,
       clock2SpeedBonus: snapshot.clock2SpeedBonus,
-      clock3EntropyReduction: snapshot.clock3EntropyReduction,
+      clock3TeBonus: snapshot.clock3TeBonus,
+      clock4EntropyReduction: snapshot.clock4EntropyReduction,
       boostLevel: snapshot.boostLevel,
       boostAtMax: snapshot.boostAtMax,
       timeDust: snapshot.timeDust,
@@ -61,18 +62,20 @@ export const useGameStore = create((set) => {
       nextEntropy: snapshot.nextEntropy,
       stabilityLevel: snapshot.stabilityLevel,
       stabilityUpgradeCost: snapshot.stabilityUpgradeCost,
-      prestigeSpeedLevel:  snapshot.prestigeSpeedLevel,
+      prestigeSpeedLevel: snapshot.prestigeSpeedLevel,
       prestigeEnergyLevel: snapshot.prestigeEnergyLevel,
-      prestigeClockLevel:  snapshot.prestigeClockLevel,
-      prestigeBoostLevel:  snapshot.prestigeBoostLevel,
+      prestigeClockLevel: snapshot.prestigeClockLevel,
+      prestigeBoostLevel: snapshot.prestigeBoostLevel,
       prestigeAnchorLevel: snapshot.prestigeAnchorLevel,
       prestigeMirrorLevel: snapshot.prestigeMirrorLevel,
-      prestigeSpeedCost:   snapshot.prestigeSpeedCost,
-      prestigeEnergyCost:  snapshot.prestigeEnergyCost,
-      prestigeClockCost:   snapshot.prestigeClockCost,
-      prestigeBoostCost:   snapshot.prestigeBoostCost,
-      prestigeAnchorCost:  snapshot.prestigeAnchorCost,
-      prestigeMirrorCost:  snapshot.prestigeMirrorCost,
+      prestigeSpeedCost: snapshot.prestigeSpeedCost,
+      prestigeEnergyCost: snapshot.prestigeEnergyCost,
+      prestigeClockCost: snapshot.prestigeClockCost,
+      prestigeBoostCost: snapshot.prestigeBoostCost,
+      prestigeAnchorCost: snapshot.prestigeAnchorCost,
+      prestigeMirrorCost: snapshot.prestigeMirrorCost,
+      prestigeClockAtMax: snapshot.prestigeClockAtMax,
+      prestigeBoostAtMax: snapshot.prestigeBoostAtMax,
     });
   });
 
@@ -92,7 +95,8 @@ export const useGameStore = create((set) => {
     clockCount: 1,
     clockAtMax: false,
     clock2SpeedBonus: 0,
-    clock3EntropyReduction: 0,
+    clock3TeBonus: 0,
+    clock4EntropyReduction: 0,
     boostLevel: 0,
     boostAtMax: false,
     timeDust: 0,
@@ -115,18 +119,20 @@ export const useGameStore = create((set) => {
     nextEntropy: 0,
     stabilityLevel: 0,
     stabilityUpgradeCost: 50,
-    prestigeSpeedLevel:  0,
+    prestigeSpeedLevel: 0,
     prestigeEnergyLevel: 0,
-    prestigeClockLevel:  0,
-    prestigeBoostLevel:  0,
+    prestigeClockLevel: 0,
+    prestigeBoostLevel: 0,
     prestigeAnchorLevel: 0,
     prestigeMirrorLevel: 0,
-    prestigeSpeedCost:   1,
-    prestigeEnergyCost:  1,
-    prestigeClockCost:   3,
-    prestigeBoostCost:   2,
-    prestigeAnchorCost:  2,
-    prestigeMirrorCost:  5,
+    prestigeSpeedCost: 1,
+    prestigeEnergyCost: 1,
+    prestigeClockCost: 3,
+    prestigeBoostCost: 2,
+    prestigeAnchorCost: 2,
+    prestigeMirrorCost: 5,
+    prestigeClockAtMax: false,
+    prestigeBoostAtMax: false,
 
     // --- actions ---
 
@@ -171,10 +177,10 @@ export const useGameStore = create((set) => {
       gameEngine.prestige();
     },
 
-    buyPrestigeSpeed:  () => { gameEngine.buyPrestigeSpeed();  },
+    buyPrestigeSpeed: () => { gameEngine.buyPrestigeSpeed(); },
     buyPrestigeEnergy: () => { gameEngine.buyPrestigeEnergy(); },
-    buyPrestigeClock:  () => { gameEngine.buyPrestigeClock();  },
-    buyPrestigeBoost:  () => { gameEngine.buyPrestigeBoost();  },
+    buyPrestigeClock: () => { gameEngine.buyPrestigeClock(); },
+    buyPrestigeBoost: () => { gameEngine.buyPrestigeBoost(); },
     buyPrestigeAnchor: () => { gameEngine.buyPrestigeAnchor(); },
     buyPrestigeMirror: () => { gameEngine.buyPrestigeMirror(); },
 
@@ -183,7 +189,7 @@ export const useGameStore = create((set) => {
     },
 
     debugAddEnergy: () => {
-      gameEngine.addEnergy(1000);
+      gameEngine.addEnergy(100000);
     },
 
     debugAddTimeDust: () => {

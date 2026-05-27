@@ -1,15 +1,9 @@
 // ---------------------------------------------------------------------------
 // Clock — SVG analog clock with animated second hand
 //
-// Receives `angle` (0–360 degrees) from the store.
-// The parent drives the angle via the game engine; this component is purely
-// presentational — it renders whatever angle it receives.
-//
 // SVG coordinate system: 0° is at the top (12 o'clock).
 // SVG rotations pivot around the center of the viewBox (100, 100).
 // ---------------------------------------------------------------------------
-
-import React from 'react';
 
 const CX = 100;   // viewBox center X
 const CY = 100;   // viewBox center Y

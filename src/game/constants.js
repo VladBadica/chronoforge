@@ -25,14 +25,20 @@ export const ENERGY_UPGRADE_COST_EXPONENT = 1.50;
 export const ENERGY_UPGRADE_VALUE_BONUS = 0.60;
 export const ENERGY_UPGRADE_VALUE_SCALING = 1.05;
 
-// Add Clock — extra clocks earn TE & TD with unique per-clock effects
+// Add Clock — extra clocks with unique per-clock effects
 export const CLOCK_UPGRADE_BASE_COST = 200;
 export const CLOCK_UPGRADE_COST_EXPONENT = 13.0;
-export const CLOCK_SPEED_FACTOR = 0.1;            // base speed ratio between adjacent extra clocks
-export const CLOCK_YIELD_MULTIPLIER = 10;         // each successive clock earns this many times more TE and TD
-export const CLOCK_MAX_EXTRA = 2;                 // hard cap on purchasable extra clocks
-export const CLOCK2_SPEED_BONUS = 0.10;           // clock 2: additive speed bonus per revolution (uncapped)
-export const CLOCK3_ENTROPY_REDUCTION = 0.01;     // clock 3: entropy reduction per revolution
+export const CLOCK_SPEED_FACTOR = 0.1;            // clock 2 base speed (reference for boost normalisation)
+export const CLOCK_YIELD_MULTIPLIER = 10;         // each successive clock earns this many times more TD
+export const CLOCK_MAX_EXTRA = 3;                 // hard cap on purchasable extra clocks
+// Per-clock base speeds (fraction of main clock speed at boost 0)
+export const CLOCK2_BASE_SPEED = 0.10;
+export const CLOCK3_BASE_SPEED = 0.05;
+export const CLOCK4_BASE_SPEED = 0.01;
+// Per-clock special effects — accumulated permanently each revolution
+export const CLOCK2_SPEED_BONUS = 0.10;           // clock 2: +10% additive speed per revolution (uncapped)
+export const CLOCK3_TE_BONUS = 1;              // clock 3: +0.10 TE/rev per revolution (uncapped)
+export const CLOCK4_ENTROPY_REDUCTION = 0.01;     // clock 4: 1% entropy reduction per revolution
 
 // Boost Clocks — increases base speed factor for all extra clocks
 export const BOOST_UPGRADE_BASE_COST = 75;

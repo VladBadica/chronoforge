@@ -27,7 +27,8 @@ export default function App() {
     clockCount,
     clockAtMax,
     clock2SpeedBonus,
-    clock3EntropyReduction,
+    clock3TeBonus,
+    clock4EntropyReduction,
     boostLevel,
     boostAtMax,
     timeDust,
@@ -57,8 +58,8 @@ export default function App() {
     prestige,
     prestigeSpeedLevel, prestigeSpeedCost, buyPrestigeSpeed,
     prestigeEnergyLevel, prestigeEnergyCost, buyPrestigeEnergy,
-    prestigeClockLevel, prestigeClockCost, buyPrestigeClock,
-    prestigeBoostLevel, prestigeBoostCost, buyPrestigeBoost,
+    prestigeClockLevel, prestigeClockCost, buyPrestigeClock, prestigeClockAtMax,
+    prestigeBoostLevel, prestigeBoostCost, buyPrestigeBoost, prestigeBoostAtMax,
     prestigeAnchorLevel, prestigeAnchorCost, buyPrestigeAnchor,
     prestigeMirrorLevel, prestigeMirrorCost, buyPrestigeMirror,
     addSecond,
@@ -162,7 +163,8 @@ export default function App() {
         clockCount={clockCount}
         clockAtMax={clockAtMax}
         clock2SpeedBonus={clock2SpeedBonus}
-        clock3EntropyReduction={clock3EntropyReduction}
+        clock3TeBonus={clock3TeBonus}
+        clock4EntropyReduction={clock4EntropyReduction}
         clockUpgradeCost={clockUpgradeCost}
         onBuyClockUpgrade={buyClockUpgrade}
         boostLevel={boostLevel}
@@ -213,7 +215,7 @@ export default function App() {
             e.currentTarget.style.color = 'var(--color-muted)';
           }}
         >
-          +1k TE
+          +100k TE
         </button>
 
         <button
@@ -266,12 +268,12 @@ export default function App() {
           timeDust={timeDust}
           prestigePoints={prestigePoints}
           canPrestige={canPrestige}
-          onPrestige={() => { prestige(); setShowPrestige(false); }}
+          onPrestige={() => { prestige(); }}
           onClose={() => setShowPrestige(false)}
           prestigeSpeedLevel={prestigeSpeedLevel} prestigeSpeedCost={prestigeSpeedCost} buyPrestigeSpeed={buyPrestigeSpeed}
           prestigeEnergyLevel={prestigeEnergyLevel} prestigeEnergyCost={prestigeEnergyCost} buyPrestigeEnergy={buyPrestigeEnergy}
-          prestigeClockLevel={prestigeClockLevel} prestigeClockCost={prestigeClockCost} buyPrestigeClock={buyPrestigeClock}
-          prestigeBoostLevel={prestigeBoostLevel} prestigeBoostCost={prestigeBoostCost} buyPrestigeBoost={buyPrestigeBoost}
+          prestigeClockLevel={prestigeClockLevel} prestigeClockCost={prestigeClockCost} buyPrestigeClock={buyPrestigeClock} prestigeClockAtMax={prestigeClockAtMax}
+          prestigeBoostLevel={prestigeBoostLevel} prestigeBoostCost={prestigeBoostCost} buyPrestigeBoost={buyPrestigeBoost} prestigeBoostAtMax={prestigeBoostAtMax}
           prestigeAnchorLevel={prestigeAnchorLevel} prestigeAnchorCost={prestigeAnchorCost} buyPrestigeAnchor={buyPrestigeAnchor}
           prestigeMirrorLevel={prestigeMirrorLevel} prestigeMirrorCost={prestigeMirrorCost} buyPrestigeMirror={buyPrestigeMirror}
         />

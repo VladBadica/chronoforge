@@ -34,8 +34,12 @@ import {
   CLOCK_UPGRADE_COST_EXPONENT,
   CLOCK_SPEED_FACTOR,
   CLOCK_MAX_EXTRA,
+  CLOCK2_BASE_SPEED,
+  CLOCK3_BASE_SPEED,
+  CLOCK4_BASE_SPEED,
   CLOCK2_SPEED_BONUS,
-  CLOCK3_ENTROPY_REDUCTION,
+  CLOCK3_TE_BONUS,
+  CLOCK4_ENTROPY_REDUCTION,
   BOOST_UPGRADE_BASE_COST,
   BOOST_UPGRADE_COST_EXPONENT,
   BOOST_MAX_LEVEL,
@@ -92,7 +96,8 @@ export class GameEngine {
 
     // Special clock bonuses — saved, reset on prestige
     this._clock2SpeedBonus = 0;       // accumulated additive speed bonus from clock 2 revolutions
-    this._clock3EntropyReduction = 0; // accumulated entropy reduction from clock 3 revolutions
+    this._clock3TeBonus = 0;          // accumulated TE/rev bonus from clock 3 revolutions
+    this._clock4EntropyReduction = 0; // accumulated entropy reduction from clock 4 revolutions
 
     // TimeDust — saved
     this._timeDust = 0;
@@ -176,7 +181,8 @@ export class GameEngine {
     this._prevHourMinNear = [true];
     this._prevSurgeNear = [true];
     this._clock2SpeedBonus = 0;
-    this._clock3EntropyReduction = 0;
+    this._clock3TeBonus = 0;
+    this._clock4EntropyReduction = 0;
     this._timeDust = 0;
     this._prestigePoints = 0;
     this._prestigeSpeedLevel  = 0;
@@ -213,7 +219,8 @@ export class GameEngine {
     this._prevHourMinNear = Array(this._clockCount).fill(true);
     this._prevSurgeNear = Array(this._clockCount).fill(true);
     this._clock2SpeedBonus = 0;
-    this._clock3EntropyReduction = 0;
+    this._clock3TeBonus = 0;
+    this._clock4EntropyReduction = 0;
     this._timeDust = 0;
     this.save();
     this._emitSnapshot();
@@ -397,7 +404,7 @@ export class GameEngine {
     const excess = this.getSpeedMultiplier() + this._clock2SpeedBonus - 1;
     if (excess <= 0) return 0;
     const stability = this._stabilityAt(stabilityLevel);
-    return Math.max(0, excess / (excess + stability) - this._clock3EntropyReduction);
+    return Math.max(0, excess / (excess + stability) - this._clock4EntropyReduction);
   }
 
   /** Current Time Entropy — 0 (stable) to 1 (total chaos) */
@@ -422,9 +429,9 @@ export class GameEngine {
     );
   }
 
-  /** TE earned per full revolution — bonus per level scales by ENERGY_UPGRADE_VALUE_SCALING */
+  /** TE earned per full revolution — includes upgrade levels and clock 3 accumulated bonus */
   getEnergyPerRevolution() {
-    return this._energyPerRevAt(this._energyLevel);
+    return this._energyPerRevAt(this._energyLevel) + this._clock3TeBonus;
   }
 
   _energyPerRevAt(level) {
@@ -461,7 +468,8 @@ export class GameEngine {
       boostLevel: this._boostLevel,
       stabilityLevel: this._stabilityLevel,
       clock2SpeedBonus: this._clock2SpeedBonus,
-      clock3EntropyReduction: this._clock3EntropyReduction,
+      clock3TeBonus: this._clock3TeBonus,
+      clock4EntropyReduction: this._clock4EntropyReduction,
       timeDust: this._timeDust,
       prestigePoints: this._prestigePoints,
       prestigeSpeedLevel:  this._prestigeSpeedLevel,
@@ -499,7 +507,8 @@ export class GameEngine {
         ? data.extraRevolutions.slice()
         : Array(extras).fill(0);
       this._clock2SpeedBonus = data.clock2SpeedBonus ?? 0;
-      this._clock3EntropyReduction = data.clock3EntropyReduction ?? 0;
+      this._clock3TeBonus = data.clock3TeBonus ?? 0;
+      this._clock4EntropyReduction = data.clock4EntropyReduction ?? 0;
       this._timeDust = data.timeDust ?? 0;
       this._prestigePoints = data.prestigePoints ?? 0;
       this._prestigeSpeedLevel  = data.prestigeSpeedLevel  ?? 0;
@@ -595,11 +604,11 @@ export class GameEngine {
       this._totalRevolutions += crossings;
     }
 
-    // Extra clocks: speed = getExtraClockSpeedFactor() * CLOCK_SPEED_FACTOR^i
-    // e.g. at boost 0: 0.1, 0.01, 0.001 — at boost 1: 0.2, 0.02, 0.002
-    const baseFactor = this.getExtraClockSpeedFactor();
+    // Extra clocks: base speeds are [0.1, 0.05, 0.01] scaled by boost ratio
+    const EXTRA_BASE_SPEEDS = [CLOCK2_BASE_SPEED, CLOCK3_BASE_SPEED, CLOCK4_BASE_SPEED];
+    const boostRatio = this.getExtraClockSpeedFactor() / CLOCK_SPEED_FACTOR;
     for (let i = 0; i < this._extraAngles.length; i++) {
-      const factor = baseFactor * Math.pow(CLOCK_SPEED_FACTOR, i);
+      const factor = EXTRA_BASE_SPEEDS[i] * boostRatio;
       const extraDelta = deltaDegrees * factor;
       const prevExtra = this._extraAngles[i];
       this._extraAngles[i] = (prevExtra + extraDelta) % 360;
@@ -610,7 +619,9 @@ export class GameEngine {
         if (i === 0) {
           this._clock2SpeedBonus += extraCrossings * CLOCK2_SPEED_BONUS;
         } else if (i === 1) {
-          this._clock3EntropyReduction = Math.min(1, this._clock3EntropyReduction + extraCrossings * CLOCK3_ENTROPY_REDUCTION);
+          this._clock3TeBonus += extraCrossings * CLOCK3_TE_BONUS;
+        } else if (i === 2) {
+          this._clock4EntropyReduction = Math.min(1, this._clock4EntropyReduction + extraCrossings * CLOCK4_ENTROPY_REDUCTION);
         }
       }
     }
@@ -702,12 +713,13 @@ export class GameEngine {
         upgradeCost: this.getUpgradeCost(),
         energyLevel: this._energyLevel,
         energyPerRevolution: this.getEnergyPerRevolution(),
-        nextEnergyPerRevolution: this._energyPerRevAt(this._energyLevel + 1),
+        nextEnergyPerRevolution: this._energyPerRevAt(this._energyLevel + 1) + this._clock3TeBonus,
         energyUpgradeCost: this.getEnergyUpgradeCost(),
         clockCount: this._clockCount,
         clockAtMax: this._clockCount >= 1 + CLOCK_MAX_EXTRA,
         clock2SpeedBonus: this._clock2SpeedBonus,
-        clock3EntropyReduction: this._clock3EntropyReduction,
+        clock3TeBonus: this._clock3TeBonus,
+        clock4EntropyReduction: this._clock4EntropyReduction,
         boostLevel: this._boostLevel,
         boostAtMax: this._boostLevel >= BOOST_MAX_LEVEL,
         extraClockSpeedFactor: this.getExtraClockSpeedFactor(),
@@ -742,6 +754,8 @@ export class GameEngine {
         prestigeBoostCost:   this.getPrestigeBoostCost(),
         prestigeAnchorCost:  this.getPrestigeAnchorCost(),
         prestigeMirrorCost:  this.getPrestigeMirrorCost(),
+        prestigeClockAtMax:  this._prestigeClockLevel >= CLOCK_MAX_EXTRA,
+        prestigeBoostAtMax:  this._prestigeBoostLevel >= BOOST_MAX_LEVEL,
       });
     }
   }
