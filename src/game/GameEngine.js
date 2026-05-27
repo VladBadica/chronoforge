@@ -69,6 +69,11 @@ import {
   ENTROPY_STABILITY_SCALING,
   STABILITY_UPGRADE_BASE_COST,
   STABILITY_UPGRADE_COST_EXPONENT,
+  REVERSE_ENTROPY_THRESHOLD,
+  REVERSE_CHANCE_AT_THRESHOLD,
+  REVERSE_CHANCE_AT_MAX,
+  REVERSE_DURATION_AT_THRESHOLD,
+  REVERSE_DURATION_AT_MAX,
 } from './constants.js';
 
 export class GameEngine {
@@ -91,6 +96,8 @@ export class GameEngine {
     this._fractureFlash = 0;
     // Temporal Surge state — transient, not saved
     this._surgeRemaining = 0;
+    // Reverse Time state — transient, not saved
+    this._reverseTimeRemaining = 0;
     this._prevSurgeNear = [true]; // start true so the initial 12-o'clock doesn't trigger
     // Start all clocks as "already near" so the initial 12-o'clock position
     // doesn't immediately fire the event on the first frame.
@@ -181,6 +188,7 @@ export class GameEngine {
     this._fastTimeIsDebuff = false;
     this._fractureFlash = 0;
     this._surgeRemaining = 0;
+    this._reverseTimeRemaining = 0;
     this._prevNear = [true];
     this._prevHourMinNear = [true];
     this._prevSurgeNear = [true];
@@ -220,6 +228,7 @@ export class GameEngine {
     this._fastTimeIsDebuff = false;
     this._fractureFlash = 0;
     this._surgeRemaining = 0;
+    this._reverseTimeRemaining = 0;
     this._prevNear = Array(this._clockCount).fill(true);
     this._prevHourMinNear = Array(this._clockCount).fill(true);
     this._prevSurgeNear = Array(this._clockCount).fill(true);
@@ -599,34 +608,67 @@ export class GameEngine {
   }
 
   _update(deltaMs) {
-    // Decrement fast time before this frame's physics so the multiplier reflects
-    // the state at the start of the frame.
+    // Decrement timers before this frame's physics.
     this._fastTimeRemaining = Math.max(0, this._fastTimeRemaining - deltaMs);
     this._fractureFlash = Math.max(0, this._fractureFlash - deltaMs);
     this._surgeRemaining = Math.max(0, this._surgeRemaining - deltaMs);
+    this._reverseTimeRemaining = Math.max(0, this._reverseTimeRemaining - deltaMs);
     const isFastTime = this._fastTimeRemaining > 0;
     const isSurge = this._surgeRemaining > 0;
+    const isReverse = this._reverseTimeRemaining > 0;
     const fastTimeMult = isFastTime
       ? (this._fastTimeIsDebuff ? FAST_TIME_DEBUFF_MULTIPLIER : FAST_TIME_MULTIPLIER)
       : 1;
 
     const speedMult = (this.getSpeedMultiplier() + this._clock2SpeedBonus) * fastTimeMult * (isSurge ? SURGE_SPEED_MULTIPLIER : 1);
     const surgeEnergyMult = isSurge ? SURGE_ENERGY_MULTIPLIER : 1;
-    // How many degrees does the second hand travel in deltaMs?
     const degreesPerMs = 360 / (BASE_REVOLUTION_MS / speedMult);
     const deltaDegrees = degreesPerMs * deltaMs;
 
-    const prevAngle = this._angle;
-    this._angle = (this._angle + deltaDegrees) % 360;
+    if (isReverse) {
+      // Tick the main clock backwards, undoing progress.
+      const prevAngle = this._angle;
+      const rawPosition = prevAngle - deltaDegrees; // can be negative
+      this._angle = ((rawPosition % 360) + 360) % 360;
 
-    // Detect full revolutions — handle wrap-around correctly.
-    // A revolution completes whenever the angle crosses 0 from 359→0.
-    const crossings = Math.floor((prevAngle + deltaDegrees) / 360);
-    if (crossings > 0) {
-      const mirrorMult = this._prestigeMirrorLevel >= 1 ? 2 : 1;
-      const teMult = (1 - this.getEntropyTePenalty()) * surgeEnergyMult * mirrorMult;
-      this._energy += crossings * this.getEnergyPerRevolution() * teMult;
-      this._totalRevolutions += crossings;
+      // Each time rawPosition crosses below a multiple of 360 from above, a
+      // reverse revolution completes and we subtract energy.
+      const reverseCrossings = rawPosition < 0
+        ? Math.ceil(-rawPosition / 360)
+        : Math.floor(prevAngle / 360) - Math.floor(rawPosition / 360);
+      if (reverseCrossings > 0) {
+        const mirrorMult = this._prestigeMirrorLevel >= 1 ? 2 : 1;
+        const teMult = (1 - this.getEntropyTePenalty()) * surgeEnergyMult * mirrorMult;
+        this._energy = Math.max(0, this._energy - reverseCrossings * this.getEnergyPerRevolution() * teMult);
+        this._totalRevolutions = Math.max(0, this._totalRevolutions - reverseCrossings);
+      }
+    } else {
+      const prevAngle = this._angle;
+      this._angle = (prevAngle + deltaDegrees) % 360;
+
+      const crossings = Math.floor((prevAngle + deltaDegrees) / 360);
+      if (crossings > 0) {
+        const mirrorMult = this._prestigeMirrorLevel >= 1 ? 2 : 1;
+        const teMult = (1 - this.getEntropyTePenalty()) * surgeEnergyMult * mirrorMult;
+        this._energy += crossings * this.getEnergyPerRevolution() * teMult;
+        this._totalRevolutions += crossings;
+
+        // Roll for reverse trigger once we complete a forward revolution.
+        const entropy = this.getEntropy();
+        if (entropy >= REVERSE_ENTROPY_THRESHOLD) {
+          const t = (entropy - REVERSE_ENTROPY_THRESHOLD) / (1 - REVERSE_ENTROPY_THRESHOLD);
+          const chance = REVERSE_CHANCE_AT_THRESHOLD + t * (REVERSE_CHANCE_AT_MAX - REVERSE_CHANCE_AT_THRESHOLD);
+          if (Math.random() < chance) {
+            const duration = REVERSE_DURATION_AT_THRESHOLD + t * (REVERSE_DURATION_AT_MAX - REVERSE_DURATION_AT_THRESHOLD);
+            this._reverseTimeRemaining = duration;
+          }
+        }
+      }
+
+      // Fast Time, TimeDust, Temporal Surge — main clock only (not while reversing).
+      this._checkOverlap(0, this._angle, this._totalRevolutions);
+      this._checkHourMinuteOverlap(0, this._angle, this._totalRevolutions, TIMEDUST_BASE_YIELD);
+      this._checkAllHandsAtTwelve(0, this._angle, this._totalRevolutions);
     }
 
     // Extra clocks: base speeds are [0.1, 0.05, 0.01] scaled by boost ratio
@@ -650,11 +692,6 @@ export class GameEngine {
         }
       }
     }
-
-    // Fast Time, TimeDust, Temporal Surge — main clock only.
-    this._checkOverlap(0, this._angle, this._totalRevolutions);
-    this._checkHourMinuteOverlap(0, this._angle, this._totalRevolutions, TIMEDUST_BASE_YIELD);
-    this._checkAllHandsAtTwelve(0, this._angle, this._totalRevolutions);
 
     this._emitSnapshot();
   }
@@ -745,6 +782,8 @@ export class GameEngine {
         surgeRemaining: this._surgeRemaining,
         fastTimeIsDebuff: this._fastTimeIsDebuff,
         fastTimeRemaining: this._fastTimeRemaining,
+        isReverse: this._reverseTimeRemaining > 0,
+        reverseTimeRemaining: this._reverseTimeRemaining,
         totalRevolutions: this._totalRevolutions,
         timeDust: this._timeDust,
         prestigePoints: this._prestigePoints,

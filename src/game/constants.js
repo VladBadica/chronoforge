@@ -106,6 +106,15 @@ export const PRESTIGE_ANCHOR_SCALING = 2.0;
 export const PRESTIGE_MIRROR_BASE_COST = 15;      // Mirror Clocks: backward hand per clock
 export const PRESTIGE_MIRROR_SCALING = 5.0;
 
+// ── Reverse Time ─────────────────────────────────────────────────────────────
+
+// Main clock randomly ticks backwards above this entropy threshold
+export const REVERSE_ENTROPY_THRESHOLD = 0.6;
+export const REVERSE_CHANCE_AT_THRESHOLD = 0.10;  // 10% at 60% entropy
+export const REVERSE_CHANCE_AT_MAX = 0.15;         // 15% at 100% entropy
+export const REVERSE_DURATION_AT_THRESHOLD = 2_000; // 2 s at threshold
+export const REVERSE_DURATION_AT_MAX = 5_000;       // 5 s at max entropy
+
 // ── System ────────────────────────────────────────────────────────────────────
 
 export const AUTOSAVE_INTERVAL_MS = 5_000;

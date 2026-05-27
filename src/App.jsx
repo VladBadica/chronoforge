@@ -43,6 +43,7 @@ export default function App() {
     isFracture,
     isSurge,
     surgeRemaining,
+    isReverse,
     totalRevolutions,
     entropy,
     nextEntropy,
@@ -127,11 +128,13 @@ export default function App() {
           cursor: 'pointer',
           filter: isFracture
             ? 'drop-shadow(0 0 32px rgba(231,76,60,0.9))'
-            : isSurge
-              ? 'drop-shadow(0 0 40px rgba(168,143,255,0.85))'
-              : isFastTime
-                ? (fastTimeIsDebuff ? 'drop-shadow(0 0 24px rgba(231,76,60,0.65))' : 'drop-shadow(0 0 24px rgba(255,200,80,0.55))')
-                : 'none',
+            : isReverse
+              ? 'drop-shadow(0 0 28px rgba(231,76,60,0.85))'
+              : isSurge
+                ? 'drop-shadow(0 0 40px rgba(168,143,255,0.85))'
+                : isFastTime
+                  ? (fastTimeIsDebuff ? 'drop-shadow(0 0 24px rgba(231,76,60,0.65))' : 'drop-shadow(0 0 24px rgba(255,200,80,0.55))')
+                  : 'none',
           transition: 'filter 0.4s ease',
         }}
       >
