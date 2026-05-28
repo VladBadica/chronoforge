@@ -1,8 +1,9 @@
 // simulate.mjs — ChronoForge headless progression simulator
 // Usage: node simulate.mjs [max_hours=2]
 //
-// Models deterministic progression: upgrades, entropy, extra clock bonuses, TimeDust.
-// Random events (Fast Time, Fracture, Reverse) are excluded — zones are flagged.
+// Models: upgrades, entropy, extra clock bonuses, TimeDust, and expected-value of:
+//   Fast Time buff (+speed) / debuff (-speed), Time Fracture (TE drain), Reverse Time (TE drain).
+// Temporal Surge excluded (rare, hard to model without tracking hand angles).
 // Player strategy: greedy (best marginal TE/s per TE cost) + immediate clock priority.
 
 import {
@@ -16,7 +17,12 @@ import {
   ENTROPY_BASE_STABILITY, ENTROPY_STABILITY_SCALING,
   STABILITY_UPGRADE_BASE_COST, STABILITY_UPGRADE_COST_EXPONENT,
   ENTROPY_TE_PENALTY_THRESHOLD, ENTROPY_TE_PENALTY_AT_THRESHOLD, ENTROPY_TE_PENALTY_AT_MAX,
-  FRACTURE_ENTROPY_THRESHOLD, PRESTIGE_COST_TD, REVERSE_ENTROPY_THRESHOLD,
+  FRACTURE_ENTROPY_THRESHOLD, FRACTURE_LOSS_AT_THRESHOLD, FRACTURE_LOSS_AT_MAX,
+  FAST_TIME_DURATION_MS, FAST_TIME_MULTIPLIER, FAST_TIME_DEBUFF_MULTIPLIER,
+  ENTROPY_DEBUFF_THRESHOLD, ENTROPY_DEBUFF_CHANCE_MIN, ENTROPY_DEBUFF_CHANCE_MAX,
+  PRESTIGE_COST_TD,
+  REVERSE_ENTROPY_THRESHOLD, REVERSE_CHANCE_AT_THRESHOLD, REVERSE_CHANCE_AT_MAX,
+  REVERSE_DURATION_AT_THRESHOLD, REVERSE_DURATION_AT_MAX,
 } from './src/game/constants.js';
 
 // ── Pure math (mirrors GameEngine) ───────────────────────────────────────────
@@ -60,6 +66,36 @@ const epsOf = (s) => {
   return rps * energyPerRevAt(s.energyLevel, s.clock3TeB) * (1 - tePenaltyOf(ent));
 };
 
+// Expected-value adjustments for random events
+const debuffChanceOf = (ent) => ent < ENTROPY_DEBUFF_THRESHOLD ? 0
+  : ENTROPY_DEBUFF_CHANCE_MIN + (ent - ENTROPY_DEBUFF_THRESHOLD) / (1 - ENTROPY_DEBUFF_THRESHOLD) * (ENTROPY_DEBUFF_CHANCE_MAX - ENTROPY_DEBUFF_CHANCE_MIN);
+
+// Wraps epsOf with Fast Time and Reverse Time expected-value corrections.
+// Fast Time fires every 60/59 revolutions (second/minute overlap); lasts FAST_TIME_DURATION_MS.
+// Reverse Time fires per forward revolution with a chance; drains TE at the same rate as forward.
+const effectiveEPS = (s) => {
+  const base = epsOf(s);
+  const sm   = speedMultAt(s.speedLevel) + s.clock2B;
+  const ent  = entropyOf(s.speedLevel, s.clock2B, s.stabilityLevel, s.clock4Red);
+
+  // Fast Time: fraction of time active, split into buff/debuff
+  const ftPeriodMs = BASE_REVOLUTION_MS / sm * (60 / 59);
+  const ftFrac     = Math.min(1, FAST_TIME_DURATION_MS / ftPeriodMs);
+  const dc         = debuffChanceOf(ent);
+  const ftDelta    = ftFrac * ((1 - dc) * (FAST_TIME_MULTIPLIER - 1) + dc * (FAST_TIME_DEBUFF_MULTIPLIER - 1));
+
+  // Reverse Time: expected TE drain per second
+  let reverseDrain = 0;
+  if (ent >= REVERSE_ENTROPY_THRESHOLD) {
+    const t      = (ent - REVERSE_ENTROPY_THRESHOLD) / (1 - REVERSE_ENTROPY_THRESHOLD);
+    const chance = REVERSE_CHANCE_AT_THRESHOLD + t * (REVERSE_CHANCE_AT_MAX - REVERSE_CHANCE_AT_THRESHOLD);
+    const durMs  = REVERSE_DURATION_AT_THRESHOLD + t * (REVERSE_DURATION_AT_MAX - REVERSE_DURATION_AT_THRESHOLD);
+    reverseDrain = chance * (durMs / (BASE_REVOLUTION_MS / sm)) * base;
+  }
+
+  return Math.max(0, base * (1 + ftDelta) - reverseDrain);
+};
+
 // Next-level costs
 const costs = {
   speed: (s) => Math.floor(UPGRADE_BASE_COST * Math.pow(UPGRADE_COST_EXPONENT, s.speedLevel)),
@@ -86,6 +122,23 @@ const MAX_HOURS = parseFloat(process.argv[2] ?? '2');
 const MAX_MS = MAX_HOURS * 3_600_000;
 const TD_INTERVAL = 720 / 11; // ≈65.45 main-clock revolutions per TimeDust event
 
+// ── Playstyle strategies ──────────────────────────────────────────────────────
+// Usage: node simulate.mjs [hours] [strategy]
+// speedW/energyW/stabilityW: multipliers on the efficiency score for each upgrade type.
+// stabThresh: entropy level at which stability purchases are considered at all.
+const STRATEGIES = {
+  greedy: { label: 'Greedy (best ROI)',                 speedW: 1, energyW: 1, stabilityW: 1, stabThresh: FRACTURE_ENTROPY_THRESHOLD },
+  speed:  { label: 'Speed Focus (3× speed priority)',   speedW: 3, energyW: 1, stabilityW: 1, stabThresh: FRACTURE_ENTROPY_THRESHOLD },
+  energy: { label: 'Energy Focus (3× energy priority)', speedW: 1, energyW: 3, stabilityW: 1, stabThresh: FRACTURE_ENTROPY_THRESHOLD },
+  safe:   { label: 'Entropy Safe (buy stability early)', speedW: 1, energyW: 1, stabilityW: 3, stabThresh: 0.1 },
+};
+const STRATEGY_KEY = process.argv[3] ?? 'greedy';
+if (!STRATEGIES[STRATEGY_KEY]) {
+  console.error(`Unknown strategy "${STRATEGY_KEY}". Valid: ${Object.keys(STRATEGIES).join(', ')}`);
+  process.exit(1);
+}
+const STRATEGY = STRATEGIES[STRATEGY_KEY];
+
 const milestones = [];
 const snapshots = [];
 const seen = new Set();
@@ -108,7 +161,8 @@ const once = (key, label) => { if (!seen.has(key)) { seen.add(key); mark(label);
 // Stability is only considered once entropy is a real drag (> 35%).
 
 function pickUpgrade() {
-  const curEPS = epsOf(S);
+  const { speedW, energyW, stabilityW, stabThresh } = STRATEGY;
+  const curEPS = effectiveEPS(S);
   const ent = entropyOf(S.speedLevel, S.clock2B, S.stabilityLevel, S.clock4Red);
   const sm = speedMultAt(S.speedLevel) + S.clock2B;
 
@@ -120,16 +174,16 @@ function pickUpgrade() {
   };
 
   // Speed upgrade
-  consider('speed', costs.speed(S), epsOf({ ...S, speedLevel: S.speedLevel + 1 }) - curEPS);
+  consider('speed', costs.speed(S), (effectiveEPS({ ...S, speedLevel: S.speedLevel + 1 }) - curEPS) * speedW);
 
   // Energy upgrade
-  consider('energy', costs.energy(S), epsOf({ ...S, energyLevel: S.energyLevel + 1 }) - curEPS);
+  consider('energy', costs.energy(S), (effectiveEPS({ ...S, energyLevel: S.energyLevel + 1 }) - curEPS) * energyW);
 
-  // Stability — only worth evaluating once entropy causes actual pain
-  if (ent > 0.35 && S.stabilityLevel < 20) {
-    const dEPS = epsOf({ ...S, stabilityLevel: S.stabilityLevel + 1 }) - curEPS;
-    const urgencyBoost = ent > 0.6 ? 3 : ent > 0.5 ? 2 : 1;
-    consider('stability', costs.stability(S), dEPS * urgencyBoost);
+  // Stability — threshold and weight come from the active strategy
+  if (ent > stabThresh && S.stabilityLevel < 20) {
+    const dEPS = effectiveEPS({ ...S, stabilityLevel: S.stabilityLevel + 1 }) - curEPS;
+    const urgencyBoost = ent > REVERSE_ENTROPY_THRESHOLD ? 3 : ent > 0.5 ? 2 : 1;
+    consider('stability', costs.stability(S), dEPS * urgencyBoost * stabilityW);
   }
 
   // Clock — value = projected bonus accumulation over 60 seconds
@@ -189,14 +243,14 @@ function applyUpgrade(u) {
     case 'stability': S.stabilityLevel++; lvl = S.stabilityLevel; break;
   }
   const sm = (speedMultAt(S.speedLevel) + S.clock2B).toFixed(2);
-  const eps = epsOf(S).toFixed(3);
+  const eps = effectiveEPS(S).toFixed(3);
   const ent = (entropyOf(S.speedLevel, S.clock2B, S.stabilityLevel, S.clock4Red) * 100).toFixed(0);
   mark(`${u.type.padEnd(9)} Lv${String(lvl).padStart(2)} | cost ${String(u.cost).padStart(6)} TE | ${sm}× | ${eps} TE/s | ent ${ent}%`);
 }
 
 // ── Main loop ─────────────────────────────────────────────────────────────────
 
-mark(`Start  —  1× | ${epsOf(S).toFixed(3)} TE/s`);
+mark(`Start  —  1× | ${effectiveEPS(S).toFixed(3)} TE/s`);
 
 const SNAPSHOT_INTERVAL_MS = 5 * 60_000;
 let lastSnapshotMs = -SNAPSHOT_INTERVAL_MS;
@@ -208,8 +262,8 @@ while (S.ms < MAX_MS) {
 
   // One-time event flags
   const ent = entropyOf(S.speedLevel, S.clock2B, S.stabilityLevel, S.clock4Red);
-  if (ent >= 0.40) once('ent40', `⚠  Entropy ≥ 40% — Fast Time debuffs (10–70%) + Fracture TE loss active`);
-  if (ent >= 0.60) once('ent60', `⚠  Entropy ≥ 60% — Reverse Time active (10–15% chance per revolution)`);
+  if (ent >= 0.40) once('ent40', `⚠  Entropy ≥ 40% — Fast Time debuffs + Fracture TE loss now active (modeled)`);
+  if (ent >= 0.60) once('ent60', `⚠  Entropy ≥ 60% — Reverse Time now active (modeled)`);
   if (ent >= 0.80) once('ent80', `⚠  Entropy ≥ 80%`);
   if (S.timeDust >= PRESTIGE_COST_TD) once('prestige', `★  First prestige available (${Math.floor(S.timeDust)} TD ≥ ${PRESTIGE_COST_TD})`);
 
@@ -221,7 +275,7 @@ while (S.ms < MAX_MS) {
       ms: S.ms,
       spd: S.speedLevel,
       sm: sm.toFixed(2),
-      eps: epsOf(S).toFixed(3),
+      eps: effectiveEPS(S).toFixed(3),
       nrg: Math.floor(S.energy),
       ent: (ent * 100).toFixed(0) + '%',
       td: Math.floor(S.timeDust),
@@ -231,13 +285,13 @@ while (S.ms < MAX_MS) {
   }
 
   // Fast-forward to next affordable upgrade (up to 30 s at a time)
-  const eps = epsOf(S);
+  const eps = effectiveEPS(S);
   const allCosts = [
     costs.speed(S),
     costs.energy(S),
     S.clockCount - 1 < CLOCK_MAX_EXTRA ? costs.clock(S) : Infinity,
     S.boostLevel < BOOST_MAX_LEVEL && S.clockCount > 1 ? costs.boost(S) : Infinity,
-    ent > 0.35 ? costs.stability(S) : Infinity,
+    ent > FRACTURE_ENTROPY_THRESHOLD ? costs.stability(S) : Infinity,
   ].filter(isFinite);
   const cheapest = Math.min(...allCosts);
 
@@ -271,10 +325,20 @@ while (S.ms < MAX_MS) {
     }
   }
 
-  // TimeDust: awarded at each minute/hour hand overlap (~every 65.45 main revolutions)
+  // TimeDust + Time Fracture: both fire on minute/hour overlap (~every 65.45 main revolutions)
   const tdBefore = Math.floor(prevRevs / TD_INTERVAL);
-  const tdAfter = Math.floor(S.totalRevs / TD_INTERVAL);
-  if (tdAfter > tdBefore) S.timeDust += tdAfter - tdBefore;
+  const tdAfter  = Math.floor(S.totalRevs / TD_INTERVAL);
+  if (tdAfter > tdBefore) {
+    const newEvents = tdAfter - tdBefore;
+    S.timeDust += newEvents;
+    if (ent >= FRACTURE_ENTROPY_THRESHOLD) {
+      const t        = (ent - FRACTURE_ENTROPY_THRESHOLD) / (1 - FRACTURE_ENTROPY_THRESHOLD);
+      const lossRate = FRACTURE_LOSS_AT_THRESHOLD + t * (FRACTURE_LOSS_AT_MAX - FRACTURE_LOSS_AT_THRESHOLD);
+      for (let i = 0; i < newEvents; i++) {
+        S.energy = Math.max(0, S.energy * (1 - lossRate));
+      }
+    }
+  }
 }
 
 // ── Output ────────────────────────────────────────────────────────────────────
@@ -285,7 +349,7 @@ const HR = '─'.repeat(W);
 console.log(`\n${'═'.repeat(W)}`);
 console.log(` ChronoForge Progression Simulator  —  ${MAX_HOURS}h`);
 console.log(`${'═'.repeat(W)}`);
-console.log(` Strategy : Greedy (best marginal TE/s per cost) with forward-looking clock value`);
+console.log(` Strategy : ${STRATEGY.label}`);
 console.log(` Events   : random events excluded (Fast Time/Fracture/Reverse flagged by zone)\n`);
 
 console.log(`MILESTONES\n${HR}`);
@@ -304,7 +368,8 @@ const finalEnt = entropyOf(S.speedLevel, S.clock2B, S.stabilityLevel, S.clock4Re
 const finalSM = speedMultAt(S.speedLevel) + S.clock2B;
 console.log(`\nFINAL STATE  at ${fmt(S.ms)}\n${HR}`);
 console.log(` Speed      : Lv${S.speedLevel} base × ${speedMultAt(S.speedLevel).toFixed(2)} + clock2 bonus +${S.clock2B.toFixed(2)} = ${finalSM.toFixed(2)}× total`);
-console.log(` TE/s       : ${epsOf(S).toFixed(4)}`);
+console.log(` TE/s (base): ${epsOf(S).toFixed(4)}`);
+console.log(` TE/s (eff) : ${effectiveEPS(S).toFixed(4)}  (includes FT buff/debuff + Reverse drain)`);
 console.log(` TE earned  : ${(S.energy + totalTeSpent).toFixed(1)} TE total  (${totalTeSpent.toFixed(1)} spent on upgrades, ${S.energy.toFixed(1)} unspent)`);
 console.log(` Energy     : ${S.energy.toFixed(1)} TE`);
 console.log(` Entropy    : ${(finalEnt * 100).toFixed(1)}%  (stability Lv${S.stabilityLevel}, value ${stabilityAt(S.stabilityLevel).toFixed(1)})`);
@@ -317,7 +382,7 @@ console.log(` Boost      : Lv${S.boostLevel} / ${BOOST_MAX_LEVEL}  (extra-clock 
 
 // Upcoming costs at end of simulation
 console.log(`\nNEXT COSTS at sim end\n${HR}`);
-const finalEPS = epsOf(S);
+const finalEPS = effectiveEPS(S);
 const upcomingCosts = [
   ['Speed Lv' + (S.speedLevel + 1), costs.speed(S)],
   ['Energy Lv' + (S.energyLevel + 1), costs.energy(S)],
