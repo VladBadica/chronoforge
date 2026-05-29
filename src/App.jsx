@@ -68,6 +68,7 @@ export default function App() {
     prestigeEntropyTeLevel, prestigeEntropyTeCost, buyPrestigeEntropyTe, prestigeEntropyTeAtMax,
     prestigeEntropyTdLevel, prestigeEntropyTdCost, buyPrestigeEntropyTd, prestigeEntropyTdAtMax,
     prestigeAscendLevel, prestigeAscendCost, buyPrestigeAscend, prestigeAscendAtMax,
+    prestigeSingularityLevel, prestigeSingularityCost, buyPrestigeSingularity, prestigeSingularityAtMax,
     addSecond,
     resetGame,
     debugAddEnergy,
@@ -290,6 +291,7 @@ export default function App() {
           prestigeEntropyTeLevel={prestigeEntropyTeLevel} prestigeEntropyTeCost={prestigeEntropyTeCost} buyPrestigeEntropyTe={buyPrestigeEntropyTe} prestigeEntropyTeAtMax={prestigeEntropyTeAtMax}
           prestigeEntropyTdLevel={prestigeEntropyTdLevel} prestigeEntropyTdCost={prestigeEntropyTdCost} buyPrestigeEntropyTd={buyPrestigeEntropyTd} prestigeEntropyTdAtMax={prestigeEntropyTdAtMax}
           prestigeAscendLevel={prestigeAscendLevel} prestigeAscendCost={prestigeAscendCost} buyPrestigeAscend={buyPrestigeAscend} prestigeAscendAtMax={prestigeAscendAtMax}
+          prestigeSingularityLevel={prestigeSingularityLevel} prestigeSingularityCost={prestigeSingularityCost} buyPrestigeSingularity={buyPrestigeSingularity} prestigeSingularityAtMax={prestigeSingularityAtMax}
         />
       )}
     </div>

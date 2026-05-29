@@ -102,6 +102,18 @@ const UPGRADES_TIER3 = [
   },
 ];
 
+const UPGRADES_TIER4 = [
+  {
+    key: 'singularity',
+    label: 'Temporal Singularity',
+    desc: 'At 100,000% speed (1000×), you can break entropy and time itself',
+    costKey: 'prestigeSingularityCost',
+    levelKey: 'prestigeSingularityLevel',
+    buyKey: 'buyPrestigeSingularity',
+    atMaxKey: 'prestigeSingularityAtMax',
+  },
+];
+
 export function PrestigeModal({
   timeDust,
   entropy,
@@ -120,16 +132,17 @@ export function PrestigeModal({
   prestigeEntropyTeLevel, prestigeEntropyTeCost, buyPrestigeEntropyTe, prestigeEntropyTeAtMax,
   prestigeEntropyTdLevel, prestigeEntropyTdCost, buyPrestigeEntropyTd, prestigeEntropyTdAtMax,
   prestigeAscendLevel, prestigeAscendCost, buyPrestigeAscend, prestigeAscendAtMax,
+  prestigeSingularityLevel, prestigeSingularityCost, buyPrestigeSingularity, prestigeSingularityAtMax,
 }) {
   const ppGain = Math.floor(timeDust * (1 + entropy));
   const ppBase = Math.floor(timeDust);
   const ppBonus = ppGain - ppBase;
   const totalAfter = prestigePoints + ppGain;
 
-  const levels = { prestigeSpeedLevel, prestigeEnergyLevel, prestigeClockLevel, prestigeBoostLevel, prestigeAnchorLevel, prestigeMirrorLevel, prestigeTdLevel, prestigeEntropyReduceLevel, prestigeEntropyTeLevel, prestigeEntropyTdLevel, prestigeAscendLevel };
-  const costs = { prestigeSpeedCost, prestigeEnergyCost, prestigeClockCost, prestigeBoostCost, prestigeAnchorCost, prestigeMirrorCost, prestigeTdCost, prestigeEntropyReduceCost, prestigeEntropyTeCost, prestigeEntropyTdCost, prestigeAscendCost };
-  const actions = { buyPrestigeSpeed, buyPrestigeEnergy, buyPrestigeClock, buyPrestigeBoost, buyPrestigeAnchor, buyPrestigeMirror, buyPrestigeTd, buyPrestigeEntropyReduce, buyPrestigeEntropyTe, buyPrestigeEntropyTd, buyPrestigeAscend };
-  const atMaxMap = { prestigeClockAtMax, prestigeBoostAtMax, prestigeMirrorAtMax, prestigeEntropyReduceAtMax, prestigeEntropyTeAtMax, prestigeEntropyTdAtMax, prestigeAscendAtMax };
+  const levels = { prestigeSpeedLevel, prestigeEnergyLevel, prestigeClockLevel, prestigeBoostLevel, prestigeAnchorLevel, prestigeMirrorLevel, prestigeTdLevel, prestigeEntropyReduceLevel, prestigeEntropyTeLevel, prestigeEntropyTdLevel, prestigeAscendLevel, prestigeSingularityLevel };
+  const costs = { prestigeSpeedCost, prestigeEnergyCost, prestigeClockCost, prestigeBoostCost, prestigeAnchorCost, prestigeMirrorCost, prestigeTdCost, prestigeEntropyReduceCost, prestigeEntropyTeCost, prestigeEntropyTdCost, prestigeAscendCost, prestigeSingularityCost };
+  const actions = { buyPrestigeSpeed, buyPrestigeEnergy, buyPrestigeClock, buyPrestigeBoost, buyPrestigeAnchor, buyPrestigeMirror, buyPrestigeTd, buyPrestigeEntropyReduce, buyPrestigeEntropyTe, buyPrestigeEntropyTd, buyPrestigeAscend, buyPrestigeSingularity };
+  const atMaxMap = { prestigeClockAtMax, prestigeBoostAtMax, prestigeMirrorAtMax, prestigeEntropyReduceAtMax, prestigeEntropyTeAtMax, prestigeEntropyTdAtMax, prestigeAscendAtMax, prestigeSingularityAtMax };
 
   return (
     <div
@@ -273,6 +286,8 @@ export function PrestigeModal({
               <div className="grid grid-cols-2 gap-2">
                 {UPGRADES_TIER3.map(renderCard)}
               </div>
+              <div style={{ borderTop: '1px solid rgba(124,111,247,0.2)', margin: '2px 0' }} />
+              {UPGRADES_TIER4.map(renderCard)}
             </div>
           );
         })()}

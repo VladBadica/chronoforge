@@ -133,6 +133,10 @@ export const PRESTIGE_ASCEND_COST_SCALING = 2.0;
 export const PRESTIGE_ASCEND_BOOST = 0.10;            // +0.10 to entropy coefficient per level
 export const PRESTIGE_ASCEND_MAX = 10;                // coefficient goes from 1.0 → 2.0 at max
 
+// Tier 4 — Temporal Singularity
+export const PRESTIGE_SINGULARITY_COST = 100;         // one-time purchase
+export const PRESTIGE_SINGULARITY_SPEED_THRESHOLD = 1000; // 1000× = 100,000%; locks entropy to 1.0
+
 // ── Reverse Time ─────────────────────────────────────────────────────────────
 
 // Main clock randomly ticks backwards above this entropy threshold

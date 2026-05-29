@@ -29,6 +29,7 @@ import {
   PRESTIGE_ENTROPY_TE_BASE_COST, PRESTIGE_ENTROPY_TE_SCALING, PRESTIGE_ENTROPY_TE_BONUS, PRESTIGE_ENTROPY_TE_MAX,
   PRESTIGE_ENTROPY_TD_BASE_COST, PRESTIGE_ENTROPY_TD_SCALING, PRESTIGE_ENTROPY_TD_BONUS, PRESTIGE_ENTROPY_TD_MAX,
   PRESTIGE_ASCEND_BASE_COST, PRESTIGE_ASCEND_COST_SCALING, PRESTIGE_ASCEND_BOOST, PRESTIGE_ASCEND_MAX,
+  PRESTIGE_SINGULARITY_COST, PRESTIGE_SINGULARITY_SPEED_THRESHOLD,
   UPGRADE_BASE_COST,
   UPGRADE_COST_EXPONENT,
   UPGRADE_SPEED_BONUS,
@@ -132,6 +133,7 @@ export class GameEngine {
     this._prestigeEntropyTeLevel   = 0;
     this._prestigeEntropyTdLevel   = 0;
     this._prestigeAscendLevel      = 0;
+    this._prestigeSingularityLevel = 0;
 
     // --- loop bookkeeping ---
     this._rafId = null;
@@ -220,6 +222,7 @@ export class GameEngine {
     this._prestigeEntropyTeLevel   = 0;
     this._prestigeEntropyTdLevel   = 0;
     this._prestigeAscendLevel      = 0;
+    this._prestigeSingularityLevel = 0;
     try {
       localStorage.removeItem(SAVE_KEY);
     } catch { /* ignore */ }
@@ -360,6 +363,13 @@ export class GameEngine {
   getPrestigeEntropyTdCost() { return this._prestigeCost(PRESTIGE_ENTROPY_TD_BASE_COST, PRESTIGE_ENTROPY_TD_SCALING, this._prestigeEntropyTdLevel); }
   getPrestigeAscendCost()    { return this._prestigeCost(PRESTIGE_ASCEND_BASE_COST,     PRESTIGE_ASCEND_COST_SCALING, this._prestigeAscendLevel); }
 
+  buyPrestigeSingularity() {
+    if (this._prestigeSingularityLevel >= 1) return false;
+    return this._buyPrestigeUpgrade(this.getPrestigeSingularityCost, '_prestigeSingularityLevel');
+  }
+
+  getPrestigeSingularityCost() { return PRESTIGE_SINGULARITY_COST; }
+
   /**
    * Combined TE multiplier: base 1.0, minus entropy penalty, plus entropy bonus from Temporal Resonance.
    * Can exceed 1.0 at high entropy with high Temporal Resonance levels.
@@ -497,6 +507,10 @@ export class GameEngine {
 
   /** Current Time Entropy — 0 (stable) to 1 (total chaos) */
   getEntropy() {
+    if (this._prestigeSingularityLevel > 0) {
+      const sm = this.getSpeedMultiplier() + this._clock2SpeedBonus;
+      if (sm >= PRESTIGE_SINGULARITY_SPEED_THRESHOLD) return 1.0;
+    }
     return this._entropyAt(this._stabilityLevel);
   }
 
@@ -580,7 +594,8 @@ export class GameEngine {
       prestigeEntropyReduceLevel: this._prestigeEntropyReduceLevel,
       prestigeEntropyTeLevel: this._prestigeEntropyTeLevel,
       prestigeEntropyTdLevel: this._prestigeEntropyTdLevel,
-      prestigeAscendLevel:    this._prestigeAscendLevel,
+      prestigeAscendLevel:        this._prestigeAscendLevel,
+      prestigeSingularityLevel:   this._prestigeSingularityLevel,
       totalRevolutions: this._totalRevolutions,
       extraRevolutions: this._extraRevolutions,
       savedAt: Date.now(),
@@ -625,7 +640,8 @@ export class GameEngine {
       this._prestigeEntropyReduceLevel = data.prestigeEntropyReduceLevel ?? 0;
       this._prestigeEntropyTeLevel   = data.prestigeEntropyTeLevel ?? 0;
       this._prestigeEntropyTdLevel   = data.prestigeEntropyTdLevel ?? 0;
-      this._prestigeAscendLevel      = data.prestigeAscendLevel ?? 0;
+      this._prestigeAscendLevel        = data.prestigeAscendLevel ?? 0;
+      this._prestigeSingularityLevel   = data.prestigeSingularityLevel ?? 0;
       this._fastTimeRemaining = 0;
       this._surgeRemaining = 0;
       this._prevNear = Array(this._clockCount).fill(true);
@@ -907,7 +923,10 @@ export class GameEngine {
         prestigeEntropyTdAtMax:  this._prestigeEntropyTdLevel >= PRESTIGE_ENTROPY_TD_MAX,
         prestigeAscendLevel:     this._prestigeAscendLevel,
         prestigeAscendCost:      this.getPrestigeAscendCost(),
-        prestigeAscendAtMax:     this._prestigeAscendLevel >= PRESTIGE_ASCEND_MAX,
+        prestigeAscendAtMax:       this._prestigeAscendLevel >= PRESTIGE_ASCEND_MAX,
+        prestigeSingularityLevel:  this._prestigeSingularityLevel,
+        prestigeSingularityCost:   this.getPrestigeSingularityCost(),
+        prestigeSingularityAtMax:  this._prestigeSingularityLevel >= 1,
       });
     }
   }

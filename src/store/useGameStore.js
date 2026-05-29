@@ -93,7 +93,10 @@ export const useGameStore = create((set) => {
       prestigeEntropyTdAtMax: snapshot.prestigeEntropyTdAtMax,
       prestigeAscendLevel:    snapshot.prestigeAscendLevel,
       prestigeAscendCost:     snapshot.prestigeAscendCost,
-      prestigeAscendAtMax:    snapshot.prestigeAscendAtMax,
+      prestigeAscendAtMax:       snapshot.prestigeAscendAtMax,
+      prestigeSingularityLevel:  snapshot.prestigeSingularityLevel,
+      prestigeSingularityCost:   snapshot.prestigeSingularityCost,
+      prestigeSingularityAtMax:  snapshot.prestigeSingularityAtMax,
     });
   });
 
@@ -168,7 +171,10 @@ export const useGameStore = create((set) => {
     prestigeEntropyTdAtMax: false,
     prestigeAscendLevel:    0,
     prestigeAscendCost:     30,
-    prestigeAscendAtMax:    false,
+    prestigeAscendAtMax:      false,
+    prestigeSingularityLevel: 0,
+    prestigeSingularityCost:  100,
+    prestigeSingularityAtMax: false,
 
     // --- actions ---
 
@@ -223,7 +229,8 @@ export const useGameStore = create((set) => {
     buyPrestigeEntropyReduce: () => { gameEngine.buyPrestigeEntropyReduce(); },
     buyPrestigeEntropyTe: () => { gameEngine.buyPrestigeEntropyTe(); },
     buyPrestigeEntropyTd: () => { gameEngine.buyPrestigeEntropyTd(); },
-    buyPrestigeAscend:    () => { gameEngine.buyPrestigeAscend(); },
+    buyPrestigeAscend:       () => { gameEngine.buyPrestigeAscend(); },
+    buyPrestigeSingularity:  () => { gameEngine.buyPrestigeSingularity(); },
 
     resetGame: () => {
       gameEngine.reset();
