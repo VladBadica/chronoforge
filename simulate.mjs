@@ -1,9 +1,10 @@
 // simulate.mjs — ChronoForge headless progression simulator
-// Usage: node simulate.mjs [max_hours=2]
+// Usage: node simulate.mjs [max_hours=2] [strategy=greedy]
 //
 // Models: upgrades, entropy, extra clock bonuses, TimeDust, and expected-value of:
-//   Fast Time buff (+speed) / debuff (-speed), Time Fracture (TE drain), Reverse Time (TE drain).
-// Temporal Surge excluded (rare, hard to model without tracking hand angles).
+//   Fast Time buff/debuff, Time Fracture (TE drain), Reverse Time (TE drain).
+// Also models prestige upgrade effects active during a run (set PRESTIGE below).
+// Temporal Surge excluded (rare; requires tracking hand angles).
 // Player strategy: greedy (best marginal TE/s per TE cost) + immediate clock priority.
 
 import {
@@ -21,6 +22,10 @@ import {
   FAST_TIME_DURATION_MS, FAST_TIME_MULTIPLIER, FAST_TIME_DEBUFF_MULTIPLIER,
   ENTROPY_DEBUFF_THRESHOLD, ENTROPY_DEBUFF_CHANCE_MIN, ENTROPY_DEBUFF_CHANCE_MAX,
   PRESTIGE_COST_TD,
+  PRESTIGE_TD_BONUS,
+  PRESTIGE_ENTROPY_REDUCE_MAX,
+  PRESTIGE_ENTROPY_BONUS_THRESHOLD, PRESTIGE_ENTROPY_TE_BONUS, PRESTIGE_ENTROPY_TD_BONUS,
+  PRESTIGE_SINGULARITY_SPEED_THRESHOLD,
   REVERSE_ENTROPY_THRESHOLD, REVERSE_CHANCE_AT_THRESHOLD, REVERSE_CHANCE_AT_MAX,
   REVERSE_DURATION_AT_THRESHOLD, REVERSE_DURATION_AT_MAX,
 } from './src/game/constants.js';
@@ -42,6 +47,8 @@ const energyPerRevAt = (level, clock3Bonus) => {
 const stabilityAt = (level) => ENTROPY_BASE_STABILITY * Math.pow(ENTROPY_STABILITY_SCALING, level);
 
 const entropyOf = (speedLevel, clock2B, stabilityLevel, clock4Red) => {
+  // Temporal Singularity: at 1000× speed entropy locks to 1.0
+  if (PRESTIGE.singularity && speedMultAt(speedLevel) + clock2B >= PRESTIGE_SINGULARITY_SPEED_THRESHOLD) return 1;
   const excess = speedMultAt(speedLevel) + clock2B - 1;
   if (excess <= 0) return 0;
   const stab = stabilityAt(stabilityLevel);
@@ -59,11 +66,19 @@ const boostFactorAt = (level) => {
   return CLOCK_SPEED_FACTOR + clamped * (BOOST_SPEED_FACTOR_MAX - CLOCK_SPEED_FACTOR) / BOOST_MAX_LEVEL;
 };
 
+// entropyReduceFactor: scales all negative entropy effects toward 0
+const entropyReduceFactor = () => 1 - PRESTIGE.entropyReduceLevel / PRESTIGE_ENTROPY_REDUCE_MAX;
+
 const epsOf = (s) => {
-  const sm = speedMultAt(s.speedLevel) + s.clock2B;
+  const sm  = speedMultAt(s.speedLevel) + s.clock2B;
   const ent = entropyOf(s.speedLevel, s.clock2B, s.stabilityLevel, s.clock4Red);
   const rps = sm / (BASE_REVOLUTION_MS / 1000);
-  return rps * energyPerRevAt(s.energyLevel, s.clock3TeB) * (1 - tePenaltyOf(ent));
+  // TE penalty reduced by Entropy Shield; Temporal Resonance adds bonus above threshold
+  const penalty = tePenaltyOf(ent) * entropyReduceFactor();
+  const resonanceBonus = ent >= PRESTIGE_ENTROPY_BONUS_THRESHOLD
+    ? PRESTIGE.entropyTeLevel * PRESTIGE_ENTROPY_TE_BONUS : 0;
+  const teMult = Math.max(0, 1 - penalty + resonanceBonus);
+  return rps * energyPerRevAt(s.energyLevel, s.clock3TeB) * teMult;
 };
 
 // Expected-value adjustments for random events
@@ -81,14 +96,16 @@ const effectiveEPS = (s) => {
   // Fast Time: fraction of time active, split into buff/debuff
   const ftPeriodMs = BASE_REVOLUTION_MS / sm * (60 / 59);
   const ftFrac = Math.min(1, FAST_TIME_DURATION_MS / ftPeriodMs);
-  const dc = debuffChanceOf(ent);
+  // Entropy Shield reduces debuff chance toward 0
+  const dc = debuffChanceOf(ent) * entropyReduceFactor();
   const ftDelta = ftFrac * ((1 - dc) * (FAST_TIME_MULTIPLIER - 1) + dc * (FAST_TIME_DEBUFF_MULTIPLIER - 1));
 
-  // Reverse Time: expected TE drain per second
+  // Reverse Time: expected TE drain per second (chance reduced by Entropy Shield)
   let reverseDrain = 0;
   if (ent >= REVERSE_ENTROPY_THRESHOLD) {
     const t = (ent - REVERSE_ENTROPY_THRESHOLD) / (1 - REVERSE_ENTROPY_THRESHOLD);
-    const chance = REVERSE_CHANCE_AT_THRESHOLD + t * (REVERSE_CHANCE_AT_MAX - REVERSE_CHANCE_AT_THRESHOLD);
+    const chance = (REVERSE_CHANCE_AT_THRESHOLD + t * (REVERSE_CHANCE_AT_MAX - REVERSE_CHANCE_AT_THRESHOLD))
+      * entropyReduceFactor();
     const durMs = REVERSE_DURATION_AT_THRESHOLD + t * (REVERSE_DURATION_AT_MAX - REVERSE_DURATION_AT_THRESHOLD);
     reverseDrain = chance * (durMs / (BASE_REVOLUTION_MS / sm)) * base;
   }
@@ -103,6 +120,17 @@ const costs = {
   clock: (s) => Math.floor(CLOCK_UPGRADE_BASE_COST * Math.pow(CLOCK_UPGRADE_COST_EXPONENT, s.clockCount - 1)),
   boost: (s) => Math.floor(BOOST_UPGRADE_BASE_COST * Math.pow(BOOST_UPGRADE_COST_EXPONENT, s.boostLevel)),
   stability: (s) => Math.floor(STABILITY_UPGRADE_BASE_COST * Math.pow(STABILITY_UPGRADE_COST_EXPONENT, s.stabilityLevel)),
+};
+
+// ── Prestige upgrade configuration ───────────────────────────────────────────
+// Set these to simulate a run that starts with prestige upgrades already active.
+// All default to 0 / false (fresh run with no prestige bonuses).
+const PRESTIGE = {
+  entropyReduceLevel: 0,  // Entropy Shield (0-10): scales all negative effects toward 0
+  tdLevel:            0,  // Extra TD (0+): +20% TD yield per level
+  entropyTeLevel:     0,  // Temporal Resonance (0-10): >70% entropy → +20% TE/level
+  entropyTdLevel:     0,  // Chaos Harvest (0-10): >70% entropy → +20% TD/level
+  singularity:        false, // Temporal Singularity: at 1000× speed entropy locks to 1.0
 };
 
 // ── Simulation state ──────────────────────────────────────────────────────────
@@ -327,15 +355,23 @@ while (S.ms < MAX_MS) {
 
   // TimeDust + Time Fracture: both fire on minute/hour overlap (~every 65.45 main revolutions)
   const tdBefore = Math.floor(prevRevs / TD_INTERVAL);
-  const tdAfter = Math.floor(S.totalRevs / TD_INTERVAL);
+  const tdAfter  = Math.floor(S.totalRevs / TD_INTERVAL);
   if (tdAfter > tdBefore) {
     const newEvents = tdAfter - tdBefore;
-    S.timeDust += newEvents;
+    // TD yield: Extra TD flat bonus + Chaos Harvest entropy bonus (above threshold)
+    const chaosBonus = ent >= PRESTIGE_ENTROPY_BONUS_THRESHOLD
+      ? PRESTIGE.entropyTdLevel * PRESTIGE_ENTROPY_TD_BONUS : 0;
+    const tdMult = (1 + PRESTIGE.tdLevel * PRESTIGE_TD_BONUS) * (1 + chaosBonus);
+    S.timeDust += newEvents * tdMult;
+    // Fracture loss reduced by Entropy Shield
     if (ent >= FRACTURE_ENTROPY_THRESHOLD) {
       const t = (ent - FRACTURE_ENTROPY_THRESHOLD) / (1 - FRACTURE_ENTROPY_THRESHOLD);
-      const lossRate = FRACTURE_LOSS_AT_THRESHOLD + t * (FRACTURE_LOSS_AT_MAX - FRACTURE_LOSS_AT_THRESHOLD);
-      for (let i = 0; i < newEvents; i++) {
-        S.energy = Math.max(0, S.energy * (1 - lossRate));
+      const lossRate = (FRACTURE_LOSS_AT_THRESHOLD + t * (FRACTURE_LOSS_AT_MAX - FRACTURE_LOSS_AT_THRESHOLD))
+        * entropyReduceFactor();
+      if (lossRate > 0) {
+        for (let i = 0; i < newEvents; i++) {
+          S.energy = Math.max(0, S.energy * (1 - lossRate));
+        }
       }
     }
   }
@@ -350,7 +386,9 @@ console.log(`\n${'═'.repeat(W)}`);
 console.log(` ChronoForge Progression Simulator  —  ${MAX_HOURS}h`);
 console.log(`${'═'.repeat(W)}`);
 console.log(` Strategy : ${STRATEGY.label}`);
-console.log(` Events   : random events excluded (Fast Time/Fracture/Reverse flagged by zone)\n`);
+console.log(` Events   : Fast Time / Fracture / Reverse modeled as expected value`);
+const prestigeActive = Object.entries(PRESTIGE).filter(([, v]) => v).map(([k, v]) => `${k}=${v}`);
+console.log(` Prestige : ${prestigeActive.length ? prestigeActive.join(', ') : 'none (fresh run)'}\n`);
 
 console.log(`MILESTONES\n${HR}`);
 for (const { ms, label } of milestones) {
