@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useGameEngine } from './hooks/useGameEngine.js';
 import { useGameStore } from './store/useGameStore.js';
 import { Clock } from './components/Clock.jsx';
+import { ExtraClock } from './components/ExtraClock.jsx';
 import { EnergyDisplay } from './components/EnergyDisplay.jsx';
 import { UpgradePanel } from './components/UpgradePanel.jsx';
 import { StatsBar } from './components/StatsBar.jsx';
@@ -35,7 +36,7 @@ export default function App() {
     extraClockSpeedFactor,
     nextExtraClockSpeedFactor,
     extraAngles,
-    extraRevolutions,
+
     clockUpgradeCost,
     boostUpgradeCost,
     isFastTime,
@@ -76,7 +77,6 @@ export default function App() {
   } = useGameStore();
 
   // Scale clocks down as more are added so they all fit comfortably
-  const clockSize = clockCount === 1 ? 220 : clockCount === 2 ? 180 : 140;
 
   return (
     <div
@@ -127,27 +127,35 @@ export default function App() {
         </div>
       </div>
 
-      <div
-        className="flex items-center justify-center gap-4 flex-wrap"
-        onClick={addSecond}
-        style={{
-          cursor: 'pointer',
-          filter: isFracture
-            ? 'drop-shadow(0 0 32px rgba(231,76,60,0.9))'
-            : isReverse
-              ? 'drop-shadow(0 0 28px rgba(231,76,60,0.85))'
-              : isSurge
-                ? 'drop-shadow(0 0 40px rgba(168,143,255,0.85))'
-                : isFastTime
-                  ? (fastTimeIsDebuff ? 'drop-shadow(0 0 24px rgba(231,76,60,0.65))' : 'drop-shadow(0 0 24px rgba(255,200,80,0.55))')
-                  : 'none',
-          transition: 'filter 0.4s ease',
-        }}
-      >
-        <Clock angle={angle} totalRevolutions={totalRevolutions} size={clockSize} showMirror={prestigeMirrorLevel >= 1} />
-        {extraAngles.map((a, i) => (
-          <Clock key={i} angle={a} totalRevolutions={extraRevolutions[i]} size={clockSize} showMirror={prestigeMirrorLevel >= i + 2} />
-        ))}
+      <div className="flex items-center justify-center gap-6">
+        {/* Main clock — glow effects + click to add a second */}
+        <div
+          onClick={addSecond}
+          style={{
+            cursor: 'pointer',
+            filter: isFracture
+              ? 'drop-shadow(0 0 32px rgba(231,76,60,0.9))'
+              : isReverse
+                ? 'drop-shadow(0 0 28px rgba(231,76,60,0.85))'
+                : isSurge
+                  ? 'drop-shadow(0 0 40px rgba(168,143,255,0.85))'
+                  : isFastTime
+                    ? (fastTimeIsDebuff ? 'drop-shadow(0 0 24px rgba(231,76,60,0.65))' : 'drop-shadow(0 0 24px rgba(255,200,80,0.55))')
+                    : 'none',
+            transition: 'filter 0.4s ease',
+          }}
+        >
+          <Clock angle={angle} totalRevolutions={totalRevolutions} size={220} showMirror={prestigeMirrorLevel >= 1} />
+        </div>
+
+        {/* Extra clocks — stacked vertically on the right */}
+        {extraAngles.length > 0 && (
+          <div className="flex flex-col items-center gap-2">
+            {extraAngles.map((a, i) => (
+              <ExtraClock key={i} angle={a} size={90} />
+            ))}
+          </div>
+        )}
       </div>
 
       <EnergyDisplay energy={energy} energyPerSecond={energyPerSecond} timeDust={timeDust} />
