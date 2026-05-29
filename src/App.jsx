@@ -63,6 +63,11 @@ export default function App() {
     prestigeBoostLevel, prestigeBoostCost, buyPrestigeBoost, prestigeBoostAtMax,
     prestigeAnchorLevel, prestigeAnchorCost, buyPrestigeAnchor,
     prestigeMirrorLevel, prestigeMirrorCost, buyPrestigeMirror, prestigeMirrorAtMax,
+    prestigeTdLevel, prestigeTdCost, buyPrestigeTd,
+    prestigeEntropyReduceLevel, prestigeEntropyReduceCost, buyPrestigeEntropyReduce, prestigeEntropyReduceAtMax,
+    prestigeEntropyTeLevel, prestigeEntropyTeCost, buyPrestigeEntropyTe, prestigeEntropyTeAtMax,
+    prestigeEntropyTdLevel, prestigeEntropyTdCost, buyPrestigeEntropyTd, prestigeEntropyTdAtMax,
+    prestigeAscendLevel, prestigeAscendCost, buyPrestigeAscend, prestigeAscendAtMax,
     addSecond,
     resetGame,
     debugAddEnergy,
@@ -280,6 +285,11 @@ export default function App() {
           prestigeBoostLevel={prestigeBoostLevel} prestigeBoostCost={prestigeBoostCost} buyPrestigeBoost={buyPrestigeBoost} prestigeBoostAtMax={prestigeBoostAtMax}
           prestigeAnchorLevel={prestigeAnchorLevel} prestigeAnchorCost={prestigeAnchorCost} buyPrestigeAnchor={buyPrestigeAnchor}
           prestigeMirrorLevel={prestigeMirrorLevel} prestigeMirrorCost={prestigeMirrorCost} buyPrestigeMirror={buyPrestigeMirror} prestigeMirrorAtMax={prestigeMirrorAtMax}
+          prestigeTdLevel={prestigeTdLevel} prestigeTdCost={prestigeTdCost} buyPrestigeTd={buyPrestigeTd}
+          prestigeEntropyReduceLevel={prestigeEntropyReduceLevel} prestigeEntropyReduceCost={prestigeEntropyReduceCost} buyPrestigeEntropyReduce={buyPrestigeEntropyReduce} prestigeEntropyReduceAtMax={prestigeEntropyReduceAtMax}
+          prestigeEntropyTeLevel={prestigeEntropyTeLevel} prestigeEntropyTeCost={prestigeEntropyTeCost} buyPrestigeEntropyTe={buyPrestigeEntropyTe} prestigeEntropyTeAtMax={prestigeEntropyTeAtMax}
+          prestigeEntropyTdLevel={prestigeEntropyTdLevel} prestigeEntropyTdCost={prestigeEntropyTdCost} buyPrestigeEntropyTd={buyPrestigeEntropyTd} prestigeEntropyTdAtMax={prestigeEntropyTdAtMax}
+          prestigeAscendLevel={prestigeAscendLevel} prestigeAscendCost={prestigeAscendCost} buyPrestigeAscend={buyPrestigeAscend} prestigeAscendAtMax={prestigeAscendAtMax}
         />
       )}
     </div>

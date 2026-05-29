@@ -106,6 +106,33 @@ export const PRESTIGE_ANCHOR_SCALING = 2.0;
 export const PRESTIGE_MIRROR_BASE_COST = 15;      // Mirror Clocks: backward hand per clock
 export const PRESTIGE_MIRROR_SCALING = 5.0;
 
+export const PRESTIGE_TD_BASE_COST = 20;          // Extra TD: +PRESTIGE_TD_BONUS yield per level
+export const PRESTIGE_TD_SCALING = 1.5;
+export const PRESTIGE_TD_BONUS = 0.20;            // +20% TD yield per level (cumulative additive)
+
+export const PRESTIGE_ENTROPY_REDUCE_BASE_COST = 20; // Reduce Entropy Effects
+export const PRESTIGE_ENTROPY_REDUCE_SCALING = 1.8;
+export const PRESTIGE_ENTROPY_REDUCE_MAX = 10;    // at max: all negative entropy effects suppressed
+
+// Tier 3 prestige upgrades — entropy flipped into a resource
+// Bonuses are flat per level, but only activate above PRESTIGE_ENTROPY_BONUS_THRESHOLD.
+export const PRESTIGE_ENTROPY_BONUS_THRESHOLD = 0.70; // entropy must exceed this for tier-3 bonuses
+
+export const PRESTIGE_ENTROPY_TE_BASE_COST = 30;     // Temporal Resonance: TE bonus above threshold
+export const PRESTIGE_ENTROPY_TE_SCALING = 2.0;
+export const PRESTIGE_ENTROPY_TE_BONUS = 0.20;        // flat +20% TE per level when entropy ≥ threshold
+export const PRESTIGE_ENTROPY_TE_MAX = 10;
+
+export const PRESTIGE_ENTROPY_TD_BASE_COST = 30;     // Chaos Harvest: TD bonus above threshold
+export const PRESTIGE_ENTROPY_TD_SCALING = 1.8;
+export const PRESTIGE_ENTROPY_TD_BONUS = 0.20;        // flat +20% TD per level when entropy ≥ threshold
+export const PRESTIGE_ENTROPY_TD_MAX = 10;
+
+export const PRESTIGE_ASCEND_BASE_COST = 30;         // Entropy Ascendance: entropy coefficient in PP formula
+export const PRESTIGE_ASCEND_COST_SCALING = 2.0;
+export const PRESTIGE_ASCEND_BOOST = 0.10;            // +0.10 to entropy coefficient per level
+export const PRESTIGE_ASCEND_MAX = 10;                // coefficient goes from 1.0 → 2.0 at max
+
 // ── Reverse Time ─────────────────────────────────────────────────────────────
 
 // Main clock randomly ticks backwards above this entropy threshold

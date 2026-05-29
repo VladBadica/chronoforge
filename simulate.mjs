@@ -75,21 +75,21 @@ const debuffChanceOf = (ent) => ent < ENTROPY_DEBUFF_THRESHOLD ? 0
 // Reverse Time fires per forward revolution with a chance; drains TE at the same rate as forward.
 const effectiveEPS = (s) => {
   const base = epsOf(s);
-  const sm   = speedMultAt(s.speedLevel) + s.clock2B;
-  const ent  = entropyOf(s.speedLevel, s.clock2B, s.stabilityLevel, s.clock4Red);
+  const sm = speedMultAt(s.speedLevel) + s.clock2B;
+  const ent = entropyOf(s.speedLevel, s.clock2B, s.stabilityLevel, s.clock4Red);
 
   // Fast Time: fraction of time active, split into buff/debuff
   const ftPeriodMs = BASE_REVOLUTION_MS / sm * (60 / 59);
-  const ftFrac     = Math.min(1, FAST_TIME_DURATION_MS / ftPeriodMs);
-  const dc         = debuffChanceOf(ent);
-  const ftDelta    = ftFrac * ((1 - dc) * (FAST_TIME_MULTIPLIER - 1) + dc * (FAST_TIME_DEBUFF_MULTIPLIER - 1));
+  const ftFrac = Math.min(1, FAST_TIME_DURATION_MS / ftPeriodMs);
+  const dc = debuffChanceOf(ent);
+  const ftDelta = ftFrac * ((1 - dc) * (FAST_TIME_MULTIPLIER - 1) + dc * (FAST_TIME_DEBUFF_MULTIPLIER - 1));
 
   // Reverse Time: expected TE drain per second
   let reverseDrain = 0;
   if (ent >= REVERSE_ENTROPY_THRESHOLD) {
-    const t      = (ent - REVERSE_ENTROPY_THRESHOLD) / (1 - REVERSE_ENTROPY_THRESHOLD);
+    const t = (ent - REVERSE_ENTROPY_THRESHOLD) / (1 - REVERSE_ENTROPY_THRESHOLD);
     const chance = REVERSE_CHANCE_AT_THRESHOLD + t * (REVERSE_CHANCE_AT_MAX - REVERSE_CHANCE_AT_THRESHOLD);
-    const durMs  = REVERSE_DURATION_AT_THRESHOLD + t * (REVERSE_DURATION_AT_MAX - REVERSE_DURATION_AT_THRESHOLD);
+    const durMs = REVERSE_DURATION_AT_THRESHOLD + t * (REVERSE_DURATION_AT_MAX - REVERSE_DURATION_AT_THRESHOLD);
     reverseDrain = chance * (durMs / (BASE_REVOLUTION_MS / sm)) * base;
   }
 
@@ -127,10 +127,10 @@ const TD_INTERVAL = 720 / 11; // ≈65.45 main-clock revolutions per TimeDust ev
 // speedW/energyW/stabilityW: multipliers on the efficiency score for each upgrade type.
 // stabThresh: entropy level at which stability purchases are considered at all.
 const STRATEGIES = {
-  greedy: { label: 'Greedy (best ROI)',                 speedW: 1, energyW: 1, stabilityW: 1, stabThresh: FRACTURE_ENTROPY_THRESHOLD },
-  speed:  { label: 'Speed Focus (3× speed priority)',   speedW: 3, energyW: 1, stabilityW: 1, stabThresh: FRACTURE_ENTROPY_THRESHOLD },
+  greedy: { label: 'Greedy (best ROI)', speedW: 1, energyW: 1, stabilityW: 1, stabThresh: FRACTURE_ENTROPY_THRESHOLD },
+  speed: { label: 'Speed Focus (3× speed priority)', speedW: 3, energyW: 1, stabilityW: 1, stabThresh: FRACTURE_ENTROPY_THRESHOLD },
   energy: { label: 'Energy Focus (3× energy priority)', speedW: 1, energyW: 3, stabilityW: 1, stabThresh: FRACTURE_ENTROPY_THRESHOLD },
-  safe:   { label: 'Entropy Safe (buy stability early)', speedW: 1, energyW: 1, stabilityW: 3, stabThresh: 0.1 },
+  safe: { label: 'Entropy Safe (buy stability early)', speedW: 1, energyW: 1, stabilityW: 3, stabThresh: 0.1 },
 };
 const STRATEGY_KEY = process.argv[3] ?? 'greedy';
 if (!STRATEGIES[STRATEGY_KEY]) {
@@ -327,12 +327,12 @@ while (S.ms < MAX_MS) {
 
   // TimeDust + Time Fracture: both fire on minute/hour overlap (~every 65.45 main revolutions)
   const tdBefore = Math.floor(prevRevs / TD_INTERVAL);
-  const tdAfter  = Math.floor(S.totalRevs / TD_INTERVAL);
+  const tdAfter = Math.floor(S.totalRevs / TD_INTERVAL);
   if (tdAfter > tdBefore) {
     const newEvents = tdAfter - tdBefore;
     S.timeDust += newEvents;
     if (ent >= FRACTURE_ENTROPY_THRESHOLD) {
-      const t        = (ent - FRACTURE_ENTROPY_THRESHOLD) / (1 - FRACTURE_ENTROPY_THRESHOLD);
+      const t = (ent - FRACTURE_ENTROPY_THRESHOLD) / (1 - FRACTURE_ENTROPY_THRESHOLD);
       const lossRate = FRACTURE_LOSS_AT_THRESHOLD + t * (FRACTURE_LOSS_AT_MAX - FRACTURE_LOSS_AT_THRESHOLD);
       for (let i = 0; i < newEvents; i++) {
         S.energy = Math.max(0, S.energy * (1 - lossRate));

@@ -80,6 +80,20 @@ export const useGameStore = create((set) => {
       prestigeClockAtMax: snapshot.prestigeClockAtMax,
       prestigeBoostAtMax: snapshot.prestigeBoostAtMax,
       prestigeMirrorAtMax: snapshot.prestigeMirrorAtMax,
+      prestigeTdLevel: snapshot.prestigeTdLevel,
+      prestigeTdCost: snapshot.prestigeTdCost,
+      prestigeEntropyReduceLevel: snapshot.prestigeEntropyReduceLevel,
+      prestigeEntropyReduceCost: snapshot.prestigeEntropyReduceCost,
+      prestigeEntropyReduceAtMax: snapshot.prestigeEntropyReduceAtMax,
+      prestigeEntropyTeLevel: snapshot.prestigeEntropyTeLevel,
+      prestigeEntropyTeCost:  snapshot.prestigeEntropyTeCost,
+      prestigeEntropyTeAtMax: snapshot.prestigeEntropyTeAtMax,
+      prestigeEntropyTdLevel: snapshot.prestigeEntropyTdLevel,
+      prestigeEntropyTdCost:  snapshot.prestigeEntropyTdCost,
+      prestigeEntropyTdAtMax: snapshot.prestigeEntropyTdAtMax,
+      prestigeAscendLevel:    snapshot.prestigeAscendLevel,
+      prestigeAscendCost:     snapshot.prestigeAscendCost,
+      prestigeAscendAtMax:    snapshot.prestigeAscendAtMax,
     });
   });
 
@@ -141,6 +155,20 @@ export const useGameStore = create((set) => {
     prestigeClockAtMax: false,
     prestigeBoostAtMax: false,
     prestigeMirrorAtMax: false,
+    prestigeTdLevel: 0,
+    prestigeTdCost: 20,
+    prestigeEntropyReduceLevel: 0,
+    prestigeEntropyReduceCost: 20,
+    prestigeEntropyReduceAtMax: false,
+    prestigeEntropyTeLevel: 0,
+    prestigeEntropyTeCost:  30,
+    prestigeEntropyTeAtMax: false,
+    prestigeEntropyTdLevel: 0,
+    prestigeEntropyTdCost:  30,
+    prestigeEntropyTdAtMax: false,
+    prestigeAscendLevel:    0,
+    prestigeAscendCost:     30,
+    prestigeAscendAtMax:    false,
 
     // --- actions ---
 
@@ -191,6 +219,11 @@ export const useGameStore = create((set) => {
     buyPrestigeBoost: () => { gameEngine.buyPrestigeBoost(); },
     buyPrestigeAnchor: () => { gameEngine.buyPrestigeAnchor(); },
     buyPrestigeMirror: () => { gameEngine.buyPrestigeMirror(); },
+    buyPrestigeTd: () => { gameEngine.buyPrestigeTd(); },
+    buyPrestigeEntropyReduce: () => { gameEngine.buyPrestigeEntropyReduce(); },
+    buyPrestigeEntropyTe: () => { gameEngine.buyPrestigeEntropyTe(); },
+    buyPrestigeEntropyTd: () => { gameEngine.buyPrestigeEntropyTd(); },
+    buyPrestigeAscend:    () => { gameEngine.buyPrestigeAscend(); },
 
     resetGame: () => {
       gameEngine.reset();

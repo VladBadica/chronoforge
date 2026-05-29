@@ -1,4 +1,4 @@
-const UPGRADES = [
+const UPGRADES_TIER1 = [
   {
     key: 'speed',
     label: 'Boost Accelerate Time',
@@ -41,6 +41,9 @@ const UPGRADES = [
     levelKey: 'prestigeAnchorLevel',
     buyKey: 'buyPrestigeAnchor',
   },
+];
+
+const UPGRADES_TIER2 = [
   {
     key: 'mirror',
     label: 'Mirror Clocks',
@@ -49,6 +52,53 @@ const UPGRADES = [
     levelKey: 'prestigeMirrorLevel',
     buyKey: 'buyPrestigeMirror',
     atMaxKey: 'prestigeMirrorAtMax',
+  },
+  {
+    key: 'td',
+    label: 'Extra TD',
+    desc: '+20% TD yield per level',
+    costKey: 'prestigeTdCost',
+    levelKey: 'prestigeTdLevel',
+    buyKey: 'buyPrestigeTd',
+  },
+  {
+    key: 'entropyReduce',
+    label: 'Entropy Shield',
+    desc: 'Reduces all negative entropy effects',
+    costKey: 'prestigeEntropyReduceCost',
+    levelKey: 'prestigeEntropyReduceLevel',
+    buyKey: 'buyPrestigeEntropyReduce',
+    atMaxKey: 'prestigeEntropyReduceAtMax',
+  },
+];
+
+const UPGRADES_TIER3 = [
+  {
+    key: 'entropyTe',
+    label: 'Temporal Resonance',
+    desc: 'Above 70% entropy: +20% TE yield per level',
+    costKey: 'prestigeEntropyTeCost',
+    levelKey: 'prestigeEntropyTeLevel',
+    buyKey: 'buyPrestigeEntropyTe',
+    atMaxKey: 'prestigeEntropyTeAtMax',
+  },
+  {
+    key: 'entropyTd',
+    label: 'Chaos Harvest',
+    desc: 'Above 70% entropy: +20% TD yield per level',
+    costKey: 'prestigeEntropyTdCost',
+    levelKey: 'prestigeEntropyTdLevel',
+    buyKey: 'buyPrestigeEntropyTd',
+    atMaxKey: 'prestigeEntropyTdAtMax',
+  },
+  {
+    key: 'ascend',
+    label: 'Entropy Ascendance',
+    desc: 'Entropy coefficient in PP formula scales up to 2× at Lv10',
+    costKey: 'prestigeAscendCost',
+    levelKey: 'prestigeAscendLevel',
+    buyKey: 'buyPrestigeAscend',
+    atMaxKey: 'prestigeAscendAtMax',
   },
 ];
 
@@ -65,16 +115,21 @@ export function PrestigeModal({
   prestigeBoostLevel, prestigeBoostCost, buyPrestigeBoost, prestigeBoostAtMax,
   prestigeAnchorLevel, prestigeAnchorCost, buyPrestigeAnchor,
   prestigeMirrorLevel, prestigeMirrorCost, buyPrestigeMirror, prestigeMirrorAtMax,
+  prestigeTdLevel, prestigeTdCost, buyPrestigeTd,
+  prestigeEntropyReduceLevel, prestigeEntropyReduceCost, buyPrestigeEntropyReduce, prestigeEntropyReduceAtMax,
+  prestigeEntropyTeLevel, prestigeEntropyTeCost, buyPrestigeEntropyTe, prestigeEntropyTeAtMax,
+  prestigeEntropyTdLevel, prestigeEntropyTdCost, buyPrestigeEntropyTd, prestigeEntropyTdAtMax,
+  prestigeAscendLevel, prestigeAscendCost, buyPrestigeAscend, prestigeAscendAtMax,
 }) {
   const ppGain = Math.floor(timeDust * (1 + entropy));
   const ppBase = Math.floor(timeDust);
   const ppBonus = ppGain - ppBase;
   const totalAfter = prestigePoints + ppGain;
 
-  const levels = { prestigeSpeedLevel, prestigeEnergyLevel, prestigeClockLevel, prestigeBoostLevel, prestigeAnchorLevel, prestigeMirrorLevel };
-  const costs = { prestigeSpeedCost, prestigeEnergyCost, prestigeClockCost, prestigeBoostCost, prestigeAnchorCost, prestigeMirrorCost };
-  const actions = { buyPrestigeSpeed, buyPrestigeEnergy, buyPrestigeClock, buyPrestigeBoost, buyPrestigeAnchor, buyPrestigeMirror };
-  const atMaxMap = { prestigeClockAtMax, prestigeBoostAtMax, prestigeMirrorAtMax };
+  const levels = { prestigeSpeedLevel, prestigeEnergyLevel, prestigeClockLevel, prestigeBoostLevel, prestigeAnchorLevel, prestigeMirrorLevel, prestigeTdLevel, prestigeEntropyReduceLevel, prestigeEntropyTeLevel, prestigeEntropyTdLevel, prestigeAscendLevel };
+  const costs = { prestigeSpeedCost, prestigeEnergyCost, prestigeClockCost, prestigeBoostCost, prestigeAnchorCost, prestigeMirrorCost, prestigeTdCost, prestigeEntropyReduceCost, prestigeEntropyTeCost, prestigeEntropyTdCost, prestigeAscendCost };
+  const actions = { buyPrestigeSpeed, buyPrestigeEnergy, buyPrestigeClock, buyPrestigeBoost, buyPrestigeAnchor, buyPrestigeMirror, buyPrestigeTd, buyPrestigeEntropyReduce, buyPrestigeEntropyTe, buyPrestigeEntropyTd, buyPrestigeAscend };
+  const atMaxMap = { prestigeClockAtMax, prestigeBoostAtMax, prestigeMirrorAtMax, prestigeEntropyReduceAtMax, prestigeEntropyTeAtMax, prestigeEntropyTdAtMax, prestigeAscendAtMax };
 
   return (
     <div
@@ -158,62 +213,69 @@ export function PrestigeModal({
         </div>
 
         {/* Prestige Upgrades */}
-        <div className="flex flex-col gap-2">
-          <h3
-            className="text-xs font-semibold uppercase tracking-widest text-center"
-            style={{ color: 'var(--color-muted)' }}
-          >
-            Prestige Upgrades
-          </h3>
-          <div className="flex flex-col gap-2">
-            {UPGRADES.map((u) => {
-              const level = levels[u.levelKey];
-              const cost = costs[u.costKey];
-              const maxed = u.atMaxKey ? atMaxMap[u.atMaxKey] : false;
-              const canAfford = !maxed && prestigePoints >= cost;
-              return (
-                <div
-                  key={u.key}
-                  className="flex items-center justify-between rounded-xl px-4 py-3"
+        {(() => {
+          const renderCard = (u) => {
+            const level = levels[u.levelKey];
+            const cost = costs[u.costKey];
+            const maxed = u.atMaxKey ? atMaxMap[u.atMaxKey] : false;
+            const canAfford = !maxed && prestigePoints >= cost;
+            return (
+              <div
+                key={u.key}
+                className="flex items-center justify-between rounded-xl"
+                style={{ background: 'rgba(124,111,247,0.04)', border: '1px solid rgba(124,111,247,0.12)', padding: '5px' }}
+              >
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-sm font-semibold" style={{ color: '#c0b8ff' }}>
+                    {u.label}
+                    {level > 0 && (
+                      <span className="ml-2 text-xs font-normal" style={{ color: '#a88fff', paddingLeft: '4px' }}>lv {level}</span>
+                    )}
+                  </span>
+                  <span className="text-xs" style={{ color: 'var(--color-muted)' }}>{u.desc}</span>
+                </div>
+                <button
+                  onClick={canAfford ? actions[u.buyKey] : undefined}
+                  disabled={!canAfford}
+                  className="ml-3 shrink-0 rounded-lg text-xs font-semibold transition-all duration-150"
                   style={{
-                    background: 'rgba(124,111,247,0.04)',
-                    border: '1px solid rgba(124,111,247,0.12)',
-                    padding: '5px'
+                    background: canAfford ? 'linear-gradient(135deg, #9d8fffcc, #7c6ff7)' : 'var(--color-border)',
+                    color: canAfford ? '#fff' : 'var(--color-muted)',
+                    cursor: canAfford ? 'pointer' : 'not-allowed',
+                    border: 'none',
+                    whiteSpace: 'nowrap',
+                    padding: '5px 8px',
                   }}
                 >
-                  <div className="flex flex-col gap-0.5" >
-                    <span className="text-sm font-semibold" style={{ color: '#c0b8ff' }}>
-                      {u.label}
-                      {level > 0 && (
-                        <span className="ml-2 text-xs font-normal" style={{ color: '#a88fff', paddingLeft: '4px' }}>
-                          lv {level}
-                        </span>
-                      )}
-                    </span>
-                    <span className="text-xs" style={{ color: 'var(--color-muted)' }}>
-                      {u.desc}
-                    </span>
-                  </div>
-                  <button
-                    onClick={canAfford ? actions[u.buyKey] : undefined}
-                    disabled={!canAfford}
-                    className="ml-4 shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150"
-                    style={{
-                      background: canAfford ? 'linear-gradient(135deg, #9d8fffcc, #7c6ff7)' : 'var(--color-border)',
-                      color: canAfford ? '#fff' : 'var(--color-muted)',
-                      cursor: canAfford ? 'pointer' : 'not-allowed',
-                      border: 'none',
-                      whiteSpace: 'nowrap',
-                      padding: '5px'
-                    }}
-                  >
-                    {maxed ? 'MAX' : `${cost} PP`}
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+                  {maxed ? 'MAX' : `${cost} PP`}
+                </button>
+              </div>
+            );
+          };
+          return (
+            <div className="flex flex-col gap-2">
+              <h3
+                className="text-xs font-semibold uppercase tracking-widest text-center"
+                style={{ color: 'var(--color-muted)' }}
+              >
+                Prestige Upgrades
+              </h3>
+              <div className="grid grid-cols-2 gap-2">
+                {UPGRADES_TIER1.map(renderCard)}
+              </div>
+
+              <div style={{ borderTop: '1px solid rgba(124,111,247,0.2)', margin: '2px 0' }} />
+              <div className="grid grid-cols-2 gap-2">
+                {UPGRADES_TIER2.map(renderCard)}
+              </div>
+
+              <div style={{ borderTop: '1px solid rgba(124,111,247,0.2)', margin: '2px 0' }} />
+              <div className="grid grid-cols-2 gap-2">
+                {UPGRADES_TIER3.map(renderCard)}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Actions */}
         <div className="flex gap-3">

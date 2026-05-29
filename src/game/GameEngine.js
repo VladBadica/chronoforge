@@ -23,6 +23,12 @@ import {
   PRESTIGE_BOOST_BASE_COST, PRESTIGE_BOOST_SCALING,
   PRESTIGE_ANCHOR_BASE_COST, PRESTIGE_ANCHOR_SCALING,
   PRESTIGE_MIRROR_BASE_COST, PRESTIGE_MIRROR_SCALING,
+  PRESTIGE_TD_BASE_COST, PRESTIGE_TD_SCALING, PRESTIGE_TD_BONUS,
+  PRESTIGE_ENTROPY_REDUCE_BASE_COST, PRESTIGE_ENTROPY_REDUCE_SCALING, PRESTIGE_ENTROPY_REDUCE_MAX,
+  PRESTIGE_ENTROPY_BONUS_THRESHOLD,
+  PRESTIGE_ENTROPY_TE_BASE_COST, PRESTIGE_ENTROPY_TE_SCALING, PRESTIGE_ENTROPY_TE_BONUS, PRESTIGE_ENTROPY_TE_MAX,
+  PRESTIGE_ENTROPY_TD_BASE_COST, PRESTIGE_ENTROPY_TD_SCALING, PRESTIGE_ENTROPY_TD_BONUS, PRESTIGE_ENTROPY_TD_MAX,
+  PRESTIGE_ASCEND_BASE_COST, PRESTIGE_ASCEND_COST_SCALING, PRESTIGE_ASCEND_BOOST, PRESTIGE_ASCEND_MAX,
   UPGRADE_BASE_COST,
   UPGRADE_COST_EXPONENT,
   UPGRADE_SPEED_BONUS,
@@ -121,6 +127,11 @@ export class GameEngine {
     this._prestigeBoostLevel  = 0;
     this._prestigeAnchorLevel = 0;
     this._prestigeMirrorLevel = 0;
+    this._prestigeTdLevel          = 0;
+    this._prestigeEntropyReduceLevel = 0;
+    this._prestigeEntropyTeLevel   = 0;
+    this._prestigeEntropyTdLevel   = 0;
+    this._prestigeAscendLevel      = 0;
 
     // --- loop bookkeeping ---
     this._rafId = null;
@@ -204,6 +215,11 @@ export class GameEngine {
     this._prestigeBoostLevel  = 0;
     this._prestigeAnchorLevel = 0;
     this._prestigeMirrorLevel = 0;
+    this._prestigeTdLevel          = 0;
+    this._prestigeEntropyReduceLevel = 0;
+    this._prestigeEntropyTeLevel   = 0;
+    this._prestigeEntropyTdLevel   = 0;
+    this._prestigeAscendLevel      = 0;
     try {
       localStorage.removeItem(SAVE_KEY);
     } catch { /* ignore */ }
@@ -213,7 +229,8 @@ export class GameEngine {
   /** Prestige — converts TD to PP and resets all non-prestige progress */
   prestige() {
     if (this._timeDust < PRESTIGE_COST_TD) return false;
-    this._prestigePoints += Math.floor(this._timeDust * (1 + this.getEntropy()));
+    const ppEntropyCoeff = 1 + this._prestigeAscendLevel * PRESTIGE_ASCEND_BOOST;
+    this._prestigePoints += Math.floor(this._timeDust * (1 + this.getEntropy() * ppEntropyCoeff));
     this._angle = 0;
     this._energy = 0;
     this._speedLevel = this._prestigeSpeedLevel;
@@ -306,6 +323,54 @@ export class GameEngine {
   getPrestigeBoostCost()  { return this._prestigeCost(PRESTIGE_BOOST_BASE_COST,  PRESTIGE_BOOST_SCALING,  this._prestigeBoostLevel);  }
   getPrestigeAnchorCost() { return this._prestigeCost(PRESTIGE_ANCHOR_BASE_COST, PRESTIGE_ANCHOR_SCALING, this._prestigeAnchorLevel); }
   getPrestigeMirrorCost() { return this._prestigeCost(PRESTIGE_MIRROR_BASE_COST, PRESTIGE_MIRROR_SCALING, this._prestigeMirrorLevel); }
+
+  buyPrestigeTd() {
+    return this._buyPrestigeUpgrade(this.getPrestigeTdCost, '_prestigeTdLevel');
+  }
+
+  buyPrestigeEntropyReduce() {
+    if (this._prestigeEntropyReduceLevel >= PRESTIGE_ENTROPY_REDUCE_MAX) return false;
+    return this._buyPrestigeUpgrade(this.getPrestigeEntropyReduceCost, '_prestigeEntropyReduceLevel');
+  }
+
+  getPrestigeTdCost()            { return this._prestigeCost(PRESTIGE_TD_BASE_COST,            PRESTIGE_TD_SCALING,            this._prestigeTdLevel); }
+  getPrestigeEntropyReduceCost() { return this._prestigeCost(PRESTIGE_ENTROPY_REDUCE_BASE_COST, PRESTIGE_ENTROPY_REDUCE_SCALING, this._prestigeEntropyReduceLevel); }
+
+  /** Scaling factor applied to all negative entropy effects (1 = full, 0 = none). */
+  _entropyReduceFactor() {
+    return 1 - this._prestigeEntropyReduceLevel / PRESTIGE_ENTROPY_REDUCE_MAX;
+  }
+
+  buyPrestigeEntropyTe() {
+    if (this._prestigeEntropyTeLevel >= PRESTIGE_ENTROPY_TE_MAX) return false;
+    return this._buyPrestigeUpgrade(this.getPrestigeEntropyTeCost, '_prestigeEntropyTeLevel');
+  }
+
+  buyPrestigeEntropyTd() {
+    if (this._prestigeEntropyTdLevel >= PRESTIGE_ENTROPY_TD_MAX) return false;
+    return this._buyPrestigeUpgrade(this.getPrestigeEntropyTdCost, '_prestigeEntropyTdLevel');
+  }
+
+  buyPrestigeAscend() {
+    if (this._prestigeAscendLevel >= PRESTIGE_ASCEND_MAX) return false;
+    return this._buyPrestigeUpgrade(this.getPrestigeAscendCost, '_prestigeAscendLevel');
+  }
+
+  getPrestigeEntropyTeCost() { return this._prestigeCost(PRESTIGE_ENTROPY_TE_BASE_COST, PRESTIGE_ENTROPY_TE_SCALING, this._prestigeEntropyTeLevel); }
+  getPrestigeEntropyTdCost() { return this._prestigeCost(PRESTIGE_ENTROPY_TD_BASE_COST, PRESTIGE_ENTROPY_TD_SCALING, this._prestigeEntropyTdLevel); }
+  getPrestigeAscendCost()    { return this._prestigeCost(PRESTIGE_ASCEND_BASE_COST,     PRESTIGE_ASCEND_COST_SCALING, this._prestigeAscendLevel); }
+
+  /**
+   * Combined TE multiplier: base 1.0, minus entropy penalty, plus entropy bonus from Temporal Resonance.
+   * Can exceed 1.0 at high entropy with high Temporal Resonance levels.
+   */
+  getEntropyTeMultiplier() {
+    const entropy = this.getEntropy();
+    const bonus = entropy >= PRESTIGE_ENTROPY_BONUS_THRESHOLD
+      ? this._prestigeEntropyTeLevel * PRESTIGE_ENTROPY_TE_BONUS
+      : 0;
+    return Math.max(0, 1 - this.getEntropyTePenalty() + bonus);
+  }
 
   /** Buy one level of the speed upgrade — returns false if not enough energy */
   buyUpgrade() {
@@ -440,7 +505,8 @@ export class GameEngine {
     const entropy = this.getEntropy();
     if (entropy < ENTROPY_TE_PENALTY_THRESHOLD) return 0;
     const t = (entropy - ENTROPY_TE_PENALTY_THRESHOLD) / (1 - ENTROPY_TE_PENALTY_THRESHOLD);
-    return ENTROPY_TE_PENALTY_AT_THRESHOLD + t * (ENTROPY_TE_PENALTY_AT_MAX - ENTROPY_TE_PENALTY_AT_THRESHOLD);
+    const base = ENTROPY_TE_PENALTY_AT_THRESHOLD + t * (ENTROPY_TE_PENALTY_AT_MAX - ENTROPY_TE_PENALTY_AT_THRESHOLD);
+    return base * this._entropyReduceFactor();
   }
 
   /** Buy one level of the Improve Time upgrade — returns false if not enough energy */
@@ -483,7 +549,7 @@ export class GameEngine {
     const mainRPS = (1000 / BASE_REVOLUTION_MS) * (this.getSpeedMultiplier() + this._clock2SpeedBonus) * fastMult * surgeMult;
     const energyPerRev = this.getEnergyPerRevolution();
     const mainMirrorMult = this._prestigeMirrorLevel >= 1 ? 2 : 1;
-    return mainRPS * energyPerRev * surgeEnergyMult * mainMirrorMult * (1 - this.getEntropyTePenalty());
+    return mainRPS * energyPerRev * surgeEnergyMult * mainMirrorMult * this.getEntropyTeMultiplier();
   }
 
   // -------------------------------------------------------------------------
@@ -510,6 +576,11 @@ export class GameEngine {
       prestigeBoostLevel:  this._prestigeBoostLevel,
       prestigeAnchorLevel: this._prestigeAnchorLevel,
       prestigeMirrorLevel: this._prestigeMirrorLevel,
+      prestigeTdLevel: this._prestigeTdLevel,
+      prestigeEntropyReduceLevel: this._prestigeEntropyReduceLevel,
+      prestigeEntropyTeLevel: this._prestigeEntropyTeLevel,
+      prestigeEntropyTdLevel: this._prestigeEntropyTdLevel,
+      prestigeAscendLevel:    this._prestigeAscendLevel,
       totalRevolutions: this._totalRevolutions,
       extraRevolutions: this._extraRevolutions,
       savedAt: Date.now(),
@@ -550,6 +621,11 @@ export class GameEngine {
       this._prestigeBoostLevel  = data.prestigeBoostLevel  ?? 0;
       this._prestigeAnchorLevel = data.prestigeAnchorLevel ?? 0;
       this._prestigeMirrorLevel = data.prestigeMirrorLevel ?? 0;
+      this._prestigeTdLevel          = data.prestigeTdLevel ?? 0;
+      this._prestigeEntropyReduceLevel = data.prestigeEntropyReduceLevel ?? 0;
+      this._prestigeEntropyTeLevel   = data.prestigeEntropyTeLevel ?? 0;
+      this._prestigeEntropyTdLevel   = data.prestigeEntropyTdLevel ?? 0;
+      this._prestigeAscendLevel      = data.prestigeAscendLevel ?? 0;
       this._fastTimeRemaining = 0;
       this._surgeRemaining = 0;
       this._prevNear = Array(this._clockCount).fill(true);
@@ -641,7 +717,7 @@ export class GameEngine {
         : Math.floor(prevAngle / 360) - Math.floor(rawPosition / 360);
       if (reverseCrossings > 0) {
         const mirrorMult = this._prestigeMirrorLevel >= 1 ? 2 : 1;
-        const teMult = (1 - this.getEntropyTePenalty()) * surgeEnergyMult * mirrorMult;
+        const teMult = this.getEntropyTeMultiplier() * surgeEnergyMult * mirrorMult;
         this._energy = Math.max(0, this._energy - reverseCrossings * this.getEnergyPerRevolution() * teMult);
         this._totalRevolutions = Math.max(0, this._totalRevolutions - reverseCrossings);
       }
@@ -652,7 +728,7 @@ export class GameEngine {
       const crossings = Math.floor((prevAngle + deltaDegrees) / 360);
       if (crossings > 0) {
         const mirrorMult = this._prestigeMirrorLevel >= 1 ? 2 : 1;
-        const teMult = (1 - this.getEntropyTePenalty()) * surgeEnergyMult * mirrorMult;
+        const teMult = this.getEntropyTeMultiplier() * surgeEnergyMult * mirrorMult;
         this._energy += crossings * this.getEnergyPerRevolution() * teMult;
         this._totalRevolutions += crossings;
 
@@ -660,7 +736,7 @@ export class GameEngine {
         const entropy = this.getEntropy();
         if (entropy >= REVERSE_ENTROPY_THRESHOLD) {
           const t = (entropy - REVERSE_ENTROPY_THRESHOLD) / (1 - REVERSE_ENTROPY_THRESHOLD);
-          const chance = REVERSE_CHANCE_AT_THRESHOLD + t * (REVERSE_CHANCE_AT_MAX - REVERSE_CHANCE_AT_THRESHOLD);
+          const chance = (REVERSE_CHANCE_AT_THRESHOLD + t * (REVERSE_CHANCE_AT_MAX - REVERSE_CHANCE_AT_THRESHOLD)) * this._entropyReduceFactor();
           if (Math.random() < chance) {
             const duration = REVERSE_DURATION_AT_THRESHOLD + t * (REVERSE_DURATION_AT_MAX - REVERSE_DURATION_AT_THRESHOLD);
             this._reverseTimeRemaining = duration;
@@ -708,14 +784,19 @@ export class GameEngine {
     const isNear = distance < TIMEDUST_THRESHOLD_DEG;
 
     if (isNear && !this._prevHourMinNear[slotIndex]) {
-      this._timeDust += yieldMult;
-
       const entropy = this.getEntropy();
+      const entropyTdBonus = entropy >= PRESTIGE_ENTROPY_BONUS_THRESHOLD
+        ? this._prestigeEntropyTdLevel * PRESTIGE_ENTROPY_TD_BONUS
+        : 0;
+      const tdMult = (1 + this._prestigeTdLevel * PRESTIGE_TD_BONUS) * (1 + entropyTdBonus);
+      this._timeDust += yieldMult * tdMult;
       if (entropy >= FRACTURE_ENTROPY_THRESHOLD) {
         const t = (entropy - FRACTURE_ENTROPY_THRESHOLD) / (1 - FRACTURE_ENTROPY_THRESHOLD);
-        const lossRate = FRACTURE_LOSS_AT_THRESHOLD + t * (FRACTURE_LOSS_AT_MAX - FRACTURE_LOSS_AT_THRESHOLD);
-        this._energy = Math.max(0, this._energy * (1 - lossRate));
-        this._fractureFlash = FRACTURE_FLASH_MS;
+        const lossRate = (FRACTURE_LOSS_AT_THRESHOLD + t * (FRACTURE_LOSS_AT_MAX - FRACTURE_LOSS_AT_THRESHOLD)) * this._entropyReduceFactor();
+        if (lossRate > 0) {
+          this._energy = Math.max(0, this._energy * (1 - lossRate));
+          this._fractureFlash = FRACTURE_FLASH_MS;
+        }
       }
     }
     this._prevHourMinNear[slotIndex] = isNear;
@@ -730,7 +811,7 @@ export class GameEngine {
     if (isNear && !this._prevNear[slotIndex]) {
       const entropy = this.getEntropy();
       const debuffChance = entropy >= ENTROPY_DEBUFF_THRESHOLD
-        ? ENTROPY_DEBUFF_CHANCE_MIN + (entropy - ENTROPY_DEBUFF_THRESHOLD) / (1 - ENTROPY_DEBUFF_THRESHOLD) * (ENTROPY_DEBUFF_CHANCE_MAX - ENTROPY_DEBUFF_CHANCE_MIN)
+        ? (ENTROPY_DEBUFF_CHANCE_MIN + (entropy - ENTROPY_DEBUFF_THRESHOLD) / (1 - ENTROPY_DEBUFF_THRESHOLD) * (ENTROPY_DEBUFF_CHANCE_MAX - ENTROPY_DEBUFF_CHANCE_MIN)) * this._entropyReduceFactor()
         : 0;
       this._fastTimeIsDebuff = Math.random() < debuffChance;
       this._fastTimeRemaining = FAST_TIME_DURATION_MS;
@@ -813,6 +894,20 @@ export class GameEngine {
         prestigeClockAtMax:  this._prestigeClockLevel >= CLOCK_MAX_EXTRA,
         prestigeBoostAtMax:  this._prestigeBoostLevel >= BOOST_MAX_LEVEL,
         prestigeMirrorAtMax: this._prestigeMirrorLevel >= CLOCK_MAX_EXTRA,
+        prestigeTdLevel:     this._prestigeTdLevel,
+        prestigeTdCost:      this.getPrestigeTdCost(),
+        prestigeEntropyReduceLevel: this._prestigeEntropyReduceLevel,
+        prestigeEntropyReduceCost:  this.getPrestigeEntropyReduceCost(),
+        prestigeEntropyReduceAtMax: this._prestigeEntropyReduceLevel >= PRESTIGE_ENTROPY_REDUCE_MAX,
+        prestigeEntropyTeLevel:  this._prestigeEntropyTeLevel,
+        prestigeEntropyTeCost:   this.getPrestigeEntropyTeCost(),
+        prestigeEntropyTeAtMax:  this._prestigeEntropyTeLevel >= PRESTIGE_ENTROPY_TE_MAX,
+        prestigeEntropyTdLevel:  this._prestigeEntropyTdLevel,
+        prestigeEntropyTdCost:   this.getPrestigeEntropyTdCost(),
+        prestigeEntropyTdAtMax:  this._prestigeEntropyTdLevel >= PRESTIGE_ENTROPY_TD_MAX,
+        prestigeAscendLevel:     this._prestigeAscendLevel,
+        prestigeAscendCost:      this.getPrestigeAscendCost(),
+        prestigeAscendAtMax:     this._prestigeAscendLevel >= PRESTIGE_ASCEND_MAX,
       });
     }
   }

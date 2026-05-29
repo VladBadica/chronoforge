@@ -75,6 +75,7 @@ export function Clock({ angle, totalRevolutions, size = 240, showMirror = false 
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
+
         </defs>
 
         {/* Clock face */}
@@ -145,7 +146,7 @@ export function Clock({ angle, totalRevolutions, size = 240, showMirror = false 
         {/* Hour hand */}
         <g transform={`rotate(${hourAngle}, ${CX}, ${CY})`}>
           <line
-            x1={CX} y1={CY + 12}
+            x1={CX} y1={CY}
             x2={CX} y2={CY - 44}
             stroke="#c8c0ff"
             strokeWidth={3.5}
@@ -156,7 +157,7 @@ export function Clock({ angle, totalRevolutions, size = 240, showMirror = false 
         {/* Minute hand */}
         <g transform={`rotate(${minuteAngle}, ${CX}, ${CY})`}>
           <line
-            x1={CX} y1={CY + 12}
+            x1={CX} y1={CY}
             x2={CX} y2={CY - 62}
             stroke="#a89fff"
             strokeWidth={2.5}
@@ -167,7 +168,7 @@ export function Clock({ angle, totalRevolutions, size = 240, showMirror = false 
         {/* Second hand */}
         <g transform={`rotate(${angle}, ${CX}, ${CY})`}>
           <line
-            x1={CX} y1={CY + 12}
+            x1={CX} y1={CY}
             x2={CX} y2={CY - 72}
             stroke="#7c6ff7"
             strokeWidth={1.5}
@@ -179,7 +180,7 @@ export function Clock({ angle, totalRevolutions, size = 240, showMirror = false 
         {showMirror && (
           <g transform={`rotate(${(360 - angle) % 360}, ${CX}, ${CY})`}>
             <line
-              x1={CX} y1={CY + 12}
+              x1={CX} y1={CY}
               x2={CX} y2={CY - 72}
               stroke="#e879f9"
               strokeWidth={1.5}
