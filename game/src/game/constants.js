@@ -135,7 +135,7 @@ export const PRESTIGE_ASCEND_MAX = 10;                // coefficient goes from 1
 
 // Tier 4 — Temporal Singularity
 export const PRESTIGE_SINGULARITY_COST = 100;         // one-time purchase
-export const PRESTIGE_SINGULARITY_SPEED_THRESHOLD = 1000; // 1000× = 100,000%; locks entropy to 1.0
+export const PRESTIGE_SINGULARITY_SPEED_THRESHOLD = 100; // 100x = 10,000%; locks entropy to 1.0
 
 // ── Reverse Time ─────────────────────────────────────────────────────────────
 

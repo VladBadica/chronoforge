@@ -173,7 +173,7 @@ Prestige preserves: `prestigePoints`, `lifetimePPSpent`, all prestige upgrade le
 
 | Upgrade | Effect | Max | Start cost |
 |---|---|---|---|
-| Mirror Clocks | Adds a backward-moving fractured hand (+1 per level) | 3 | 15 PP |
+| Mirror Hands | Adds a backward-moving fractured hand to the main clock. **Doubles TE per revolution** (`mirrorMult = prestigeMirrorLevel ≥ 1 ? 2 : 1`). One-time purchase. | 1 | 15 PP |
 | Extra TD | +20% TD yield per level (`PRESTIGE_TD_BONUS`) | — | 20 PP |
 | Entropy Shield | All negative entropy effects × `_entropyReduceFactor()`; at Lv10 = zero | 10 | 20 PP |
 

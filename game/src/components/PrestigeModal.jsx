@@ -46,8 +46,8 @@ const UPGRADES_TIER1 = [
 const UPGRADES_TIER2 = [
   {
     key: 'mirror',
-    label: 'Mirror Clocks',
-    desc: 'Adds a backward-moving hand (+1 clock per level)',
+    label: 'Mirror Hands',
+    desc: 'Adds a backward-moving fractured hand to the main clock. Doubles TE per revolution.',
     costKey: 'prestigeMirrorCost',
     levelKey: 'prestigeMirrorLevel',
     buyKey: 'buyPrestigeMirror',

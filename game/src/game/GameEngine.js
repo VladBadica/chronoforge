@@ -316,7 +316,7 @@ export class GameEngine {
   }
 
   buyPrestigeMirror() {
-    if (this._prestigeMirrorLevel >= CLOCK_MAX_EXTRA) return false;
+    if (this._prestigeMirrorLevel >= 1) return false;
     return this._buyPrestigeUpgrade(this.getPrestigeMirrorCost, '_prestigeMirrorLevel');
   }
 
@@ -909,7 +909,7 @@ export class GameEngine {
         prestigeMirrorCost:  this.getPrestigeMirrorCost(),
         prestigeClockAtMax:  this._prestigeClockLevel >= CLOCK_MAX_EXTRA,
         prestigeBoostAtMax:  this._prestigeBoostLevel >= BOOST_MAX_LEVEL,
-        prestigeMirrorAtMax: this._prestigeMirrorLevel >= CLOCK_MAX_EXTRA,
+        prestigeMirrorAtMax: this._prestigeMirrorLevel >= 1,
         prestigeTdLevel:     this._prestigeTdLevel,
         prestigeTdCost:      this.getPrestigeTdCost(),
         prestigeEntropyReduceLevel: this._prestigeEntropyReduceLevel,
