@@ -15,13 +15,13 @@ export const ENERGY_PER_REVOLUTION = 1;
 
 // Accelerate Time — increases main clock speed multiplier
 export const UPGRADE_BASE_COST = 2;
-export const UPGRADE_COST_EXPONENT = 1.35;
+export const UPGRADE_COST_EXPONENT = 1.3;
 export const UPGRADE_SPEED_BONUS = 0.20;          // base speed bonus for level 1
 export const UPGRADE_SPEED_BONUS_SCALING = 1.05;  // each level's bonus is 5% larger than the last
 
 // Improve Time — increases TE per revolution
 export const ENERGY_UPGRADE_BASE_COST = 2;
-export const ENERGY_UPGRADE_COST_EXPONENT = 1.50;
+export const ENERGY_UPGRADE_COST_EXPONENT = 1.3;
 export const ENERGY_UPGRADE_VALUE_BONUS = 0.60;
 export const ENERGY_UPGRADE_VALUE_SCALING = 1.05;
 

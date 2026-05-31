@@ -168,9 +168,19 @@ export class GameEngine {
     }
   }
 
-  /** Simulate one second of game time passing instantly — main clock only */
+  /** Simulate one second of game time passing instantly — main clock only.
+   *  Sub-steps so the second hand never skips over a 5° event window. */
   addSecond() {
-    this._update(1000, true);
+    const sm = this.getSpeedMultiplier() + this._clock2SpeedBonus;
+    const degsPerMs = 360 / (BASE_REVOLUTION_MS / sm);
+    // Step < event window (FAST_TIME_THRESHOLD_DEG = 5°) so no overlap can be skipped.
+    const stepMs = Math.max(1, Math.floor(FAST_TIME_THRESHOLD_DEG / degsPerMs));
+    let remaining = 1000;
+    while (remaining > 0) {
+      const step = Math.min(stepMs, remaining);
+      remaining -= step;
+      this._update(step, true, remaining > 0);
+    }
   }
 
   /** Debug: inject energy directly */
@@ -601,7 +611,7 @@ export class GameEngine {
       savedAt: Date.now(),
     };
     try {
-      localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+      localStorage.setItem(SAVE_KEY, btoa(JSON.stringify(data)));
     } catch {
       // Silently ignore storage errors (private browsing, quota exceeded, etc.)
     }
@@ -611,7 +621,10 @@ export class GameEngine {
     try {
       const raw = localStorage.getItem(SAVE_KEY);
       if (!raw) return;
-      const data = JSON.parse(raw);
+      // Decode base64; fall back to plain JSON for saves from before encoding was added.
+      let decoded;
+      try { decoded = atob(raw); } catch { decoded = raw; }
+      const data = JSON.parse(decoded);
 
       this._energy = data.energy ?? 0;
       this._speedLevel = data.speedLevel ?? 0;
@@ -699,7 +712,7 @@ export class GameEngine {
     this._rafId = requestAnimationFrame(this._loop.bind(this));
   }
 
-  _update(deltaMs, skipExtraClocks = false) {
+  _update(deltaMs, skipExtraClocks = false, silent = false) {
     // Decrement timers before this frame's physics.
     this._fastTimeRemaining = Math.max(0, this._fastTimeRemaining - deltaMs);
     this._fractureFlash = Math.max(0, this._fractureFlash - deltaMs);
@@ -789,7 +802,7 @@ export class GameEngine {
       }
     }
 
-    this._emitSnapshot();
+    if (!silent) this._emitSnapshot();
   }
 
   _checkHourMinuteOverlap(slotIndex, secondAngle, totalRevs, yieldMult = 1) {
