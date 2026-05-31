@@ -145,7 +145,7 @@ export default function App() {
             transition: 'filter 0.4s ease',
           }}
         >
-          <Clock angle={angle} totalRevolutions={totalRevolutions} size={220} showMirror={prestigeMirrorLevel >= 1} />
+          <Clock angle={angle} totalRevolutions={totalRevolutions} size={220} showMirror={prestigeMirrorLevel >= 1} entropy={entropy} />
         </div>
 
         {/* Extra clocks — stacked vertically on the right */}
