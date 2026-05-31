@@ -99,18 +99,18 @@ export const PRESTIGE_ENERGY_BASE_COST = 2;       // P2: Start with Improve Time
 export const PRESTIGE_ENERGY_SCALING = 1.3;
 export const PRESTIGE_CLOCK_BASE_COST = 10;       // P3: Start with Add Clock +1 lv
 export const PRESTIGE_CLOCK_SCALING = 5.0;
-export const PRESTIGE_BOOST_BASE_COST = 3;        // P4: Start with Boost Clocks +1 lv
+export const PRESTIGE_BOOST_BASE_COST = 2;        // P4: Start with Boost Clocks +1 lv
 export const PRESTIGE_BOOST_SCALING = 1.7;
 export const PRESTIGE_ANCHOR_BASE_COST = 2;       // P5: Start with Anchor Time +1 lv
 export const PRESTIGE_ANCHOR_SCALING = 2.0;
 export const PRESTIGE_MIRROR_BASE_COST = 15;      // Mirror Clocks: backward hand per clock
 export const PRESTIGE_MIRROR_SCALING = 5.0;
 
-export const PRESTIGE_TD_BASE_COST = 20;          // Extra TD: +PRESTIGE_TD_BONUS yield per level
+export const PRESTIGE_TD_BASE_COST = 7;           // Extra TD: +PRESTIGE_TD_BONUS yield per level
 export const PRESTIGE_TD_SCALING = 1.5;
 export const PRESTIGE_TD_BONUS = 0.20;            // +20% TD yield per level (cumulative additive)
 
-export const PRESTIGE_ENTROPY_REDUCE_BASE_COST = 20; // Reduce Entropy Effects
+export const PRESTIGE_ENTROPY_REDUCE_BASE_COST = 7; // Reduce Entropy Effects
 export const PRESTIGE_ENTROPY_REDUCE_SCALING = 1.8;
 export const PRESTIGE_ENTROPY_REDUCE_MAX = 10;    // at max: all negative entropy effects suppressed
 
@@ -118,17 +118,17 @@ export const PRESTIGE_ENTROPY_REDUCE_MAX = 10;    // at max: all negative entrop
 // Bonuses are flat per level, but only activate above PRESTIGE_ENTROPY_BONUS_THRESHOLD.
 export const PRESTIGE_ENTROPY_BONUS_THRESHOLD = 0.70; // entropy must exceed this for tier-3 bonuses
 
-export const PRESTIGE_ENTROPY_TE_BASE_COST = 30;     // Temporal Resonance: TE bonus above threshold
+export const PRESTIGE_ENTROPY_TE_BASE_COST = 10;     // Temporal Resonance: TE bonus above threshold
 export const PRESTIGE_ENTROPY_TE_SCALING = 2.0;
 export const PRESTIGE_ENTROPY_TE_BONUS = 0.20;        // flat +20% TE per level when entropy ≥ threshold
 export const PRESTIGE_ENTROPY_TE_MAX = 10;
 
-export const PRESTIGE_ENTROPY_TD_BASE_COST = 30;     // Chaos Harvest: TD bonus above threshold
+export const PRESTIGE_ENTROPY_TD_BASE_COST = 10;     // Chaos Harvest: TD bonus above threshold
 export const PRESTIGE_ENTROPY_TD_SCALING = 1.8;
 export const PRESTIGE_ENTROPY_TD_BONUS = 0.20;        // flat +20% TD per level when entropy ≥ threshold
 export const PRESTIGE_ENTROPY_TD_MAX = 10;
 
-export const PRESTIGE_ASCEND_BASE_COST = 30;         // Entropy Ascendance: entropy coefficient in PP formula
+export const PRESTIGE_ASCEND_BASE_COST = 10;         // Entropy Ascendance: entropy coefficient in PP formula
 export const PRESTIGE_ASCEND_COST_SCALING = 2.0;
 export const PRESTIGE_ASCEND_BOOST = 0.10;            // +0.10 to entropy coefficient per level
 export const PRESTIGE_ASCEND_MAX = 10;                // coefficient goes from 1.0 → 2.0 at max
@@ -145,6 +145,12 @@ export const REVERSE_CHANCE_AT_THRESHOLD = 0.10;  // 10% at 60% entropy
 export const REVERSE_CHANCE_AT_MAX = 0.15;         // 15% at 100% entropy
 export const REVERSE_DURATION_AT_THRESHOLD = 2_000; // 2 s at threshold
 export const REVERSE_DURATION_AT_MAX = 5_000;       // 5 s at max entropy
+
+// Extra clock maintenance — TE/s drain proportional to accumulated bonus.
+// Scale with the bonus so running a clock longer gets progressively more expensive.
+export const CLOCK2_MAINTENANCE_RATE = 5;   // TE/s per unit of clock2SpeedBonus
+export const CLOCK3_MAINTENANCE_RATE = 0.2;   // TE/s per unit of clock3TeBonus
+export const CLOCK4_MAINTENANCE_RATE = 5;     // TE/s at full entropy reduction (0→1 scale)
 
 // ── System ────────────────────────────────────────────────────────────────────
 

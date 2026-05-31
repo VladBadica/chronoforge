@@ -48,6 +48,9 @@ import {
   CLOCK2_SPEED_BONUS,
   CLOCK3_TE_BONUS,
   CLOCK4_ENTROPY_REDUCTION,
+  CLOCK2_MAINTENANCE_RATE,
+  CLOCK3_MAINTENANCE_RATE,
+  CLOCK4_MAINTENANCE_RATE,
   BOOST_UPGRADE_BASE_COST,
   BOOST_UPGRADE_COST_EXPONENT,
   BOOST_MAX_LEVEL,
@@ -116,6 +119,9 @@ export class GameEngine {
     this._clock3TeBonus = 0;          // accumulated TE/rev bonus from clock 3 revolutions
     this._clock4EntropyReduction = 0; // accumulated entropy reduction from clock 4 revolutions
 
+    // Running state — transient, not saved; true = clock is active
+    this._extraClockRunning = [];
+
     // TimeDust — saved
     this._timeDust = 0;
 
@@ -183,6 +189,21 @@ export class GameEngine {
     }
   }
 
+  /** Toggle a specific extra clock on/off by index (0-based within extraAngles) */
+  toggleExtraClock(index) {
+    if (index < 0 || index >= this._extraClockRunning.length) return;
+    this._extraClockRunning[index] = !this._extraClockRunning[index];
+    this._emitSnapshot();
+  }
+
+  /** TE/s maintenance cost for extra clock i based on its current accumulated bonus */
+  _getExtraClockMaintenanceCost(i) {
+    if (i === 0) return this._clock2SpeedBonus * CLOCK2_MAINTENANCE_RATE;
+    if (i === 1) return this._clock3TeBonus * CLOCK3_MAINTENANCE_RATE;
+    if (i === 2) return this._clock4EntropyReduction * CLOCK4_MAINTENANCE_RATE;
+    return 0;
+  }
+
   /** Debug: inject energy directly */
   addEnergy(amount) {
     this._energy += amount;
@@ -218,6 +239,7 @@ export class GameEngine {
     this._clock2SpeedBonus = 0;
     this._clock3TeBonus = 0;
     this._clock4EntropyReduction = 0;
+    this._extraClockRunning = [];
     this._timeDust = 0;
     this._prestigePoints = 0;
     this._lifetimePPSpent = 0;
@@ -265,6 +287,7 @@ export class GameEngine {
     this._clock2SpeedBonus = 0;
     this._clock3TeBonus = 0;
     this._clock4EntropyReduction = 0;
+    this._extraClockRunning = Array(this._prestigeClockLevel).fill(true);
     this._timeDust = 0;
     this.save();
     this._emitSnapshot();
@@ -306,6 +329,7 @@ export class GameEngine {
       this._clockCount += 1;
       this._extraAngles.push(0);
       this._extraRevolutions.push(0);
+      this._extraClockRunning.push(true);
       this._prevNear.push(true);
       this._prevHourMinNear.push(true);
       this._prevSurgeNear.push(true);
@@ -348,6 +372,7 @@ export class GameEngine {
         this._clockCount--;
         this._extraAngles.pop();
         this._extraRevolutions.pop();
+        this._extraClockRunning.pop();
         this._prevNear.pop();
         this._prevHourMinNear.pop();
         this._prevSurgeNear.pop();
@@ -462,6 +487,7 @@ export class GameEngine {
     this._clockCount += 1;
     this._extraAngles.push(0);
     this._extraRevolutions.push(0);
+    this._extraClockRunning.push(true);
     // New clock starts at 0 (all hands overlapping) — mark near so no immediate trigger.
     this._prevNear.push(true);
     this._prevHourMinNear.push(true);
@@ -671,6 +697,7 @@ export class GameEngine {
       this._clock2SpeedBonus = data.clock2SpeedBonus ?? 0;
       this._clock3TeBonus = data.clock3TeBonus ?? 0;
       this._clock4EntropyReduction = data.clock4EntropyReduction ?? 0;
+      this._extraClockRunning = Array(extras).fill(true);
       this._timeDust = data.timeDust ?? 0;
       this._prestigePoints = data.prestigePoints ?? 0;
       this._lifetimePPSpent = data.lifetimePPSpent ?? 0;
@@ -811,10 +838,12 @@ export class GameEngine {
     }
 
     if (!skipExtraClocks) {
-      // Extra clocks: base speeds are [0.1, 0.05, 0.01] scaled by boost ratio
+      // Extra clocks: base speeds are [0.1, 0.05, 0.001] scaled by boost ratio
       const EXTRA_BASE_SPEEDS = [CLOCK2_BASE_SPEED, CLOCK3_BASE_SPEED, CLOCK4_BASE_SPEED];
       const boostRatio = this.getExtraClockSpeedFactor() / CLOCK_SPEED_FACTOR;
       for (let i = 0; i < this._extraAngles.length; i++) {
+        if (!this._extraClockRunning[i]) continue;
+
         const factor = EXTRA_BASE_SPEEDS[i] * boostRatio;
         const extraDelta = deltaDegrees * factor;
         const prevExtra = this._extraAngles[i];
@@ -828,6 +857,16 @@ export class GameEngine {
             this._clock3TeBonus += extraCrossings * CLOCK3_TE_BONUS;
           } else if (i === 2) {
             this._clock4EntropyReduction = Math.min(1, this._clock4EntropyReduction + extraCrossings * CLOCK4_ENTROPY_REDUCTION);
+          }
+        }
+
+        // Drain TE proportional to accumulated bonus — stops the clock if energy runs out
+        const drain = this._getExtraClockMaintenanceCost(i) * (deltaMs / 1000);
+        if (drain > 0) {
+          this._energy -= drain;
+          if (this._energy <= 0) {
+            this._energy = 0;
+            this._extraClockRunning[i] = false;
           }
         }
       }
@@ -921,6 +960,8 @@ export class GameEngine {
         nextExtraClockSpeedFactor: this._extraClockFactorAt(this._boostLevel + 1),
         extraAngles: this._extraAngles.slice(),
         extraRevolutions: this._extraRevolutions.slice(),
+        extraClockRunning: this._extraClockRunning.slice(),
+        extraClockMaintenanceCosts: this._extraAngles.map((_, i) => this._getExtraClockMaintenanceCost(i)),
         clockUpgradeCost: this.getClockUpgradeCost(),
         boostUpgradeCost: this.getBoostUpgradeCost(),
         isFastTime: this._fastTimeRemaining > 0,

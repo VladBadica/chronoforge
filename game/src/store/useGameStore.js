@@ -50,6 +50,8 @@ export const useGameStore = create((set) => {
       nextExtraClockSpeedFactor: snapshot.nextExtraClockSpeedFactor,
       extraAngles: snapshot.extraAngles,
       extraRevolutions: snapshot.extraRevolutions,
+      extraClockRunning: snapshot.extraClockRunning,
+      extraClockMaintenanceCosts: snapshot.extraClockMaintenanceCosts,
       clockUpgradeCost: snapshot.clockUpgradeCost,
       boostUpgradeCost: snapshot.boostUpgradeCost,
       isFastTime: snapshot.isFastTime,
@@ -130,6 +132,8 @@ export const useGameStore = create((set) => {
     nextExtraClockSpeedFactor: 0.1,
     extraAngles: [],
     extraRevolutions: [],
+    extraClockRunning: [],
+    extraClockMaintenanceCosts: [],
     clockUpgradeCost: 50,
     boostUpgradeCost: 25,
     isFastTime: false,
@@ -205,6 +209,10 @@ export const useGameStore = create((set) => {
 
     buyBoostUpgrade: () => {
       gameEngine.buyBoostUpgrade();
+    },
+
+    toggleExtraClock: (index) => {
+      gameEngine.toggleExtraClock(index);
     },
 
     buyStabilityUpgrade: () => {

@@ -37,6 +37,9 @@ export default function App() {
     nextExtraClockSpeedFactor,
     extraAngles,
 
+    extraClockRunning,
+    extraClockMaintenanceCosts,
+    toggleExtraClock,
     clockUpgradeCost,
     boostUpgradeCost,
     isFastTime,
@@ -152,7 +155,14 @@ export default function App() {
         {extraAngles.length > 0 && (
           <div className="flex flex-col items-center gap-2">
             {extraAngles.map((a, i) => (
-              <ExtraClock key={i} angle={a} size={90} />
+              <ExtraClock
+                key={i}
+                angle={a}
+                size={90}
+                running={extraClockRunning[i] ?? true}
+                maintenanceCost={extraClockMaintenanceCosts[i] ?? 0}
+                onClick={() => toggleExtraClock(i)}
+              />
             ))}
           </div>
         )}
