@@ -856,7 +856,9 @@ export class GameEngine {
     const hourDist = Math.min(hourAngle, 360 - hourAngle);
     const isNear = secondDist < SURGE_THRESHOLD_DEG && minuteDist < SURGE_THRESHOLD_DEG && hourDist < SURGE_THRESHOLD_DEG;
 
-    if (isNear && !this._prevSurgeNear[slotIndex]) {
+    // Reset timer every tick the hands are aligned — this means a surge-within-a-surge
+    // always resets to the full duration rather than being ignored.
+    if (isNear) {
       this._surgeRemaining = SURGE_DURATION_MS;
     }
     this._prevSurgeNear[slotIndex] = isNear;
