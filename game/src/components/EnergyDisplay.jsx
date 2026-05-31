@@ -1,7 +1,7 @@
-function formatNumber(n) {
-  if (n >= 1_000_000) return (n / 1_000_000).toFixed(2) + 'M';
-  if (n >= 1_000) return (n / 1_000).toFixed(2) + 'K';
-  return n.toFixed(2);
+function formatNumber(n, fixedDecimals = 2) {
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(fixedDecimals) + 'M';
+  if (n >= 1_000) return (n / 1_000).toFixed(fixedDecimals) + 'K';
+  return n.toFixed(fixedDecimals);
 }
 
 export function EnergyDisplay({ energy, energyPerSecond, timeDust = 0 }) {
@@ -35,7 +35,7 @@ export function EnergyDisplay({ energy, energyPerSecond, timeDust = 0 }) {
             color: 'rgba(240,192,96,0.75)',
           }}
         >
-          <span className="stat-value">{energyPerSecond.toFixed(3)}</span>
+          <span className="stat-value">{formatNumber(energyPerSecond)}</span>
           <span style={{ color: 'var(--color-muted)' }}>TE/s</span>
         </div>
       </div>
@@ -47,7 +47,7 @@ export function EnergyDisplay({ energy, energyPerSecond, timeDust = 0 }) {
             className="stat-value text-5xl font-bold tracking-tight"
             style={{ color: '#c0b8ff' }}
           >
-            {timeDust.toFixed(1)}
+            {formatNumber(timeDust, 1)}
           </span>
           <span className="text-lg font-medium" style={{ color: 'var(--color-muted)' }}>
             TD

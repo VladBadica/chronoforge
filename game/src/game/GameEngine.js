@@ -330,6 +330,37 @@ export class GameEngine {
     return this._buyPrestigeUpgrade(this.getPrestigeMirrorCost, '_prestigeMirrorLevel');
   }
 
+  // Refund the last level of a prestige upgrade — returns PP, does NOT reduce lifetimePPSpent.
+  // onRefund (optional) is called with `this` to apply the change to the current run immediately.
+  _refundPrestigeUpgrade(levelProp, base, scaling, onRefund = null) {
+    if (this[levelProp] <= 0) return false;
+    const refund = this._prestigeCost(base, scaling, this[levelProp] - 1);
+    this[levelProp]--;
+    this._prestigePoints += refund;
+    if (onRefund) onRefund.call(this);
+    this._emitSnapshot();
+    return true;
+  }
+
+  refundPrestigeClock() {
+    return this._refundPrestigeUpgrade('_prestigeClockLevel', PRESTIGE_CLOCK_BASE_COST, PRESTIGE_CLOCK_SCALING, function() {
+      if (this._clockCount > 1) {
+        this._clockCount--;
+        this._extraAngles.pop();
+        this._extraRevolutions.pop();
+        this._prevNear.pop();
+        this._prevHourMinNear.pop();
+        this._prevSurgeNear.pop();
+      }
+    });
+  }
+
+  refundPrestigeAnchor() {
+    return this._refundPrestigeUpgrade('_prestigeAnchorLevel', PRESTIGE_ANCHOR_BASE_COST, PRESTIGE_ANCHOR_SCALING, function() {
+      if (this._stabilityLevel > 0) this._stabilityLevel--;
+    });
+  }
+
   getPrestigeSpeedCost()  { return this._prestigeCost(PRESTIGE_SPEED_BASE_COST,  PRESTIGE_SPEED_SCALING,  this._prestigeSpeedLevel);  }
   getPrestigeEnergyCost() { return this._prestigeCost(PRESTIGE_ENERGY_BASE_COST, PRESTIGE_ENERGY_SCALING, this._prestigeEnergyLevel); }
   getPrestigeClockCost()  { return this._prestigeCost(PRESTIGE_CLOCK_BASE_COST,  PRESTIGE_CLOCK_SCALING,  this._prestigeClockLevel);  }
@@ -923,6 +954,8 @@ export class GameEngine {
         prestigeAnchorCost:  this.getPrestigeAnchorCost(),
         prestigeMirrorCost:  this.getPrestigeMirrorCost(),
         prestigeClockAtMax:  this._prestigeClockLevel >= CLOCK_MAX_EXTRA,
+        prestigeClockRefund:  this._prestigeClockLevel  > 0 ? this._prestigeCost(PRESTIGE_CLOCK_BASE_COST,  PRESTIGE_CLOCK_SCALING,  this._prestigeClockLevel  - 1) : 0,
+        prestigeAnchorRefund: this._prestigeAnchorLevel > 0 ? this._prestigeCost(PRESTIGE_ANCHOR_BASE_COST, PRESTIGE_ANCHOR_SCALING, this._prestigeAnchorLevel - 1) : 0,
         prestigeBoostAtMax:  this._prestigeBoostLevel >= BOOST_MAX_LEVEL,
         prestigeMirrorAtMax: this._prestigeMirrorLevel >= 1,
         prestigeTdLevel:     this._prestigeTdLevel,

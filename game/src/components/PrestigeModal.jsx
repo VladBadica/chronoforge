@@ -23,6 +23,8 @@ const UPGRADES_TIER1 = [
     levelKey: 'prestigeClockLevel',
     buyKey: 'buyPrestigeClock',
     atMaxKey: 'prestigeClockAtMax',
+    refundKey: 'refundPrestigeClock',
+    refundCostKey: 'prestigeClockRefund',
   },
   {
     key: 'boost',
@@ -40,6 +42,8 @@ const UPGRADES_TIER1 = [
     costKey: 'prestigeAnchorCost',
     levelKey: 'prestigeAnchorLevel',
     buyKey: 'buyPrestigeAnchor',
+    refundKey: 'refundPrestigeAnchor',
+    refundCostKey: 'prestigeAnchorRefund',
   },
 ];
 
@@ -123,9 +127,9 @@ export function PrestigeModal({
   onClose,
   prestigeSpeedLevel, prestigeSpeedCost, buyPrestigeSpeed,
   prestigeEnergyLevel, prestigeEnergyCost, buyPrestigeEnergy,
-  prestigeClockLevel, prestigeClockCost, buyPrestigeClock, prestigeClockAtMax,
+  prestigeClockLevel, prestigeClockCost, buyPrestigeClock, prestigeClockAtMax, prestigeClockRefund, refundPrestigeClock,
   prestigeBoostLevel, prestigeBoostCost, buyPrestigeBoost, prestigeBoostAtMax,
-  prestigeAnchorLevel, prestigeAnchorCost, buyPrestigeAnchor,
+  prestigeAnchorLevel, prestigeAnchorCost, buyPrestigeAnchor, prestigeAnchorRefund, refundPrestigeAnchor,
   prestigeMirrorLevel, prestigeMirrorCost, buyPrestigeMirror, prestigeMirrorAtMax,
   prestigeTdLevel, prestigeTdCost, buyPrestigeTd,
   prestigeEntropyReduceLevel, prestigeEntropyReduceCost, buyPrestigeEntropyReduce, prestigeEntropyReduceAtMax,
@@ -141,8 +145,9 @@ export function PrestigeModal({
 
   const levels = { prestigeSpeedLevel, prestigeEnergyLevel, prestigeClockLevel, prestigeBoostLevel, prestigeAnchorLevel, prestigeMirrorLevel, prestigeTdLevel, prestigeEntropyReduceLevel, prestigeEntropyTeLevel, prestigeEntropyTdLevel, prestigeAscendLevel, prestigeSingularityLevel };
   const costs = { prestigeSpeedCost, prestigeEnergyCost, prestigeClockCost, prestigeBoostCost, prestigeAnchorCost, prestigeMirrorCost, prestigeTdCost, prestigeEntropyReduceCost, prestigeEntropyTeCost, prestigeEntropyTdCost, prestigeAscendCost, prestigeSingularityCost };
-  const actions = { buyPrestigeSpeed, buyPrestigeEnergy, buyPrestigeClock, buyPrestigeBoost, buyPrestigeAnchor, buyPrestigeMirror, buyPrestigeTd, buyPrestigeEntropyReduce, buyPrestigeEntropyTe, buyPrestigeEntropyTd, buyPrestigeAscend, buyPrestigeSingularity };
-  const atMaxMap = { prestigeClockAtMax, prestigeBoostAtMax, prestigeMirrorAtMax, prestigeEntropyReduceAtMax, prestigeEntropyTeAtMax, prestigeEntropyTdAtMax, prestigeAscendAtMax, prestigeSingularityAtMax };
+  const actions     = { buyPrestigeSpeed, buyPrestigeEnergy, buyPrestigeClock, buyPrestigeBoost, buyPrestigeAnchor, buyPrestigeMirror, buyPrestigeTd, buyPrestigeEntropyReduce, buyPrestigeEntropyTe, buyPrestigeEntropyTd, buyPrestigeAscend, buyPrestigeSingularity, refundPrestigeClock, refundPrestigeAnchor };
+  const atMaxMap    = { prestigeClockAtMax, prestigeBoostAtMax, prestigeMirrorAtMax, prestigeEntropyReduceAtMax, prestigeEntropyTeAtMax, prestigeEntropyTdAtMax, prestigeAscendAtMax, prestigeSingularityAtMax };
+  const refundCosts = { prestigeClockRefund, prestigeAnchorRefund };
 
   return (
     <div
@@ -247,21 +252,39 @@ export function PrestigeModal({
                   </span>
                   <span className="text-xs" style={{ color: 'var(--color-muted)' }}>{u.desc}</span>
                 </div>
-                <button
-                  onClick={canAfford ? actions[u.buyKey] : undefined}
-                  disabled={!canAfford}
-                  className="ml-3 shrink-0 rounded-lg text-xs font-semibold transition-all duration-150"
-                  style={{
-                    background: canAfford ? 'linear-gradient(135deg, #9d8fffcc, #7c6ff7)' : 'var(--color-border)',
-                    color: canAfford ? '#fff' : 'var(--color-muted)',
-                    cursor: canAfford ? 'pointer' : 'not-allowed',
-                    border: 'none',
-                    whiteSpace: 'nowrap',
-                    padding: '5px 8px',
-                  }}
-                >
-                  {maxed ? 'MAX' : `${cost} PP`}
-                </button>
+                <div className="flex items-center gap-1 ml-3 shrink-0">
+                  {u.refundKey && level > 0 && (
+                    <button
+                      onClick={actions[u.refundKey]}
+                      title={`Refund ${refundCosts[u.refundCostKey]} PP (entropy cost is permanent)`}
+                      className="rounded-lg text-xs font-semibold transition-all duration-150"
+                      style={{
+                        background: 'rgba(200,80,80,0.15)',
+                        color: '#e88',
+                        border: '1px solid rgba(200,80,80,0.3)',
+                        cursor: 'pointer',
+                        padding: '5px 7px',
+                      }}
+                    >
+                      −1
+                    </button>
+                  )}
+                  <button
+                    onClick={canAfford ? actions[u.buyKey] : undefined}
+                    disabled={!canAfford}
+                    className="rounded-lg text-xs font-semibold transition-all duration-150"
+                    style={{
+                      background: canAfford ? 'linear-gradient(135deg, #9d8fffcc, #7c6ff7)' : 'var(--color-border)',
+                      color: canAfford ? '#fff' : 'var(--color-muted)',
+                      cursor: canAfford ? 'pointer' : 'not-allowed',
+                      border: 'none',
+                      whiteSpace: 'nowrap',
+                      padding: '5px 8px',
+                    }}
+                  >
+                    {maxed ? 'MAX' : `${cost} PP`}
+                  </button>
+                </div>
               </div>
             );
           };

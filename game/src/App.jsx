@@ -60,9 +60,9 @@ export default function App() {
     prestige,
     prestigeSpeedLevel, prestigeSpeedCost, buyPrestigeSpeed,
     prestigeEnergyLevel, prestigeEnergyCost, buyPrestigeEnergy,
-    prestigeClockLevel, prestigeClockCost, buyPrestigeClock, prestigeClockAtMax,
+    prestigeClockLevel, prestigeClockCost, buyPrestigeClock, prestigeClockAtMax, prestigeClockRefund, refundPrestigeClock,
     prestigeBoostLevel, prestigeBoostCost, buyPrestigeBoost, prestigeBoostAtMax,
-    prestigeAnchorLevel, prestigeAnchorCost, buyPrestigeAnchor,
+    prestigeAnchorLevel, prestigeAnchorCost, buyPrestigeAnchor, prestigeAnchorRefund, refundPrestigeAnchor,
     prestigeMirrorLevel, prestigeMirrorCost, buyPrestigeMirror, prestigeMirrorAtMax,
     prestigeTdLevel, prestigeTdCost, buyPrestigeTd,
     prestigeEntropyReduceLevel, prestigeEntropyReduceCost, buyPrestigeEntropyReduce, prestigeEntropyReduceAtMax,
@@ -290,9 +290,9 @@ export default function App() {
           onClose={() => setShowPrestige(false)}
           prestigeSpeedLevel={prestigeSpeedLevel} prestigeSpeedCost={prestigeSpeedCost} buyPrestigeSpeed={buyPrestigeSpeed}
           prestigeEnergyLevel={prestigeEnergyLevel} prestigeEnergyCost={prestigeEnergyCost} buyPrestigeEnergy={buyPrestigeEnergy}
-          prestigeClockLevel={prestigeClockLevel} prestigeClockCost={prestigeClockCost} buyPrestigeClock={buyPrestigeClock} prestigeClockAtMax={prestigeClockAtMax}
+          prestigeClockLevel={prestigeClockLevel} prestigeClockCost={prestigeClockCost} buyPrestigeClock={buyPrestigeClock} prestigeClockAtMax={prestigeClockAtMax} prestigeClockRefund={prestigeClockRefund} refundPrestigeClock={refundPrestigeClock}
           prestigeBoostLevel={prestigeBoostLevel} prestigeBoostCost={prestigeBoostCost} buyPrestigeBoost={buyPrestigeBoost} prestigeBoostAtMax={prestigeBoostAtMax}
-          prestigeAnchorLevel={prestigeAnchorLevel} prestigeAnchorCost={prestigeAnchorCost} buyPrestigeAnchor={buyPrestigeAnchor}
+          prestigeAnchorLevel={prestigeAnchorLevel} prestigeAnchorCost={prestigeAnchorCost} buyPrestigeAnchor={buyPrestigeAnchor} prestigeAnchorRefund={prestigeAnchorRefund} refundPrestigeAnchor={refundPrestigeAnchor}
           prestigeMirrorLevel={prestigeMirrorLevel} prestigeMirrorCost={prestigeMirrorCost} buyPrestigeMirror={buyPrestigeMirror} prestigeMirrorAtMax={prestigeMirrorAtMax}
           prestigeTdLevel={prestigeTdLevel} prestigeTdCost={prestigeTdCost} buyPrestigeTd={buyPrestigeTd}
           prestigeEntropyReduceLevel={prestigeEntropyReduceLevel} prestigeEntropyReduceCost={prestigeEntropyReduceCost} buyPrestigeEntropyReduce={buyPrestigeEntropyReduce} prestigeEntropyReduceAtMax={prestigeEntropyReduceAtMax}
