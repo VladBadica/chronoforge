@@ -2,7 +2,7 @@
 
 ## What this is
 
-ChronoForge is a browser-based idle/clicker game. The player watches analog clocks spin; each full revolution of the main clock earns Time Energy (TE), which is spent on upgrades that make the clocks spin faster, earn more TE per revolution, or add more clocks. Clicking the clock area manually adds one second of game time to the main clock only. The game has an adversarial mechanic — Time Entropy — that grows with speed and introduces increasingly punishing events. A prestige system (spending Time Dust) resets each run but carries forward Prestige Points spent on permanent upgrades.
+ChronoForge is a browser-based idle/clicker game (also packaged as a desktop app via Electron). The player watches analog clocks spin; each full revolution of the main clock earns Time Energy (TE), which is spent on upgrades that make the clocks spin faster, earn more TE per revolution, or add more clocks. Clicking the clock area manually adds one second of game time to the main clock only. The game has an adversarial mechanic — Time Entropy — that grows with speed and introduces increasingly punishing events. A prestige system (spending Time Dust) resets each run but carries forward Prestige Points spent on permanent upgrades.
 
 ## Stack
 
@@ -11,11 +11,14 @@ ChronoForge is a browser-based idle/clicker game. The player watches analog cloc
 | Framework | React 19 |
 | State | Zustand 5 |
 | Styling | Tailwind CSS 4 (via `@tailwindcss/vite`) + CSS custom properties |
-| Build | Vite 8 |
+| Build | Vite 8 (browser) / electron-vite 5 (desktop) |
+| Desktop | Electron 42 + electron-builder 26 |
 | Lint | ESLint 10 with `eslint-plugin-react-hooks` and `eslint-plugin-react-refresh` |
-| Persistence | `localStorage` |
+| Persistence | `localStorage` (works natively in Electron's Chromium renderer) |
 
 No TypeScript — the project is plain JavaScript (`.js`/`.jsx`).
+
+**Peer dep note:** `electron-vite@5` declares `vite@^7` as a peer dep but the project uses Vite 8 (required by `@vitejs/plugin-react@6`). `.npmrc` sets `legacy-peer-deps=true` to suppress the conflict — do not remove it.
 
 ## Architecture
 
@@ -230,11 +233,51 @@ Avoid hardcoded Tailwind arbitrary values for theme colors — use CSS variables
 ## Dev commands
 
 ```sh
-npm run dev       # Vite dev server (hot reload)
+# Browser workflow (fastest iteration)
+npm run dev       # Vite dev server with hot reload
 npm run build     # Production build → dist/
-npm run preview   # Serve the dist/ build locally
+npm run preview   # Serve dist/ locally
 npm run lint      # ESLint
+
+# Electron workflow
+npm run electron:dev    # Launch app in Electron with hot reload
+npm run electron:build  # Compile only → out/  (main + preload + renderer)
+npm run dist            # Compile + package installers → release/
+
 node simulate.mjs [hours=2] [strategy=greedy]   # headless progression simulator
+```
+
+## Electron structure
+
+```
+electron/
+  main/
+    index.js      ← Electron main process (BrowserWindow, menu suppression)
+  preload/
+    index.js      ← contextBridge (exposes platform; save uses localStorage)
+electron.vite.config.js   ← electron-vite config; renderer root set to '.' (project root)
+```
+
+Build output layout:
+```
+out/
+  main/index.js         ← built main process (CJS)
+  preload/index.mjs     ← built preload (ESM)
+  renderer/             ← built React app (index.html + assets)
+release/                ← electron-builder installers (created by npm run dist)
+```
+
+`"main": "out/main/index.js"` in `package.json` is the Electron entry point.
+
+The preload path in `electron/main/index.js` references `../preload/index.mjs` — must match the `.mjs` extension that electron-vite outputs for the preload lib build.
+
+**Electron binary install issue (Windows):** `npm install` sometimes downloads the zip but silently fails to extract it, leaving `node_modules/electron/dist/` incomplete and `path.txt` missing. Fix with PowerShell:
+```powershell
+$zip = Get-ChildItem "$env:LOCALAPPDATA\electron\Cache\*\electron-v42.3.3-win32-x64.zip" | Select-Object -First 1
+Remove-Item -Recurse -Force .\node_modules\electron\dist -ErrorAction SilentlyContinue
+New-Item -ItemType Directory -Force .\node_modules\electron\dist | Out-Null
+Expand-Archive -Path $zip.FullName -DestinationPath .\node_modules\electron\dist -Force
+"electron.exe" | Set-Content .\node_modules\electron\path.txt -NoNewline
 ```
 
 ## Key design principles

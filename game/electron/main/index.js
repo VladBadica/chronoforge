@@ -5,8 +5,8 @@ function createWindow() {
   const win = new BrowserWindow({
     width: 1024,
     height: 820,
-    minWidth: 800,
-    minHeight: 600,
+    minWidth: 1024,
+    minHeight: 768,
     title: 'ChronoForge',
     backgroundColor: '#0a0a0f',
     webPreferences: {
