@@ -43,6 +43,9 @@ export const useGameStore = create((set) => {
       boostLevel: snapshot.boostLevel,
       boostAtMax: snapshot.boostAtMax,
       timeDust: snapshot.timeDust,
+      singularities: snapshot.singularities,
+      singularityGain: snapshot.singularityGain,
+      canAscend: snapshot.canAscend,
       prestigePoints: snapshot.prestigePoints,
       lifetimePPSpent: snapshot.lifetimePPSpent,
       canPrestige: snapshot.canPrestige,
@@ -125,6 +128,9 @@ export const useGameStore = create((set) => {
     boostLevel: 0,
     boostAtMax: false,
     timeDust: 0,
+    singularities: 0,
+    singularityGain: 0,
+    canAscend: false,
     prestigePoints: 0,
     lifetimePPSpent: 0,
     canPrestige: false,
@@ -229,6 +235,10 @@ export const useGameStore = create((set) => {
 
     prestige: () => {
       gameEngine.prestige();
+    },
+
+    ascend: () => {
+      gameEngine.ascend();
     },
 
     buyPrestigeSpeed: () => { gameEngine.buyPrestigeSpeed(); },

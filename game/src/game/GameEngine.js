@@ -30,6 +30,7 @@ import {
   PRESTIGE_ENTROPY_TD_BASE_COST, PRESTIGE_ENTROPY_TD_SCALING, PRESTIGE_ENTROPY_TD_BONUS, PRESTIGE_ENTROPY_TD_MAX,
   PRESTIGE_ASCEND_BASE_COST, PRESTIGE_ASCEND_COST_SCALING, PRESTIGE_ASCEND_BOOST, PRESTIGE_ASCEND_MAX,
   PRESTIGE_SINGULARITY_COST, PRESTIGE_SINGULARITY_SPEED_THRESHOLD,
+  ASCEND_SPEED_THRESHOLD, ASCEND_SINGULARITY_PER_ENTROPY,
   UPGRADE_BASE_COST,
   UPGRADE_COST_EXPONENT,
   UPGRADE_SPEED_BONUS,
@@ -122,23 +123,29 @@ export class GameEngine {
     // Running state — transient, not saved; true = clock is active
     this._extraClockRunning = [];
 
+    // Ascend unlock latch — transient; once true stays true for the rest of the run
+    this._ascendUnlocked = false;
+
     // TimeDust — saved
     this._timeDust = 0;
+
+    // Ascension — saved, never reset by prestige or ascend
+    this._singularities = 0;
 
     // Prestige — saved, never reset by prestige itself
     this._prestigePoints = 0;
     this._lifetimePPSpent = 0;  // cumulative PP invested in upgrades across all runs
-    this._prestigeSpeedLevel  = 0;
+    this._prestigeSpeedLevel = 0;
     this._prestigeEnergyLevel = 0;
-    this._prestigeClockLevel  = 0;
-    this._prestigeBoostLevel  = 0;
+    this._prestigeClockLevel = 0;
+    this._prestigeBoostLevel = 0;
     this._prestigeAnchorLevel = 0;
     this._prestigeMirrorLevel = 0;
-    this._prestigeTdLevel          = 0;
+    this._prestigeTdLevel = 0;
     this._prestigeEntropyReduceLevel = 0;
-    this._prestigeEntropyTeLevel   = 0;
-    this._prestigeEntropyTdLevel   = 0;
-    this._prestigeAscendLevel      = 0;
+    this._prestigeEntropyTeLevel = 0;
+    this._prestigeEntropyTdLevel = 0;
+    this._prestigeAscendLevel = 0;
     this._prestigeSingularityLevel = 0;
 
     // --- loop bookkeeping ---
@@ -240,20 +247,22 @@ export class GameEngine {
     this._clock3TeBonus = 0;
     this._clock4EntropyReduction = 0;
     this._extraClockRunning = [];
+    this._ascendUnlocked = false;
     this._timeDust = 0;
+    this._singularities = 0;
     this._prestigePoints = 0;
     this._lifetimePPSpent = 0;
-    this._prestigeSpeedLevel  = 0;
+    this._prestigeSpeedLevel = 0;
     this._prestigeEnergyLevel = 0;
-    this._prestigeClockLevel  = 0;
-    this._prestigeBoostLevel  = 0;
+    this._prestigeClockLevel = 0;
+    this._prestigeBoostLevel = 0;
     this._prestigeAnchorLevel = 0;
     this._prestigeMirrorLevel = 0;
-    this._prestigeTdLevel          = 0;
+    this._prestigeTdLevel = 0;
     this._prestigeEntropyReduceLevel = 0;
-    this._prestigeEntropyTeLevel   = 0;
-    this._prestigeEntropyTdLevel   = 0;
-    this._prestigeAscendLevel      = 0;
+    this._prestigeEntropyTeLevel = 0;
+    this._prestigeEntropyTdLevel = 0;
+    this._prestigeAscendLevel = 0;
     this._prestigeSingularityLevel = 0;
     try {
       localStorage.removeItem(SAVE_KEY);
@@ -288,7 +297,81 @@ export class GameEngine {
     this._clock3TeBonus = 0;
     this._clock4EntropyReduction = 0;
     this._extraClockRunning = Array(this._prestigeClockLevel).fill(true);
+    this._ascendUnlocked = false;
     this._timeDust = 0;
+    this.save();
+    this._emitSnapshot();
+    return true;
+  }
+
+  // ---- Ascension ----
+
+  /** True when the player meets all ascension conditions. Latches true for the rest of the run. */
+  canAscend() {
+    if (this._ascendUnlocked) return true;
+    if (this._prestigeSingularityLevel < 1) return false;
+    if (this.getEntropy() < 1.0) return false;
+    const fastMult = this._fastTimeRemaining > 0
+      ? (this._fastTimeIsDebuff ? FAST_TIME_DEBUFF_MULTIPLIER : FAST_TIME_MULTIPLIER)
+      : 1;
+    const surgeMult = this._surgeRemaining > 0 ? SURGE_SPEED_MULTIPLIER : 1;
+    const effectiveSm = (this.getSpeedMultiplier() + this._clock2SpeedBonus) * fastMult * surgeMult;
+    if (effectiveSm >= ASCEND_SPEED_THRESHOLD) {
+      this._ascendUnlocked = true;
+      return true;
+    }
+    return false;
+  }
+
+  /** Singularities earned by ascending now */
+  getSingularityGain() {
+    return Math.floor(this.getEntropy()) * ASCEND_SINGULARITY_PER_ENTROPY;
+  }
+
+  /** Ascend — resets run + prestige, preserves only singularities */
+  ascend() {
+    if (!this.canAscend()) return false;
+    this._singularities += this.getSingularityGain();
+    // Reset run state
+    this._angle = 0;
+    this._energy = 0;
+    this._speedLevel = 0;
+    this._energyLevel = 0;
+    this._clockCount = 1;
+    this._boostLevel = 0;
+    this._stabilityLevel = 0;
+    this._extraAngles = [];
+    this._extraRevolutions = [];
+    this._extraClockRunning = [];
+    this._totalRevolutions = 0;
+    this._fastTimeRemaining = 0;
+    this._fastTimeIsDebuff = false;
+    this._fractureFlash = 0;
+    this._surgeRemaining = 0;
+    this._reverseTimeRemaining = 0;
+    this._prevNear = [true];
+    this._prevHourMinNear = [true];
+    this._prevSurgeNear = [true];
+    this._clock2SpeedBonus = 0;
+    this._clock3TeBonus = 0;
+    this._clock4EntropyReduction = 0;
+    this._ascendUnlocked = false;
+    this._timeDust = 0;
+    // Reset prestige layer
+    this._prestigePoints = 0;
+    this._lifetimePPSpent = 0;
+    this._prestigeSpeedLevel = 0;
+    this._prestigeEnergyLevel = 0;
+    this._prestigeClockLevel = 0;
+    this._prestigeBoostLevel = 0;
+    this._prestigeAnchorLevel = 0;
+    this._prestigeMirrorLevel = 0;
+    this._prestigeTdLevel = 0;
+    this._prestigeEntropyReduceLevel = 0;
+    this._prestigeEntropyTeLevel = 0;
+    this._prestigeEntropyTdLevel = 0;
+    this._prestigeAscendLevel = 0;
+    this._prestigeSingularityLevel = 0;
     this.save();
     this._emitSnapshot();
     return true;
@@ -312,20 +395,20 @@ export class GameEngine {
   }
 
   buyPrestigeSpeed() {
-    return this._buyPrestigeUpgrade(this.getPrestigeSpeedCost, '_prestigeSpeedLevel', function() {
+    return this._buyPrestigeUpgrade(this.getPrestigeSpeedCost, '_prestigeSpeedLevel', function () {
       this._speedLevel += 1;
     });
   }
 
   buyPrestigeEnergy() {
-    return this._buyPrestigeUpgrade(this.getPrestigeEnergyCost, '_prestigeEnergyLevel', function() {
+    return this._buyPrestigeUpgrade(this.getPrestigeEnergyCost, '_prestigeEnergyLevel', function () {
       this._energyLevel += 1;
     });
   }
 
   buyPrestigeClock() {
     if (this._clockCount >= 1 + CLOCK_MAX_EXTRA) return false;
-    return this._buyPrestigeUpgrade(this.getPrestigeClockCost, '_prestigeClockLevel', function() {
+    return this._buyPrestigeUpgrade(this.getPrestigeClockCost, '_prestigeClockLevel', function () {
       this._clockCount += 1;
       this._extraAngles.push(0);
       this._extraRevolutions.push(0);
@@ -338,13 +421,13 @@ export class GameEngine {
 
   buyPrestigeBoost() {
     if (this._boostLevel >= BOOST_MAX_LEVEL) return false;
-    return this._buyPrestigeUpgrade(this.getPrestigeBoostCost, '_prestigeBoostLevel', function() {
+    return this._buyPrestigeUpgrade(this.getPrestigeBoostCost, '_prestigeBoostLevel', function () {
       this._boostLevel += 1;
     });
   }
 
   buyPrestigeAnchor() {
-    return this._buyPrestigeUpgrade(this.getPrestigeAnchorCost, '_prestigeAnchorLevel', function() {
+    return this._buyPrestigeUpgrade(this.getPrestigeAnchorCost, '_prestigeAnchorLevel', function () {
       this._stabilityLevel += 1;
     });
   }
@@ -367,7 +450,7 @@ export class GameEngine {
   }
 
   refundPrestigeClock() {
-    return this._refundPrestigeUpgrade('_prestigeClockLevel', PRESTIGE_CLOCK_BASE_COST, PRESTIGE_CLOCK_SCALING, function() {
+    return this._refundPrestigeUpgrade('_prestigeClockLevel', PRESTIGE_CLOCK_BASE_COST, PRESTIGE_CLOCK_SCALING, function () {
       if (this._clockCount > 1) {
         this._clockCount--;
         this._extraAngles.pop();
@@ -381,15 +464,15 @@ export class GameEngine {
   }
 
   refundPrestigeAnchor() {
-    return this._refundPrestigeUpgrade('_prestigeAnchorLevel', PRESTIGE_ANCHOR_BASE_COST, PRESTIGE_ANCHOR_SCALING, function() {
+    return this._refundPrestigeUpgrade('_prestigeAnchorLevel', PRESTIGE_ANCHOR_BASE_COST, PRESTIGE_ANCHOR_SCALING, function () {
       if (this._stabilityLevel > 0) this._stabilityLevel--;
     });
   }
 
-  getPrestigeSpeedCost()  { return this._prestigeCost(PRESTIGE_SPEED_BASE_COST,  PRESTIGE_SPEED_SCALING,  this._prestigeSpeedLevel);  }
+  getPrestigeSpeedCost() { return this._prestigeCost(PRESTIGE_SPEED_BASE_COST, PRESTIGE_SPEED_SCALING, this._prestigeSpeedLevel); }
   getPrestigeEnergyCost() { return this._prestigeCost(PRESTIGE_ENERGY_BASE_COST, PRESTIGE_ENERGY_SCALING, this._prestigeEnergyLevel); }
-  getPrestigeClockCost()  { return this._prestigeCost(PRESTIGE_CLOCK_BASE_COST,  PRESTIGE_CLOCK_SCALING,  this._prestigeClockLevel);  }
-  getPrestigeBoostCost()  { return this._prestigeCost(PRESTIGE_BOOST_BASE_COST,  PRESTIGE_BOOST_SCALING,  this._prestigeBoostLevel);  }
+  getPrestigeClockCost() { return this._prestigeCost(PRESTIGE_CLOCK_BASE_COST, PRESTIGE_CLOCK_SCALING, this._prestigeClockLevel); }
+  getPrestigeBoostCost() { return this._prestigeCost(PRESTIGE_BOOST_BASE_COST, PRESTIGE_BOOST_SCALING, this._prestigeBoostLevel); }
   getPrestigeAnchorCost() { return this._prestigeCost(PRESTIGE_ANCHOR_BASE_COST, PRESTIGE_ANCHOR_SCALING, this._prestigeAnchorLevel); }
   getPrestigeMirrorCost() { return this._prestigeCost(PRESTIGE_MIRROR_BASE_COST, PRESTIGE_MIRROR_SCALING, this._prestigeMirrorLevel); }
 
@@ -402,7 +485,7 @@ export class GameEngine {
     return this._buyPrestigeUpgrade(this.getPrestigeEntropyReduceCost, '_prestigeEntropyReduceLevel');
   }
 
-  getPrestigeTdCost()            { return this._prestigeCost(PRESTIGE_TD_BASE_COST,            PRESTIGE_TD_SCALING,            this._prestigeTdLevel); }
+  getPrestigeTdCost() { return this._prestigeCost(PRESTIGE_TD_BASE_COST, PRESTIGE_TD_SCALING, this._prestigeTdLevel); }
   getPrestigeEntropyReduceCost() { return this._prestigeCost(PRESTIGE_ENTROPY_REDUCE_BASE_COST, PRESTIGE_ENTROPY_REDUCE_SCALING, this._prestigeEntropyReduceLevel); }
 
   /** Scaling factor applied to all negative entropy effects (1 = full, 0 = none). */
@@ -427,7 +510,7 @@ export class GameEngine {
 
   getPrestigeEntropyTeCost() { return this._prestigeCost(PRESTIGE_ENTROPY_TE_BASE_COST, PRESTIGE_ENTROPY_TE_SCALING, this._prestigeEntropyTeLevel); }
   getPrestigeEntropyTdCost() { return this._prestigeCost(PRESTIGE_ENTROPY_TD_BASE_COST, PRESTIGE_ENTROPY_TD_SCALING, this._prestigeEntropyTdLevel); }
-  getPrestigeAscendCost()    { return this._prestigeCost(PRESTIGE_ASCEND_BASE_COST,     PRESTIGE_ASCEND_COST_SCALING, this._prestigeAscendLevel); }
+  getPrestigeAscendCost() { return this._prestigeCost(PRESTIGE_ASCEND_BASE_COST, PRESTIGE_ASCEND_COST_SCALING, this._prestigeAscendLevel); }
 
   buyPrestigeSingularity() {
     if (this._prestigeSingularityLevel >= 1) return false;
@@ -658,20 +741,21 @@ export class GameEngine {
       clock3TeBonus: this._clock3TeBonus,
       clock4EntropyReduction: this._clock4EntropyReduction,
       timeDust: this._timeDust,
+      singularities: this._singularities,
       prestigePoints: this._prestigePoints,
       lifetimePPSpent: this._lifetimePPSpent,
-      prestigeSpeedLevel:  this._prestigeSpeedLevel,
+      prestigeSpeedLevel: this._prestigeSpeedLevel,
       prestigeEnergyLevel: this._prestigeEnergyLevel,
-      prestigeClockLevel:  this._prestigeClockLevel,
-      prestigeBoostLevel:  this._prestigeBoostLevel,
+      prestigeClockLevel: this._prestigeClockLevel,
+      prestigeBoostLevel: this._prestigeBoostLevel,
       prestigeAnchorLevel: this._prestigeAnchorLevel,
       prestigeMirrorLevel: this._prestigeMirrorLevel,
       prestigeTdLevel: this._prestigeTdLevel,
       prestigeEntropyReduceLevel: this._prestigeEntropyReduceLevel,
       prestigeEntropyTeLevel: this._prestigeEntropyTeLevel,
       prestigeEntropyTdLevel: this._prestigeEntropyTdLevel,
-      prestigeAscendLevel:        this._prestigeAscendLevel,
-      prestigeSingularityLevel:   this._prestigeSingularityLevel,
+      prestigeAscendLevel: this._prestigeAscendLevel,
+      prestigeSingularityLevel: this._prestigeSingularityLevel,
       totalRevolutions: this._totalRevolutions,
       extraRevolutions: this._extraRevolutions,
       savedAt: Date.now(),
@@ -708,20 +792,21 @@ export class GameEngine {
       this._clock4EntropyReduction = data.clock4EntropyReduction ?? 0;
       this._extraClockRunning = Array(extras).fill(true);
       this._timeDust = data.timeDust ?? 0;
+      this._singularities = data.singularities ?? 0;
       this._prestigePoints = data.prestigePoints ?? 0;
       this._lifetimePPSpent = data.lifetimePPSpent ?? 0;
-      this._prestigeSpeedLevel  = data.prestigeSpeedLevel  ?? 0;
+      this._prestigeSpeedLevel = data.prestigeSpeedLevel ?? 0;
       this._prestigeEnergyLevel = data.prestigeEnergyLevel ?? 0;
-      this._prestigeClockLevel  = data.prestigeClockLevel  ?? 0;
-      this._prestigeBoostLevel  = data.prestigeBoostLevel  ?? 0;
+      this._prestigeClockLevel = data.prestigeClockLevel ?? 0;
+      this._prestigeBoostLevel = data.prestigeBoostLevel ?? 0;
       this._prestigeAnchorLevel = data.prestigeAnchorLevel ?? 0;
       this._prestigeMirrorLevel = data.prestigeMirrorLevel ?? 0;
-      this._prestigeTdLevel          = data.prestigeTdLevel ?? 0;
+      this._prestigeTdLevel = data.prestigeTdLevel ?? 0;
       this._prestigeEntropyReduceLevel = data.prestigeEntropyReduceLevel ?? 0;
-      this._prestigeEntropyTeLevel   = data.prestigeEntropyTeLevel ?? 0;
-      this._prestigeEntropyTdLevel   = data.prestigeEntropyTdLevel ?? 0;
-      this._prestigeAscendLevel        = data.prestigeAscendLevel ?? 0;
-      this._prestigeSingularityLevel   = data.prestigeSingularityLevel ?? 0;
+      this._prestigeEntropyTeLevel = data.prestigeEntropyTeLevel ?? 0;
+      this._prestigeEntropyTdLevel = data.prestigeEntropyTdLevel ?? 0;
+      this._prestigeAscendLevel = data.prestigeAscendLevel ?? 0;
+      this._prestigeSingularityLevel = data.prestigeSingularityLevel ?? 0;
       this._fastTimeRemaining = 0;
       this._surgeRemaining = 0;
       this._prevNear = Array(this._clockCount).fill(true);
@@ -791,8 +876,8 @@ export class GameEngine {
     // While reversing, the slowdown debuff inverts into a speed-up (going backwards faster).
     const fastTimeMult = isFastTime
       ? (this._fastTimeIsDebuff
-          ? (isReverse ? FAST_TIME_MULTIPLIER : FAST_TIME_DEBUFF_MULTIPLIER)
-          : FAST_TIME_MULTIPLIER)
+        ? (isReverse ? FAST_TIME_MULTIPLIER : FAST_TIME_DEBUFF_MULTIPLIER)
+        : FAST_TIME_MULTIPLIER)
       : 1;
 
     const speedMult = (this.getSpeedMultiplier() + this._clock2SpeedBonus) * fastTimeMult * (isSurge ? SURGE_SPEED_MULTIPLIER : 1);
@@ -983,6 +1068,9 @@ export class GameEngine {
         reverseTimeRemaining: this._reverseTimeRemaining,
         totalRevolutions: this._totalRevolutions,
         timeDust: this._timeDust,
+        singularities: this._singularities,
+        singularityGain: this.getSingularityGain(),
+        canAscend: this.canAscend(),
         prestigePoints: this._prestigePoints,
         lifetimePPSpent: this._lifetimePPSpent,
         canPrestige: this._timeDust >= PRESTIGE_COST_TD,
@@ -991,40 +1079,40 @@ export class GameEngine {
         entropyTePenalty: this.getEntropyTePenalty(),
         stabilityLevel: this._stabilityLevel,
         stabilityUpgradeCost: this.getStabilityUpgradeCost(),
-        prestigeSpeedLevel:  this._prestigeSpeedLevel,
+        prestigeSpeedLevel: this._prestigeSpeedLevel,
         prestigeEnergyLevel: this._prestigeEnergyLevel,
-        prestigeClockLevel:  this._prestigeClockLevel,
-        prestigeBoostLevel:  this._prestigeBoostLevel,
+        prestigeClockLevel: this._prestigeClockLevel,
+        prestigeBoostLevel: this._prestigeBoostLevel,
         prestigeAnchorLevel: this._prestigeAnchorLevel,
         prestigeMirrorLevel: this._prestigeMirrorLevel,
-        prestigeSpeedCost:   this.getPrestigeSpeedCost(),
-        prestigeEnergyCost:  this.getPrestigeEnergyCost(),
-        prestigeClockCost:   this.getPrestigeClockCost(),
-        prestigeBoostCost:   this.getPrestigeBoostCost(),
-        prestigeAnchorCost:  this.getPrestigeAnchorCost(),
-        prestigeMirrorCost:  this.getPrestigeMirrorCost(),
-        prestigeClockAtMax:  this._prestigeClockLevel >= CLOCK_MAX_EXTRA,
-        prestigeClockRefund:  this._prestigeClockLevel  > 0 ? this._prestigeCost(PRESTIGE_CLOCK_BASE_COST,  PRESTIGE_CLOCK_SCALING,  this._prestigeClockLevel  - 1) : 0,
+        prestigeSpeedCost: this.getPrestigeSpeedCost(),
+        prestigeEnergyCost: this.getPrestigeEnergyCost(),
+        prestigeClockCost: this.getPrestigeClockCost(),
+        prestigeBoostCost: this.getPrestigeBoostCost(),
+        prestigeAnchorCost: this.getPrestigeAnchorCost(),
+        prestigeMirrorCost: this.getPrestigeMirrorCost(),
+        prestigeClockAtMax: this._prestigeClockLevel >= CLOCK_MAX_EXTRA,
+        prestigeClockRefund: this._prestigeClockLevel > 0 ? this._prestigeCost(PRESTIGE_CLOCK_BASE_COST, PRESTIGE_CLOCK_SCALING, this._prestigeClockLevel - 1) : 0,
         prestigeAnchorRefund: this._prestigeAnchorLevel > 0 ? this._prestigeCost(PRESTIGE_ANCHOR_BASE_COST, PRESTIGE_ANCHOR_SCALING, this._prestigeAnchorLevel - 1) : 0,
-        prestigeBoostAtMax:  this._prestigeBoostLevel >= BOOST_MAX_LEVEL,
+        prestigeBoostAtMax: this._prestigeBoostLevel >= BOOST_MAX_LEVEL,
         prestigeMirrorAtMax: this._prestigeMirrorLevel >= 1,
-        prestigeTdLevel:     this._prestigeTdLevel,
-        prestigeTdCost:      this.getPrestigeTdCost(),
+        prestigeTdLevel: this._prestigeTdLevel,
+        prestigeTdCost: this.getPrestigeTdCost(),
         prestigeEntropyReduceLevel: this._prestigeEntropyReduceLevel,
-        prestigeEntropyReduceCost:  this.getPrestigeEntropyReduceCost(),
+        prestigeEntropyReduceCost: this.getPrestigeEntropyReduceCost(),
         prestigeEntropyReduceAtMax: this._prestigeEntropyReduceLevel >= PRESTIGE_ENTROPY_REDUCE_MAX,
-        prestigeEntropyTeLevel:  this._prestigeEntropyTeLevel,
-        prestigeEntropyTeCost:   this.getPrestigeEntropyTeCost(),
-        prestigeEntropyTeAtMax:  this._prestigeEntropyTeLevel >= PRESTIGE_ENTROPY_TE_MAX,
-        prestigeEntropyTdLevel:  this._prestigeEntropyTdLevel,
-        prestigeEntropyTdCost:   this.getPrestigeEntropyTdCost(),
-        prestigeEntropyTdAtMax:  this._prestigeEntropyTdLevel >= PRESTIGE_ENTROPY_TD_MAX,
-        prestigeAscendLevel:     this._prestigeAscendLevel,
-        prestigeAscendCost:      this.getPrestigeAscendCost(),
-        prestigeAscendAtMax:       this._prestigeAscendLevel >= PRESTIGE_ASCEND_MAX,
-        prestigeSingularityLevel:  this._prestigeSingularityLevel,
-        prestigeSingularityCost:   this.getPrestigeSingularityCost(),
-        prestigeSingularityAtMax:  this._prestigeSingularityLevel >= 1,
+        prestigeEntropyTeLevel: this._prestigeEntropyTeLevel,
+        prestigeEntropyTeCost: this.getPrestigeEntropyTeCost(),
+        prestigeEntropyTeAtMax: this._prestigeEntropyTeLevel >= PRESTIGE_ENTROPY_TE_MAX,
+        prestigeEntropyTdLevel: this._prestigeEntropyTdLevel,
+        prestigeEntropyTdCost: this.getPrestigeEntropyTdCost(),
+        prestigeEntropyTdAtMax: this._prestigeEntropyTdLevel >= PRESTIGE_ENTROPY_TD_MAX,
+        prestigeAscendLevel: this._prestigeAscendLevel,
+        prestigeAscendCost: this.getPrestigeAscendCost(),
+        prestigeAscendAtMax: this._prestigeAscendLevel >= PRESTIGE_ASCEND_MAX,
+        prestigeSingularityLevel: this._prestigeSingularityLevel,
+        prestigeSingularityCost: this.getPrestigeSingularityCost(),
+        prestigeSingularityAtMax: this._prestigeSingularityLevel >= 1,
       });
     }
   }

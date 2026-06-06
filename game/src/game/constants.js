@@ -94,24 +94,24 @@ export const PRESTIGE_ENTROPY_PP_SCALING = 0.01;  // K in: effectiveEntropy = 1 
 
 // Costs paid in Prestige Points; scale exponentially per level
 export const PRESTIGE_SPEED_BASE_COST = 2;        // P1: Start with Accelerate Time +1 lv
-export const PRESTIGE_SPEED_SCALING = 1.3;
+export const PRESTIGE_SPEED_SCALING = 1.1;
 export const PRESTIGE_ENERGY_BASE_COST = 2;       // P2: Start with Improve Time +1 lv
-export const PRESTIGE_ENERGY_SCALING = 1.3;
+export const PRESTIGE_ENERGY_SCALING = 1.1;
 export const PRESTIGE_CLOCK_BASE_COST = 10;       // P3: Start with Add Clock +1 lv
-export const PRESTIGE_CLOCK_SCALING = 5.0;
+export const PRESTIGE_CLOCK_SCALING = 3.0;
 export const PRESTIGE_BOOST_BASE_COST = 2;        // P4: Start with Boost Clocks +1 lv
-export const PRESTIGE_BOOST_SCALING = 1.7;
+export const PRESTIGE_BOOST_SCALING = 1.2;
 export const PRESTIGE_ANCHOR_BASE_COST = 2;       // P5: Start with Anchor Time +1 lv
-export const PRESTIGE_ANCHOR_SCALING = 2.0;
+export const PRESTIGE_ANCHOR_SCALING = 1.3;
 export const PRESTIGE_MIRROR_BASE_COST = 15;      // Mirror Clocks: backward hand per clock
-export const PRESTIGE_MIRROR_SCALING = 5.0;
+export const PRESTIGE_MIRROR_SCALING = 1.0;
 
 export const PRESTIGE_TD_BASE_COST = 7;           // Extra TD: +PRESTIGE_TD_BONUS yield per level
-export const PRESTIGE_TD_SCALING = 1.5;
+export const PRESTIGE_TD_SCALING = 1.2;
 export const PRESTIGE_TD_BONUS = 0.20;            // +20% TD yield per level (cumulative additive)
 
 export const PRESTIGE_ENTROPY_REDUCE_BASE_COST = 7; // Reduce Entropy Effects
-export const PRESTIGE_ENTROPY_REDUCE_SCALING = 1.8;
+export const PRESTIGE_ENTROPY_REDUCE_SCALING = 1.1;
 export const PRESTIGE_ENTROPY_REDUCE_MAX = 10;    // at max: all negative entropy effects suppressed
 
 // Tier 3 prestige upgrades — entropy flipped into a resource
@@ -119,23 +119,27 @@ export const PRESTIGE_ENTROPY_REDUCE_MAX = 10;    // at max: all negative entrop
 export const PRESTIGE_ENTROPY_BONUS_THRESHOLD = 0.70; // entropy must exceed this for tier-3 bonuses
 
 export const PRESTIGE_ENTROPY_TE_BASE_COST = 10;     // Temporal Resonance: TE bonus above threshold
-export const PRESTIGE_ENTROPY_TE_SCALING = 2.0;
+export const PRESTIGE_ENTROPY_TE_SCALING = 1.3;
 export const PRESTIGE_ENTROPY_TE_BONUS = 0.20;        // flat +20% TE per level when entropy ≥ threshold
 export const PRESTIGE_ENTROPY_TE_MAX = 10;
 
 export const PRESTIGE_ENTROPY_TD_BASE_COST = 10;     // Chaos Harvest: TD bonus above threshold
-export const PRESTIGE_ENTROPY_TD_SCALING = 1.8;
+export const PRESTIGE_ENTROPY_TD_SCALING = 1.3;
 export const PRESTIGE_ENTROPY_TD_BONUS = 0.20;        // flat +20% TD per level when entropy ≥ threshold
 export const PRESTIGE_ENTROPY_TD_MAX = 10;
 
 export const PRESTIGE_ASCEND_BASE_COST = 10;         // Entropy Ascendance: entropy coefficient in PP formula
-export const PRESTIGE_ASCEND_COST_SCALING = 2.0;
+export const PRESTIGE_ASCEND_COST_SCALING = 1.3;
 export const PRESTIGE_ASCEND_BOOST = 0.10;            // +0.10 to entropy coefficient per level
 export const PRESTIGE_ASCEND_MAX = 10;                // coefficient goes from 1.0 → 2.0 at max
 
-// Tier 4 — Temporal Singularity
+// Tier 4 — Temporal Stabilization (formerly Singularity)
 export const PRESTIGE_SINGULARITY_COST = 100;         // one-time purchase
 export const PRESTIGE_SINGULARITY_SPEED_THRESHOLD = 100; // 100x = 10,000%; locks entropy to 1.0
+
+// ── Ascension ─────────────────────────────────────────────────────────────────
+export const ASCEND_SPEED_THRESHOLD = 1000;           // 1000× = 100,000% required to ascend
+export const ASCEND_SINGULARITY_PER_ENTROPY = 1;      // singularities gained per 100% entropy
 
 // ── Reverse Time ─────────────────────────────────────────────────────────────
 

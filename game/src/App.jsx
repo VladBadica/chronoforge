@@ -7,11 +7,13 @@ import { EnergyDisplay } from './components/EnergyDisplay.jsx';
 import { UpgradePanel } from './components/UpgradePanel.jsx';
 import { StatsBar } from './components/StatsBar.jsx';
 import { PrestigeModal } from './components/PrestigeModal.jsx';
+import { AscendModal } from './components/AscendModal.jsx';
 import { FAST_TIME_MULTIPLIER, FAST_TIME_DEBUFF_MULTIPLIER } from './game/constants.js';
 
 export default function App() {
   useGameEngine();
   const [showPrestige, setShowPrestige] = useState(false);
+  const [showAscend, setShowAscend] = useState(false);
 
   const {
     angle,
@@ -61,6 +63,10 @@ export default function App() {
     prestigePoints,
     canPrestige,
     prestige,
+    singularities,
+    singularityGain,
+    canAscend,
+    ascend,
     prestigeSpeedLevel, prestigeSpeedCost, buyPrestigeSpeed,
     prestigeEnergyLevel, prestigeEnergyCost, buyPrestigeEnergy,
     prestigeClockLevel, prestigeClockCost, buyPrestigeClock, prestigeClockAtMax, prestigeClockRefund, refundPrestigeClock,
@@ -138,6 +144,23 @@ export default function App() {
         >
           ✦ Prestige{prestigePoints > 0 ? ` · ${prestigePoints} PP` : ''}
         </button>
+
+        {canAscend && (
+          <button
+            onClick={() => setShowAscend(true)}
+            className="w-full rounded-lg text-sm font-semibold transition-all duration-200"
+            style={{
+              background: 'linear-gradient(135deg, #f0c060cc, #e6a830)',
+              border: '1px solid rgba(240,192,96,0.5)',
+              color: '#0a0a0f',
+              cursor: 'pointer',
+              fontWeight: 700,
+              boxShadow: '0 0 24px rgba(240,192,96,0.2)',
+            }}
+          >
+            ✦ Ascend{singularities > 0 ? ` · ${singularities} ✦` : ''}
+          </button>
+        )}
 
         <div className="flex gap-2 flex-wrap">
           <button
@@ -267,6 +290,16 @@ export default function App() {
           prestigeEntropyTdLevel={prestigeEntropyTdLevel} prestigeEntropyTdCost={prestigeEntropyTdCost} buyPrestigeEntropyTd={buyPrestigeEntropyTd} prestigeEntropyTdAtMax={prestigeEntropyTdAtMax}
           prestigeAscendLevel={prestigeAscendLevel} prestigeAscendCost={prestigeAscendCost} buyPrestigeAscend={buyPrestigeAscend} prestigeAscendAtMax={prestigeAscendAtMax}
           prestigeSingularityLevel={prestigeSingularityLevel} prestigeSingularityCost={prestigeSingularityCost} buyPrestigeSingularity={buyPrestigeSingularity} prestigeSingularityAtMax={prestigeSingularityAtMax}
+        />
+      )}
+
+      {showAscend && (
+        <AscendModal
+          singularities={singularities}
+          singularityGain={singularityGain}
+          canAscend={canAscend}
+          onAscend={() => { ascend(); setShowAscend(false); }}
+          onClose={() => setShowAscend(false)}
         />
       )}
     </div>
