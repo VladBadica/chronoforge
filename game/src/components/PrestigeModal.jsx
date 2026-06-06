@@ -109,8 +109,8 @@ const UPGRADES_TIER3 = [
 const UPGRADES_TIER4 = [
   {
     key: 'singularity',
-    label: 'Temporal Singularity',
-    desc: 'At 100,000% speed (1000×), you can break entropy and time itself',
+    label: 'Temporal Stabilization',
+    desc: 'Allows reaching 100% entropy and suppresses all clock distortion',
     costKey: 'prestigeSingularityCost',
     levelKey: 'prestigeSingularityLevel',
     buyKey: 'buyPrestigeSingularity',
@@ -156,7 +156,7 @@ export function PrestigeModal({
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
-        className="w-full max-w-2xl flex flex-col gap-6 rounded-2xl overflow-y-auto custom-scrollbar"
+        className="w-full max-w-2xl flex flex-col gap-6 rounded-2xl"
         style={{
           padding: '1rem',
           maxHeight: '90vh',
@@ -296,21 +296,23 @@ export function PrestigeModal({
               >
                 Prestige Upgrades
               </h3>
-              <div className="grid grid-cols-2 gap-2">
-                {UPGRADES_TIER1.map(renderCard)}
-              </div>
+              <div className="overflow-y-auto custom-scrollbar flex flex-col gap-2" style={{ maxHeight: '40vh' }}>
+                <div className="grid grid-cols-2 gap-2">
+                  {UPGRADES_TIER1.map(renderCard)}
+                </div>
 
-              <div style={{ borderTop: '1px solid rgba(124,111,247,0.2)', margin: '2px 0' }} />
-              <div className="grid grid-cols-2 gap-2">
-                {UPGRADES_TIER2.map(renderCard)}
-              </div>
+                <div style={{ borderTop: '1px solid rgba(124,111,247,0.2)', margin: '2px 0' }} />
+                <div className="grid grid-cols-2 gap-2">
+                  {UPGRADES_TIER2.map(renderCard)}
+                </div>
 
-              <div style={{ borderTop: '1px solid rgba(124,111,247,0.2)', margin: '2px 0' }} />
-              <div className="grid grid-cols-2 gap-2">
-                {UPGRADES_TIER3.map(renderCard)}
+                <div style={{ borderTop: '1px solid rgba(124,111,247,0.2)', margin: '2px 0' }} />
+                <div className="grid grid-cols-2 gap-2">
+                  {UPGRADES_TIER3.map(renderCard)}
+                </div>
+                <div style={{ borderTop: '1px solid rgba(124,111,247,0.2)', margin: '2px 0' }} />
+                {UPGRADES_TIER4.map(renderCard)}
               </div>
-              <div style={{ borderTop: '1px solid rgba(124,111,247,0.2)', margin: '2px 0' }} />
-              {UPGRADES_TIER4.map(renderCard)}
             </div>
           );
         })()}

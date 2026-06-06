@@ -1,8 +1,4 @@
-function formatNumber(n) {
-  if (n >= 1_000_000) return (n / 1_000_000).toFixed(2) + 'M';
-  if (n >= 1_000) return (n / 1_000).toFixed(2) + 'K';
-  return Math.floor(n).toString();
-}
+import { fmt } from '../utils/format.js';
 
 function UpgradeCard({ title, description, level, statLabel, statCurrent, statNext, statNextColor, cost, canAfford, onBuy, accentColor, accentGlow, maxed = false }) {
   const effectiveCanAfford = canAfford && !maxed;
@@ -73,7 +69,7 @@ function UpgradeCard({ title, description, level, statLabel, statCurrent, statNe
           {maxed ? 'MAX LEVEL' : (
             <>
               <span style={{ color: 'var(--color-energy)', marginRight: 6 }}>
-                {formatNumber(cost)} TE
+                {fmt(cost)} TE
               </span>
               Buy
             </>

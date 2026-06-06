@@ -20,13 +20,14 @@ function polarToCartesian(cx, cy, r, angleDeg) {
   return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
 }
 
-export function Clock({ angle, totalRevolutions, size = 240, showMirror = false, entropy = 0 }) {
+export function Clock({ angle, totalRevolutions, size = 240, showMirror = false, entropy = 0, suppressWarp = false }) {
   const minuteAngle = ((totalRevolutions % 60) + angle / 360) * 6;
   const hourAngle   = ((totalRevolutions % 720) + angle / 360) * 0.5;
 
   // Power curve: t=0 at 40%, t=1 at 100%. Exponent 2.5 keeps it barely
   // visible from 40-70% (~0-3.5px) then ramps hard above 70% (up to 20px).
-  const warpScale = entropy >= WARP_THRESHOLD
+  // Suppressed when Temporal Stabilization is purchased.
+  const warpScale = !suppressWarp && entropy >= WARP_THRESHOLD
     ? Math.pow((entropy - WARP_THRESHOLD) / (1 - WARP_THRESHOLD), 1.7) * 7
     : 0;
 

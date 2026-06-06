@@ -633,6 +633,15 @@ export class GameEngine {
     return mainRPS * energyPerRev * surgeEnergyMult * mainMirrorMult * this.getEntropyTeMultiplier();
   }
 
+  /** Total TE/s drained by all currently-running extra clocks */
+  getTotalMaintenanceCost() {
+    let total = 0;
+    for (let i = 0; i < this._extraClockRunning.length; i++) {
+      if (this._extraClockRunning[i]) total += this._getExtraClockMaintenanceCost(i);
+    }
+    return total;
+  }
+
   // -------------------------------------------------------------------------
   // Save / Load
   // -------------------------------------------------------------------------
@@ -943,7 +952,7 @@ export class GameEngine {
         speedLevel: this._speedLevel,
         speedMultiplier: this.getSpeedMultiplier() + this._clock2SpeedBonus,
         nextSpeedMultiplier: this._speedMultiplierAt(this._speedLevel + 1) + this._clock2SpeedBonus,
-        energyPerSecond: this.getEnergyPerSecond(true),
+        energyPerSecond: this.getEnergyPerSecond(true) - this.getTotalMaintenanceCost(),
         upgradeCost: this.getUpgradeCost(),
         energyLevel: this._energyLevel,
         energyPerRevolution: this.getEnergyPerRevolution(),

@@ -1,8 +1,4 @@
-function formatNumber(n, fixedDecimals = 2) {
-  if (n >= 1_000_000) return (n / 1_000_000).toFixed(fixedDecimals) + 'M';
-  if (n >= 1_000) return (n / 1_000).toFixed(fixedDecimals) + 'K';
-  return n.toFixed(fixedDecimals);
-}
+import { fmt } from '../utils/format.js';
 
 export function EnergyDisplay({ energy, energyPerSecond, timeDust = 0 }) {
   return (
@@ -15,7 +11,7 @@ export function EnergyDisplay({ energy, energyPerSecond, timeDust = 0 }) {
             className="stat-value text-5xl font-bold tracking-tight"
             style={{ color: 'var(--color-energy)' }}
           >
-            {formatNumber(energy)}
+            {fmt(energy)}
           </span>
           <span className="text-lg font-medium" style={{ color: 'var(--color-muted)' }}>
             TE
@@ -35,7 +31,7 @@ export function EnergyDisplay({ energy, energyPerSecond, timeDust = 0 }) {
             color: 'rgba(240,192,96,0.75)',
           }}
         >
-          <span className="stat-value">{formatNumber(energyPerSecond)}</span>
+          <span className="stat-value">{fmt(energyPerSecond)}</span>
           <span style={{ color: 'var(--color-muted)' }}>TE/s</span>
         </div>
       </div>
@@ -47,7 +43,7 @@ export function EnergyDisplay({ energy, energyPerSecond, timeDust = 0 }) {
             className="stat-value text-5xl font-bold tracking-tight"
             style={{ color: '#c0b8ff' }}
           >
-            {formatNumber(timeDust, 1)}
+            {fmt(timeDust, 1)}
           </span>
           <span className="text-lg font-medium" style={{ color: 'var(--color-muted)' }}>
             TD

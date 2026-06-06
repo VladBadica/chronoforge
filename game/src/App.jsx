@@ -225,7 +225,7 @@ export default function App() {
               transition: 'filter 0.4s ease',
             }}
           >
-            <Clock angle={angle} totalRevolutions={totalRevolutions} size={220} showMirror={prestigeMirrorLevel >= 1} entropy={entropy} />
+            <Clock angle={angle} totalRevolutions={totalRevolutions} size={220} showMirror={prestigeMirrorLevel >= 1} entropy={entropy} suppressWarp={prestigeSingularityLevel >= 1} />
           </div>
 
           {extraAngles.length > 0 && (
