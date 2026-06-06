@@ -1,6 +1,3 @@
-// Minimal stats strip shown above the clock
-import React from 'react';
-
 export function StatsBar({ totalRevolutions, speedMultiplier, isFastTime, fastTimeIsDebuff, fastTimeMultiplier, fastTimeDebuffMultiplier, isSurge, surgeRemaining }) {
   const fastMult = isFastTime ? (fastTimeIsDebuff ? fastTimeDebuffMultiplier : fastTimeMultiplier) : 1;
   const surgeMult = isSurge ? 5 : 1;
@@ -21,7 +18,7 @@ export function StatsBar({ totalRevolutions, speedMultiplier, isFastTime, fastTi
 
   return (
     <div
-      className="flex items-center gap-6 px-6 py-2 rounded-full text-xs transition-all duration-400"
+      className="flex items-center gap-6 rounded-full text-xs transition-all duration-400"
       style={{
         background: 'var(--color-surface)',
         border: `1px solid ${borderColor}`,

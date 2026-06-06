@@ -28,7 +28,7 @@ export function EnergyDisplay({ energy, energyPerSecond, timeDust = 0 }) {
           Time Energy
         </span>
         <div
-          className="mt-1 flex items-center gap-1.5 px-3 py-1 rounded-full text-sm"
+          className="mt-1 flex items-center gap-1.5 rounded-full text-sm"
           style={{
             background: 'rgba(240,192,96,0.08)',
             border: '1px solid rgba(240,192,96,0.15)',

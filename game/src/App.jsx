@@ -85,7 +85,7 @@ export default function App() {
       style={{ background: 'var(--color-bg)' }}
     >
       {/* ── LHS — upgrades + actions ───────────────────────────────────── */}
-      <div className="flex flex-col gap-5 p-5 overflow-y-auto">
+      <div className="flex flex-col gap-5 p-5 overflow-y-auto items-center justify-center">
 
         <h2 className="text-xs font-semibold uppercase tracking-widest shrink-0" style={{ color: 'var(--color-muted)' }}>
           Upgrades
@@ -127,7 +127,7 @@ export default function App() {
 
         <button
           onClick={() => setShowPrestige(true)}
-          className="w-full px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200"
+          className="w-full rounded-lg text-sm font-semibold transition-all duration-200"
           style={{
             background: canPrestige ? 'linear-gradient(135deg, #9d8fffcc, #7c6ff7)' : 'transparent',
             border: `1px solid ${canPrestige ? 'rgba(124,111,247,0.6)' : 'var(--color-border)'}`,
@@ -142,21 +142,21 @@ export default function App() {
         <div className="flex gap-2 flex-wrap">
           <button
             onClick={debugAddEnergy}
-            className="text-xs px-3 py-1.5 rounded-md transition-colors duration-150"
+            className="text-xs rounded-md transition-colors duration-150"
             style={{ background: 'transparent', border: '1px solid var(--color-border)', color: 'var(--color-muted)', cursor: 'pointer' }}
             onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--color-accent)'; e.currentTarget.style.color = 'var(--color-accent)'; }}
             onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.color = 'var(--color-muted)'; }}
           >+100k TE</button>
           <button
             onClick={debugAddTimeDust}
-            className="text-xs px-3 py-1.5 rounded-md transition-colors duration-150"
+            className="text-xs rounded-md transition-colors duration-150"
             style={{ background: 'transparent', border: '1px solid var(--color-border)', color: 'var(--color-muted)', cursor: 'pointer' }}
             onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#5ecfb0'; e.currentTarget.style.color = '#5ecfb0'; }}
             onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.color = 'var(--color-muted)'; }}
           >+100 TD</button>
           <button
             onClick={() => { if (window.confirm('Reset all progress and start fresh?')) resetGame(); }}
-            className="text-xs px-3 py-1.5 rounded-md transition-colors duration-150"
+            className="text-xs rounded-md transition-colors duration-150"
             style={{ background: 'transparent', border: '1px solid var(--color-border)', color: 'var(--color-muted)', cursor: 'pointer' }}
             onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#c0392b'; e.currentTarget.style.color = '#e74c3c'; }}
             onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.color = 'var(--color-muted)'; }}
@@ -165,7 +165,7 @@ export default function App() {
       </div>
 
       {/* ── RHS — game view ────────────────────────────────────────────── */}
-      <div className="flex flex-col items-center justify-center gap-8 py-10 px-8">
+      <div className="flex flex-col items-center gap-8" style={{ justifyContent: 'flex-start', paddingTop: '6rem', paddingBottom: '2.5rem', paddingLeft: '2rem', paddingRight: '2rem' }}>
 
         <header className="flex flex-col items-center gap-1">
           <h1

@@ -145,8 +145,8 @@ export function PrestigeModal({
 
   const levels = { prestigeSpeedLevel, prestigeEnergyLevel, prestigeClockLevel, prestigeBoostLevel, prestigeAnchorLevel, prestigeMirrorLevel, prestigeTdLevel, prestigeEntropyReduceLevel, prestigeEntropyTeLevel, prestigeEntropyTdLevel, prestigeAscendLevel, prestigeSingularityLevel };
   const costs = { prestigeSpeedCost, prestigeEnergyCost, prestigeClockCost, prestigeBoostCost, prestigeAnchorCost, prestigeMirrorCost, prestigeTdCost, prestigeEntropyReduceCost, prestigeEntropyTeCost, prestigeEntropyTdCost, prestigeAscendCost, prestigeSingularityCost };
-  const actions     = { buyPrestigeSpeed, buyPrestigeEnergy, buyPrestigeClock, buyPrestigeBoost, buyPrestigeAnchor, buyPrestigeMirror, buyPrestigeTd, buyPrestigeEntropyReduce, buyPrestigeEntropyTe, buyPrestigeEntropyTd, buyPrestigeAscend, buyPrestigeSingularity, refundPrestigeClock, refundPrestigeAnchor };
-  const atMaxMap    = { prestigeClockAtMax, prestigeBoostAtMax, prestigeMirrorAtMax, prestigeEntropyReduceAtMax, prestigeEntropyTeAtMax, prestigeEntropyTdAtMax, prestigeAscendAtMax, prestigeSingularityAtMax };
+  const actions = { buyPrestigeSpeed, buyPrestigeEnergy, buyPrestigeClock, buyPrestigeBoost, buyPrestigeAnchor, buyPrestigeMirror, buyPrestigeTd, buyPrestigeEntropyReduce, buyPrestigeEntropyTe, buyPrestigeEntropyTd, buyPrestigeAscend, buyPrestigeSingularity, refundPrestigeClock, refundPrestigeAnchor };
+  const atMaxMap = { prestigeClockAtMax, prestigeBoostAtMax, prestigeMirrorAtMax, prestigeEntropyReduceAtMax, prestigeEntropyTeAtMax, prestigeEntropyTdAtMax, prestigeAscendAtMax, prestigeSingularityAtMax };
   const refundCosts = { prestigeClockRefund, prestigeAnchorRefund };
 
   return (
@@ -198,7 +198,7 @@ export function PrestigeModal({
 
         {/* Stats */}
         <div
-          className="flex justify-between rounded-xl px-6 py-4"
+          className="flex justify-between rounded-xl"
           style={{ background: 'rgba(124,111,247,0.06)', border: '1px solid rgba(124,111,247,0.15)', padding: '5px' }}
         >
           <div className="flex flex-col items-center gap-1">
@@ -319,7 +319,7 @@ export function PrestigeModal({
         <div className="flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 py-2.5 rounded-lg text-sm font-semibold transition-colors duration-150"
+            className="flex-1 rounded-lg text-sm font-semibold transition-colors duration-150"
             style={{
               background: 'transparent',
               border: '1px solid var(--color-border)',
@@ -335,7 +335,7 @@ export function PrestigeModal({
           <button
             onClick={canPrestige ? onPrestige : undefined}
             disabled={!canPrestige}
-            className="flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200"
+            className="flex-1 rounded-lg text-sm font-semibold transition-all duration-200"
             style={{
               background: canPrestige
                 ? 'linear-gradient(135deg, #9d8fffcc, #7c6ff7)'

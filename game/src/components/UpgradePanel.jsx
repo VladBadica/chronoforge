@@ -27,7 +27,7 @@ function UpgradeCard({ title, description, level, statLabel, statCurrent, statNe
           </div>
         </div>
         <div
-          className="shrink-0 px-2.5 py-0.5 rounded-full text-xs font-bold"
+          className="shrink-0 rounded-full text-xs font-bold"
           style={{ background: accentColor + '26', color: statNextColor }}
         >
           Lv.{level}
@@ -38,7 +38,7 @@ function UpgradeCard({ title, description, level, statLabel, statCurrent, statNe
       <div className="flex-1" />
 
       {/* Bottom: stat row + buy button */}
-      <div className="flex flex-col gap-2 pt-3">
+      <div className="flex flex-col gap-2">
         <div className="flex justify-between text-xs" style={{ color: 'var(--color-muted)' }}>
           <span>
             {statLabel}: <span style={{ color: 'var(--color-text)' }}>{statCurrent}</span>
@@ -51,7 +51,7 @@ function UpgradeCard({ title, description, level, statLabel, statCurrent, statNe
         <button
           onClick={onBuy}
           disabled={!effectiveCanAfford}
-          className="w-full py-2.5 px-4 rounded-lg text-sm font-semibold transition-all duration-200"
+          className="w-full rounded-lg text-sm font-semibold transition-all duration-200"
           style={{
             background: effectiveCanAfford
               ? `linear-gradient(135deg, ${accentColor}cc, ${accentColor})`
