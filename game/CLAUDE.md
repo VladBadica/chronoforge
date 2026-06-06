@@ -39,14 +39,20 @@ The singleton `gameEngine` is exported and used everywhere.
 **Save encoding:** `save()` writes `btoa(JSON.stringify(data))` — base64-encoded so the save is not human-readable. `load()` tries `atob(raw)` first, falls back to plain JSON for saves written before encoding was added.
 
 **Saved state fields** (persisted to `localStorage`):
-`energy`, `speedLevel`, `energyLevel`, `clockCount`, `boostLevel`, `stabilityLevel`, `timeDust`, `totalRevolutions`, `extraRevolutions`, `clock2SpeedBonus`, `clock3TeBonus`, `clock4EntropyReduction`, `prestigePoints`, `lifetimePPSpent`, all prestige upgrade levels (`prestigeSpeedLevel`, `prestigeEnergyLevel`, `prestigeClockLevel`, `prestigeBoostLevel`, `prestigeAnchorLevel`, `prestigeMirrorLevel`, `prestigeTdLevel`, `prestigeEntropyReduceLevel`, `prestigeEntropyTeLevel`, `prestigeEntropyTdLevel`, `prestigeAscendLevel`, `prestigeSingularityLevel`), `savedAt`
+`energy`, `speedLevel`, `energyLevel`, `clockCount`, `boostLevel`, `stabilityLevel`, `timeDust`, `totalRevolutions`, `extraRevolutions`, `clock2SpeedBonus`, `clock3TeBonus`, `clock4EntropyReduction`, `prestigePoints`, `lifetimePPSpent`, all prestige upgrade levels (`prestigeSpeedLevel`, `prestigeEnergyLevel`, `prestigeClockLevel`, `prestigeBoostLevel`, `prestigeAnchorLevel`, `prestigeMirrorLevel`, `prestigeTdLevel`, `prestigeEntropyReduceLevel`, `prestigeEntropyTeLevel`, `prestigeEntropyTdLevel`, `prestigeAscendLevel`, `prestigeSingularityLevel`), `singularities`, `totalClicks`, `timesPrestiged`, `totalPPEarned`, `maxSpeedReached`, `timesAscended`, `savedAt`
 
-**Transient state** (not saved, reset to 0 on load):
-`_fastTimeRemaining`, `_fastTimeIsDebuff`, `_fractureFlash`, `_surgeRemaining`, `_reverseTimeRemaining`, `_extraAngles`, `_extraClockRunning`, `_prevNear`, `_prevHourMinNear`, `_prevSurgeNear`
+**Transient state** (not saved, reset on load):
+`_fastTimeRemaining`, `_fastTimeIsDebuff`, `_fractureFlash`, `_surgeRemaining`, `_reverseTimeRemaining`, `_extraAngles`, `_extraClockRunning`, `_ascendUnlocked`, `_prevNear`, `_prevHourMinNear`, `_prevSurgeNear`
 
 **`_update(deltaMs, skipExtraClocks = false, silent = false)`** — core loop step. `skipExtraClocks = true` means extra clocks don't advance (used by `addSecond()`). `silent = true` skips `_emitSnapshot()` — used for intermediate sub-steps inside `addSecond()`.
 
-**`addSecond()`** — simulates 1 second of game time by breaking it into sub-steps. Step size = `FAST_TIME_THRESHOLD_DEG / degreesPerMs` (min 1 ms) so the second hand can never skip over a 5° event window in a single step, regardless of speed. Only the final sub-step emits a snapshot.
+**`addSecond()`** — simulates 1 second of game time by breaking it into sub-steps. Step size = `FAST_TIME_THRESHOLD_DEG / degreesPerMs` (min 1 ms) so the second hand can never skip over a 5° event window in a single step, regardless of speed. Only the final sub-step emits a snapshot. Increments `_totalClicks`.
+
+**`getTotalMaintenanceCost()`** — sum of `_getExtraClockMaintenanceCost(i)` for all running extra clocks. Subtracted from gross TE/s in the snapshot so `energyPerSecond` is always the **net** rate.
+
+**`canAscend()`** — checks `_prestigeSingularityLevel ≥ 1`, entropy = 1.0, and effective speed (base × fastMult × surgeMult) ≥ `ASCEND_SPEED_THRESHOLD`. Latches `_ascendUnlocked = true` the first time it fires so the Ascend button stays visible for the rest of the run even if buffs expire.
+
+**`ascend()`** — grants `getSingularityGain()` singularities, then performs a full reset of both run state and prestige layer (PP, PP spent, all prestige levels). Singularities and lifetime stats are never reset by ascend.
 
 **`getEntropyTeMultiplier()`** — combined TE multiplier for each revolution: `max(0, 1 − getEntropyTePenalty() + entropy × prestigeEntropyTeLevel × PRESTIGE_ENTROPY_TE_BONUS)`. Can exceed 1.0 when Temporal Resonance is active at high entropy. Used everywhere `(1 − tePenalty)` was previously used.
 
@@ -64,18 +70,24 @@ A single `useEffect` that mounts/unmounts the engine: loads save, starts the RAF
 
 All tunable game-balance values. Never put magic numbers inline — change here. Sections: Core / Upgrades / Entropy / Events / Prestige (Tier 1–4) / Reverse Time / System.
 
+### `src/utils/format.js`
+
+Shared number formatter using `decimal.js` (display-only — game internals use plain JS numbers). `fmt(n, decimals = 2)` produces suffix notation (K, M, B, T, Qa, Qi, Sx, Sp, Oc, No, Dc) up to 10^33, then scientific notation. Import this everywhere numbers are displayed; do not define local `formatNumber` helpers.
+
 ### Components (`src/components/`)
 
 All purely presentational — receive props, render, no game state, no engine calls.
 
-- **`Clock.jsx`** — SVG analog clock, three hands (no tail — hands start at centre), tick marks, glow. Receives `angle` (0–360°), `totalRevolutions`, and `entropy` (0–1). Mirror hand (when `showMirror`) is fractured at two points: inner segment straight, mid segment +4° offset, tip −4° offset relative to mid, with decreasing opacity toward the tip. **Turbulence warp**: above `WARP_THRESHOLD` (0.40 entropy) an `feTurbulence + feDisplacementMap` SVG filter warps the whole clock. Displacement scale = `t^1.7 × 7` px where `t = (entropy − 0.40) / 0.60` — barely visible at 40–70%, escalating rapidly above 70%. The `feTurbulence` seed shifts with `angle` so the distortion crawls as the clock spins; a SMIL `<animate>` on `baseFrequency` adds a continuous 5 s ripple cycle. Filter is not rendered when `entropy < WARP_THRESHOLD` (zero performance cost at low entropy).
-- **`ExtraClock.jsx`** — Minimal orbiting-dot display for extra clocks. No face fill, no tick marks — just a glowing teal ring track, a thin arm from centre, a bright dot at the circumference, and a short comet trail. Receives `angle` and `size` only.
-- **`EnergyDisplay.jsx`** — Shows TE, TE/s rate, and TimeDust count.
-- **`UpgradePanel.jsx`** — Five upgrade cards in a 2-column grid (Anchor Time spans full width).
+- **`Clock.jsx`** — SVG analog clock, three hands (no tail — hands start at centre), tick marks, glow. Receives `angle` (0–360°), `totalRevolutions`, `entropy` (0–1), `showMirror`, and `suppressWarp`. Mirror hand (when `showMirror`) is fractured at two points. **Turbulence warp**: above `WARP_THRESHOLD` (0.40 entropy) an `feTurbulence + feDisplacementMap` SVG filter warps the clock. Suppressed entirely when `suppressWarp = true` (set when Temporal Stabilization is purchased).
+- **`ExtraClock.jsx`** — Minimal orbiting-dot display for extra clocks. Receives `angle`, `size`, `running` (bool), `maintenanceCost`, and `onClick`. Dims and shows a pause icon when stopped; displays drain rate in red when running and cost > 0.
+- **`EnergyDisplay.jsx`** — Shows TE, net TE/s (after maintenance), and TimeDust count.
+- **`UpgradePanel.jsx`** — Five upgrade cards in a **single-column** list (no heading — heading lives in App.jsx LHS).
 - **`StatsBar.jsx`** — Top bar: total revolutions and current speed %. Shows gold ⚡ for Fast Time buff, red 🔻 for Fast Time debuff, with matching border/shadow colors.
-- **`PrestigeModal.jsx`** — Modal for prestiging and spending Prestige Points on prestige upgrades across four tiers. Stays open after prestiging so the player can spend PP immediately.
+- **`PrestigeModal.jsx`** — Modal (`max-w-2xl`) for prestiging and spending PP on prestige upgrades across four tiers. Upgrade list is independently scrollable (`custom-scrollbar`, `max-h: 40vh`). Stays open after prestiging.
+- **`AscendModal.jsx`** — Gold-themed modal shown when `canAscend` is true. Displays entropy → singularity gain conversion. Ascending resets everything including the prestige layer.
+- **`SettingsModal.jsx`** — Opened by the cogwheel button (top-right of LHS "Upgrades" heading). Fixed `80vh` height, two tabs: **Stats** (in-game time, speeds, lifetime stats) and **Options** (Save Game with inline confirmation feedback, Exit in Electron). Clicking the Singularities row 5 times unlocks the debug buttons in the LHS (in-memory only, not saved).
 
-**Layout:** Main clock centred with click handler for `addSecond`. Extra clocks appear in a vertical column to the right (fixed 90 px each), not in the same row as the main clock.
+**Layout:** 30/70 CSS grid split (`app-grid` class in `index.css`; switches to 20/80 at ≥ 1500 px). LHS: upgrades heading + cogwheel, `UpgradePanel`, prestige/ascend buttons, debug buttons (hidden until unlocked). RHS: header, stats bar, entropy bar, clocks, energy display. Modal-layer components (Prestige, Ascend, Settings) are rendered inside the root grid div and use `position: fixed`.
 
 ## Game mechanics
 
@@ -120,7 +132,7 @@ All extra clock speeds are scaled by the boost ratio: `speed = BASE_SPEED × (ge
 
 **Effective entropy (used everywhere):** `1 − (1 − raw)^(1 + lifetimePPSpent × K)`
 
-**Temporal Singularity override:** if `_prestigeSingularityLevel > 0` and `speedMult ≥ PRESTIGE_SINGULARITY_SPEED_THRESHOLD` (1000×), `getEntropy()` returns `1.0` exactly, bypassing the formula.
+**Temporal Stabilization override:** if `_prestigeSingularityLevel > 0` and `speedMult ≥ PRESTIGE_SINGULARITY_SPEED_THRESHOLD` (100×), `getEntropy()` returns `1.0` exactly, bypassing the formula. Also suppresses the clock turbulence warp (`suppressWarp` prop on Clock).
 
 - Always 0 at base speed. Approaches 1 asymptotically as speed grows (without Singularity).
 - `stability = ENTROPY_BASE_STABILITY × ENTROPY_STABILITY_SCALING^stabilityLevel`
@@ -204,15 +216,42 @@ Active only when `entropy ≥ PRESTIGE_ENTROPY_BONUS_THRESHOLD` (0.70).
 
 | Upgrade | Effect | Max | Cost |
 |---|---|---|---|
-| Temporal Singularity | At speed ≥ 1000× (100 000%), `getEntropy()` returns 1.0 exactly | 1 | 100 PP |
+| Temporal Stabilization | At speed ≥ 100× (10 000%), `getEntropy()` returns 1.0 exactly; suppresses clock warp | 1 | 100 PP |
 
 Buying any prestige upgrade increments `_lifetimePPSpent`, permanently increasing effective entropy.
+
+### Ascension
+
+**Conditions (all must be true; latches once met):**
+- Temporal Stabilization purchased (`_prestigeSingularityLevel ≥ 1`)
+- `getEntropy() = 1.0` (100%)
+- Effective speed (base × fastTimeMult × surgeMult) ≥ `ASCEND_SPEED_THRESHOLD` (1000×)
+
+Once all three conditions are met, `_ascendUnlocked` is set to `true` for the rest of the run regardless of whether Fast Time or Surge expire. The gold Ascend button appears in the LHS below Prestige.
+
+**Singularity gain:** `Math.floor(entropy) × ASCEND_SINGULARITY_PER_ENTROPY` — currently always 1 per ascension (entropy is capped at 1.0).
+
+**Ascend resets:** everything prestige resets, PLUS all prestige points, lifetimePPSpent, and all prestige upgrade levels.
+
+**Ascend preserves:** `_singularities`, all lifetime stats (`_totalClicks`, `_timesPrestiged`, `_totalPPEarned`, `_maxSpeedReached`, `_timesAscended`).
+
+### Lifetime stats
+
+Tracked in the engine, saved, only reset by full game reset:
+
+| Field | Incremented by |
+|---|---|
+| `_totalClicks` | Each `addSecond()` call |
+| `_timesPrestiged` | Each `prestige()` |
+| `_totalPPEarned` | PP gained per prestige (added alongside `_prestigePoints`) |
+| `_maxSpeedReached` | Every `_update()` frame — tracks max of `speedMult` (including fast/surge) |
+| `_timesAscended` | Each `ascend()` |
 
 **Refunds (Boost Add Clock and Boost Anchor Time only):** `_refundPrestigeUpgrade(levelProp, base, scaling, onRefund)` decrements the level, credits the exact PP cost of that level back to `prestigePoints`, and calls `onRefund` to apply the change to the current run immediately. `_lifetimePPSpent` is **not** reduced — the entropy cost is permanent.
 
 ### Snapshot fields (engine → store each frame)
 
-`angle`, `energy`, `speedLevel`, `speedMultiplier`, `nextSpeedMultiplier`, `energyPerSecond`, `upgradeCost`, `energyLevel`, `energyPerRevolution`, `nextEnergyPerRevolution`, `energyUpgradeCost`, `clockCount`, `clockAtMax`, `clock2SpeedBonus`, `clock3TeBonus`, `clock4EntropyReduction`, `boostLevel`, `boostAtMax`, `extraClockSpeedFactor`, `nextExtraClockSpeedFactor`, `extraAngles[]`, `extraRevolutions[]`, `extraClockRunning[]`, `extraClockMaintenanceCosts[]`, `clockUpgradeCost`, `boostUpgradeCost`, `isFastTime`, `fastTimeIsDebuff`, `fastTimeRemaining`, `isFracture`, `isSurge`, `surgeRemaining`, `isReverse`, `reverseTimeRemaining`, `totalRevolutions`, `timeDust`, `prestigePoints`, `lifetimePPSpent`, `canPrestige`, `entropy`, `nextEntropy`, `entropyTePenalty`, `stabilityLevel`, `stabilityUpgradeCost`, `prestigeClockRefund`, `prestigeAnchorRefund`, all prestige levels/costs/atMax flags for every upgrade in tiers 1–4
+`angle`, `energy`, `speedLevel`, `speedMultiplier`, `nextSpeedMultiplier`, `energyPerSecond` (net, after maintenance), `upgradeCost`, `energyLevel`, `energyPerRevolution`, `nextEnergyPerRevolution`, `energyUpgradeCost`, `clockCount`, `clockAtMax`, `clock2SpeedBonus`, `clock3TeBonus`, `clock4EntropyReduction`, `boostLevel`, `boostAtMax`, `extraClockSpeedFactor`, `nextExtraClockSpeedFactor`, `extraAngles[]`, `extraRevolutions[]`, `extraClockRunning[]`, `extraClockMaintenanceCosts[]`, `clockUpgradeCost`, `boostUpgradeCost`, `isFastTime`, `fastTimeIsDebuff`, `fastTimeRemaining`, `isFracture`, `isSurge`, `surgeRemaining`, `isReverse`, `reverseTimeRemaining`, `totalRevolutions`, `timeDust`, `singularities`, `singularityGain`, `canAscend`, `totalClicks`, `timesPrestiged`, `totalPPEarned`, `maxSpeedReached`, `timesAscended`, `prestigePoints`, `lifetimePPSpent`, `canPrestige`, `entropy`, `nextEntropy`, `entropyTePenalty`, `stabilityLevel`, `stabilityUpgradeCost`, `prestigeClockRefund`, `prestigeAnchorRefund`, all prestige levels/costs/atMax flags for every upgrade in tiers 1–4
 
 ## Styling conventions
 
@@ -254,7 +293,7 @@ electron/
   main/
     index.js      ← Electron main process (BrowserWindow, menu suppression)
   preload/
-    index.js      ← contextBridge (exposes platform; save uses localStorage)
+    index.js      ← contextBridge (exposes `platform` and `quit`; save uses localStorage)
 electron.vite.config.js   ← electron-vite config; renderer root set to '.' (project root)
 ```
 
@@ -292,3 +331,6 @@ Expand-Archive -Path $zip.FullName -DestinationPath .\node_modules\electron\dist
 - **Clicks only affect the main clock.** `addSecond()` passes `skipExtraClocks = true` to `_update()`.
 - **`totalRevolutions` is main-clock-only.** Extra clock revolution counts live in `extraRevolutions[]`. This keeps minute/hour hand angles smooth.
 - **Entropy reduce factor.** All negative entropy effects are multiplied by `_entropyReduceFactor()`, not hardcoded per-effect. Adding a new negative effect must use this factor.
+- **Net TE/s.** `energyPerSecond` in the snapshot is gross income minus `getTotalMaintenanceCost()`. Offline progress uses raw `getEnergyPerSecond()` (no maintenance — clocks are transient).
+- **Number formatting.** Always use `fmt()` from `src/utils/format.js`. Never define local `formatNumber` helpers in components.
+- **Tailwind spacing utilities are unreliable.** Use inline `style` props or named CSS classes (`index.css`) for layout-critical padding/margin. Tailwind v4 generates classes on-demand and spacing may not be generated in dev mode.
