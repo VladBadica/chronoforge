@@ -39,7 +39,7 @@ The singleton `gameEngine` is exported and used everywhere.
 `energy`, `speedLevel`, `energyLevel`, `clockCount`, `boostLevel`, `stabilityLevel`, `timeDust`, `totalRevolutions`, `extraRevolutions`, `clock2SpeedBonus`, `clock3TeBonus`, `clock4EntropyReduction`, `prestigePoints`, `lifetimePPSpent`, all prestige upgrade levels (`prestigeSpeedLevel`, `prestigeEnergyLevel`, `prestigeClockLevel`, `prestigeBoostLevel`, `prestigeAnchorLevel`, `prestigeMirrorLevel`, `prestigeTdLevel`, `prestigeEntropyReduceLevel`, `prestigeEntropyTeLevel`, `prestigeEntropyTdLevel`, `prestigeAscendLevel`, `prestigeSingularityLevel`), `savedAt`
 
 **Transient state** (not saved, reset to 0 on load):
-`_fastTimeRemaining`, `_fastTimeIsDebuff`, `_fractureFlash`, `_surgeRemaining`, `_reverseTimeRemaining`, `_extraAngles`, `_prevNear`, `_prevHourMinNear`, `_prevSurgeNear`
+`_fastTimeRemaining`, `_fastTimeIsDebuff`, `_fractureFlash`, `_surgeRemaining`, `_reverseTimeRemaining`, `_extraAngles`, `_extraClockRunning`, `_prevNear`, `_prevHourMinNear`, `_prevSurgeNear`
 
 **`_update(deltaMs, skipExtraClocks = false, silent = false)`** — core loop step. `skipExtraClocks = true` means extra clocks don't advance (used by `addSecond()`). `silent = true` skips `_emitSnapshot()` — used for intermediate sub-steps inside `addSecond()`.
 
@@ -95,11 +95,17 @@ All purely presentational — receive props, render, no game state, no engine ca
 
 Up to 3 extra clocks. Each has a fixed base speed and a unique permanent effect that accumulates on every revolution of that clock. Extra clocks do **not** generate TE or TD and are **not** affected by manual clicks. They render as `ExtraClock` (orbiting dot), not the full `Clock` component.
 
-| Clock | Base speed | Effect per revolution |
-|---|---|---|
-| Clock 2 | 0.10× main | +`CLOCK2_SPEED_BONUS` (0.01) additive speed bonus |
-| Clock 3 | 0.05× main | +`CLOCK3_TE_BONUS` (1) TE/rev |
-| Clock 4 | 0.001× main | −`CLOCK4_ENTROPY_REDUCTION` (1%) raw entropy |
+**Clicking an extra clock toggles it on/off.** A stopped clock does not spin, does not accumulate bonus, and pays no maintenance.
+
+| Clock | Base speed | Effect per revolution | Maintenance cost |
+|---|---|---|---|
+| Clock 2 | 0.10× main | +`CLOCK2_SPEED_BONUS` (0.02) additive speed bonus | `clock2SpeedBonus × CLOCK2_MAINTENANCE_RATE` TE/s |
+| Clock 3 | 0.05× main | +`CLOCK3_TE_BONUS` (2) TE/rev | `clock3TeBonus × CLOCK3_MAINTENANCE_RATE` TE/s |
+| Clock 4 | 0.001× main | −`CLOCK4_ENTROPY_REDUCTION` (1%) raw entropy | `clock4EntropyReduction × CLOCK4_MAINTENANCE_RATE` TE/s |
+
+**Maintenance drain:** Every frame a running extra clock deducts TE proportional to its accumulated bonus. If energy hits 0 the clock auto-stops. Rate constants (`CLOCK2_MAINTENANCE_RATE = 0.5`, `CLOCK3_MAINTENANCE_RATE = 0.2`, `CLOCK4_MAINTENANCE_RATE = 5`) live in `constants.js`.
+
+Running state (`_extraClockRunning[]`) is **transient** — not saved, always resets to `true` on load/prestige/reset.
 
 All extra clock speeds are scaled by the boost ratio: `speed = BASE_SPEED × (getExtraClockSpeedFactor() / CLOCK_SPEED_FACTOR)`.
 
@@ -203,7 +209,7 @@ Buying any prestige upgrade increments `_lifetimePPSpent`, permanently increasin
 
 ### Snapshot fields (engine → store each frame)
 
-`angle`, `energy`, `speedLevel`, `speedMultiplier`, `nextSpeedMultiplier`, `energyPerSecond`, `upgradeCost`, `energyLevel`, `energyPerRevolution`, `nextEnergyPerRevolution`, `energyUpgradeCost`, `clockCount`, `clockAtMax`, `clock2SpeedBonus`, `clock3TeBonus`, `clock4EntropyReduction`, `boostLevel`, `boostAtMax`, `extraClockSpeedFactor`, `nextExtraClockSpeedFactor`, `extraAngles[]`, `extraRevolutions[]`, `clockUpgradeCost`, `boostUpgradeCost`, `isFastTime`, `fastTimeIsDebuff`, `fastTimeRemaining`, `isFracture`, `isSurge`, `surgeRemaining`, `isReverse`, `reverseTimeRemaining`, `totalRevolutions`, `timeDust`, `prestigePoints`, `lifetimePPSpent`, `canPrestige`, `entropy`, `nextEntropy`, `entropyTePenalty`, `stabilityLevel`, `stabilityUpgradeCost`, `prestigeClockRefund`, `prestigeAnchorRefund`, all prestige levels/costs/atMax flags for every upgrade in tiers 1–4
+`angle`, `energy`, `speedLevel`, `speedMultiplier`, `nextSpeedMultiplier`, `energyPerSecond`, `upgradeCost`, `energyLevel`, `energyPerRevolution`, `nextEnergyPerRevolution`, `energyUpgradeCost`, `clockCount`, `clockAtMax`, `clock2SpeedBonus`, `clock3TeBonus`, `clock4EntropyReduction`, `boostLevel`, `boostAtMax`, `extraClockSpeedFactor`, `nextExtraClockSpeedFactor`, `extraAngles[]`, `extraRevolutions[]`, `extraClockRunning[]`, `extraClockMaintenanceCosts[]`, `clockUpgradeCost`, `boostUpgradeCost`, `isFastTime`, `fastTimeIsDebuff`, `fastTimeRemaining`, `isFracture`, `isSurge`, `surgeRemaining`, `isReverse`, `reverseTimeRemaining`, `totalRevolutions`, `timeDust`, `prestigePoints`, `lifetimePPSpent`, `canPrestige`, `entropy`, `nextEntropy`, `entropyTePenalty`, `stabilityLevel`, `stabilityUpgradeCost`, `prestigeClockRefund`, `prestigeAnchorRefund`, all prestige levels/costs/atMax flags for every upgrade in tiers 1–4
 
 ## Styling conventions
 
