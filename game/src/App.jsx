@@ -79,215 +79,172 @@ export default function App() {
     debugAddTimeDust,
   } = useGameStore();
 
-  // Scale clocks down as more are added so they all fit comfortably
-
   return (
     <div
-      className="min-h-screen flex flex-col items-center justify-center gap-8"
-      style={{ background: 'var(--color-bg)', paddingTop: '3rem', paddingBottom: '3rem' }}
+      className="min-h-screen grid app-grid"
+      style={{ background: 'var(--color-bg)' }}
     >
-      <header className="flex flex-col items-center gap-1">
-        <h1
-          className="text-3xl font-bold tracking-tight"
+      {/* ── LHS — upgrades + actions ───────────────────────────────────── */}
+      <div className="flex flex-col gap-5 p-5 overflow-y-auto">
+
+        <h2 className="text-xs font-semibold uppercase tracking-widest shrink-0" style={{ color: 'var(--color-muted)' }}>
+          Upgrades
+        </h2>
+
+        <UpgradePanel
+          energy={energy}
+          upgradeCost={upgradeCost}
+          speedLevel={speedLevel}
+          speedMultiplier={speedMultiplier}
+          nextSpeedMultiplier={nextSpeedMultiplier}
+          onBuyUpgrade={buyUpgrade}
+          energyUpgradeCost={energyUpgradeCost}
+          energyLevel={energyLevel}
+          energyPerRevolution={energyPerRevolution}
+          nextEnergyPerRevolution={nextEnergyPerRevolution}
+          onBuyEnergyUpgrade={buyEnergyUpgrade}
+          clockCount={clockCount}
+          clockAtMax={clockAtMax}
+          clock2SpeedBonus={clock2SpeedBonus}
+          clock3TeBonus={clock3TeBonus}
+          clock4EntropyReduction={clock4EntropyReduction}
+          clockUpgradeCost={clockUpgradeCost}
+          onBuyClockUpgrade={buyClockUpgrade}
+          boostLevel={boostLevel}
+          extraClockSpeedFactor={extraClockSpeedFactor}
+          nextExtraClockSpeedFactor={nextExtraClockSpeedFactor}
+          boostUpgradeCost={boostUpgradeCost}
+          boostAtMax={boostAtMax}
+          onBuyBoostUpgrade={buyBoostUpgrade}
+          entropy={entropy}
+          nextEntropy={nextEntropy}
+          stabilityLevel={stabilityLevel}
+          stabilityUpgradeCost={stabilityUpgradeCost}
+          onBuyStabilityUpgrade={buyStabilityUpgrade}
+        />
+
+        <div className="h-px w-full" style={{ background: 'var(--color-border)' }} />
+
+        <button
+          onClick={() => setShowPrestige(true)}
+          className="w-full px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200"
           style={{
-            background: 'linear-gradient(135deg, #a89fff, #7c6ff7)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
+            background: canPrestige ? 'linear-gradient(135deg, #9d8fffcc, #7c6ff7)' : 'transparent',
+            border: `1px solid ${canPrestige ? 'rgba(124,111,247,0.6)' : 'var(--color-border)'}`,
+            color: canPrestige ? '#fff' : 'var(--color-muted)',
+            cursor: 'pointer',
+            boxShadow: canPrestige ? '0 0 20px rgba(124,111,247,0.25)' : 'none',
           }}
         >
-          CHRONOFORGE
-        </h1>
-        <p
-          className="text-xs tracking-widest uppercase"
-          style={{ color: 'var(--color-muted)' }}
-        >
-          Forge time itself
-        </p>
-      </header>
+          ✦ Prestige{prestigePoints > 0 ? ` · ${prestigePoints} PP` : ''}
+        </button>
 
-      <StatsBar totalRevolutions={totalRevolutions} speedMultiplier={speedMultiplier} isFastTime={isFastTime} fastTimeIsDebuff={fastTimeIsDebuff} fastTimeMultiplier={FAST_TIME_MULTIPLIER} fastTimeDebuffMultiplier={FAST_TIME_DEBUFF_MULTIPLIER} isSurge={isSurge} surgeRemaining={surgeRemaining} />
-
-      <div className="w-full max-w-lg flex flex-col gap-1">
-        <div className="flex justify-between text-xs" style={{ color: 'var(--color-muted)' }}>
-          <span>Time Entropy</span>
-          <span style={{ color: entropy > 0.7 ? '#e74c3c' : entropy > 0.4 ? '#e67e22' : '#5ecfb0' }}>
-            {(entropy * 100).toFixed(1)}%
-          </span>
+        <div className="flex gap-2 flex-wrap">
+          <button
+            onClick={debugAddEnergy}
+            className="text-xs px-3 py-1.5 rounded-md transition-colors duration-150"
+            style={{ background: 'transparent', border: '1px solid var(--color-border)', color: 'var(--color-muted)', cursor: 'pointer' }}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--color-accent)'; e.currentTarget.style.color = 'var(--color-accent)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.color = 'var(--color-muted)'; }}
+          >+100k TE</button>
+          <button
+            onClick={debugAddTimeDust}
+            className="text-xs px-3 py-1.5 rounded-md transition-colors duration-150"
+            style={{ background: 'transparent', border: '1px solid var(--color-border)', color: 'var(--color-muted)', cursor: 'pointer' }}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#5ecfb0'; e.currentTarget.style.color = '#5ecfb0'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.color = 'var(--color-muted)'; }}
+          >+100 TD</button>
+          <button
+            onClick={() => { if (window.confirm('Reset all progress and start fresh?')) resetGame(); }}
+            className="text-xs px-3 py-1.5 rounded-md transition-colors duration-150"
+            style={{ background: 'transparent', border: '1px solid var(--color-border)', color: 'var(--color-muted)', cursor: 'pointer' }}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#c0392b'; e.currentTarget.style.color = '#e74c3c'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.color = 'var(--color-muted)'; }}
+          >Reset Game</button>
         </div>
-        <div className="w-full rounded-full overflow-hidden" style={{ height: 6, background: 'var(--color-border)' }}>
-          <div
+      </div>
+
+      {/* ── RHS — game view ────────────────────────────────────────────── */}
+      <div className="flex flex-col items-center justify-center gap-8 py-10 px-8">
+
+        <header className="flex flex-col items-center gap-1">
+          <h1
+            className="text-3xl font-bold tracking-tight"
             style={{
-              height: '100%',
-              width: `${entropy * 100}%`,
-              background: 'linear-gradient(90deg, #5ecfb0 0%, #e67e22 40%, #e74c3c 70%, #c0392b 100%)',
-              backgroundSize: entropy > 0 ? `${(100 / entropy).toFixed(1)}% 100%` : '100% 100%',
-              boxShadow: entropy > 0.5 ? `0 0 8px ${entropy > 0.7 ? 'rgba(231,76,60,0.5)' : 'rgba(230,126,34,0.5)'}` : 'none',
-              transition: 'width 0.3s ease, box-shadow 0.3s ease',
-              borderRadius: 9999,
+              background: 'linear-gradient(135deg, #a89fff, #7c6ff7)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
             }}
-          />
-        </div>
-      </div>
+          >
+            CHRONOFORGE
+          </h1>
+          <p className="text-xs tracking-widest uppercase" style={{ color: 'var(--color-muted)' }}>
+            Forge time itself
+          </p>
+        </header>
 
-      <div className="flex items-center justify-center gap-6">
-        {/* Main clock — glow effects + click to add a second */}
-        <div
-          onClick={addSecond}
-          style={{
-            cursor: 'pointer',
-            filter: isFracture
-              ? 'drop-shadow(0 0 32px rgba(231,76,60,0.9))'
-              : isReverse
-                ? 'drop-shadow(0 0 28px rgba(231,76,60,0.85))'
-                : isSurge
-                  ? 'drop-shadow(0 0 40px rgba(168,143,255,0.85))'
-                  : isFastTime
-                    ? (fastTimeIsDebuff ? 'drop-shadow(0 0 24px rgba(231,76,60,0.65))' : 'drop-shadow(0 0 24px rgba(255,200,80,0.55))')
-                    : 'none',
-            transition: 'filter 0.4s ease',
-          }}
-        >
-          <Clock angle={angle} totalRevolutions={totalRevolutions} size={220} showMirror={prestigeMirrorLevel >= 1} entropy={entropy} />
-        </div>
+        <StatsBar totalRevolutions={totalRevolutions} speedMultiplier={speedMultiplier} isFastTime={isFastTime} fastTimeIsDebuff={fastTimeIsDebuff} fastTimeMultiplier={FAST_TIME_MULTIPLIER} fastTimeDebuffMultiplier={FAST_TIME_DEBUFF_MULTIPLIER} isSurge={isSurge} surgeRemaining={surgeRemaining} />
 
-        {/* Extra clocks — stacked vertically on the right */}
-        {extraAngles.length > 0 && (
-          <div className="flex flex-col items-center gap-2">
-            {extraAngles.map((a, i) => (
-              <ExtraClock
-                key={i}
-                angle={a}
-                size={90}
-                running={extraClockRunning[i] ?? true}
-                maintenanceCost={extraClockMaintenanceCosts[i] ?? 0}
-                onClick={() => toggleExtraClock(i)}
-              />
-            ))}
+        <div className="w-full max-w-md flex flex-col gap-1">
+          <div className="flex justify-between text-xs" style={{ color: 'var(--color-muted)' }}>
+            <span>Time Entropy</span>
+            <span style={{ color: entropy > 0.7 ? '#e74c3c' : entropy > 0.4 ? '#e67e22' : '#5ecfb0' }}>
+              {(entropy * 100).toFixed(1)}%
+            </span>
           </div>
-        )}
-      </div>
+          <div className="w-full rounded-full overflow-hidden" style={{ height: 6, background: 'var(--color-border)' }}>
+            <div
+              style={{
+                height: '100%',
+                width: `${entropy * 100}%`,
+                background: 'linear-gradient(90deg, #5ecfb0 0%, #e67e22 40%, #e74c3c 70%, #c0392b 100%)',
+                backgroundSize: entropy > 0 ? `${(100 / entropy).toFixed(1)}% 100%` : '100% 100%',
+                boxShadow: entropy > 0.5 ? `0 0 8px ${entropy > 0.7 ? 'rgba(231,76,60,0.5)' : 'rgba(230,126,34,0.5)'}` : 'none',
+                transition: 'width 0.3s ease, box-shadow 0.3s ease',
+                borderRadius: 9999,
+              }}
+            />
+          </div>
+        </div>
 
-      <EnergyDisplay energy={energy} energyPerSecond={energyPerSecond} timeDust={timeDust} />
+        <div className="flex items-center justify-center gap-6">
+          <div
+            onClick={addSecond}
+            style={{
+              cursor: 'pointer',
+              filter: isFracture
+                ? 'drop-shadow(0 0 32px rgba(231,76,60,0.9))'
+                : isReverse
+                  ? 'drop-shadow(0 0 28px rgba(231,76,60,0.85))'
+                  : isSurge
+                    ? 'drop-shadow(0 0 40px rgba(168,143,255,0.85))'
+                    : isFastTime
+                      ? (fastTimeIsDebuff ? 'drop-shadow(0 0 24px rgba(231,76,60,0.65))' : 'drop-shadow(0 0 24px rgba(255,200,80,0.55))')
+                      : 'none',
+              transition: 'filter 0.4s ease',
+            }}
+          >
+            <Clock angle={angle} totalRevolutions={totalRevolutions} size={220} showMirror={prestigeMirrorLevel >= 1} entropy={entropy} />
+          </div>
 
-      <div
-        className="w-48 h-px"
-        style={{ background: 'var(--color-border)' }}
-      />
+          {extraAngles.length > 0 && (
+            <div className="flex flex-col items-center gap-2">
+              {extraAngles.map((a, i) => (
+                <ExtraClock
+                  key={i}
+                  angle={a}
+                  size={90}
+                  running={extraClockRunning[i] ?? true}
+                  maintenanceCost={extraClockMaintenanceCosts[i] ?? 0}
+                  onClick={() => toggleExtraClock(i)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
 
-      <UpgradePanel
-        energy={energy}
-        upgradeCost={upgradeCost}
-        speedLevel={speedLevel}
-        speedMultiplier={speedMultiplier}
-        nextSpeedMultiplier={nextSpeedMultiplier}
-        onBuyUpgrade={buyUpgrade}
-        energyUpgradeCost={energyUpgradeCost}
-        energyLevel={energyLevel}
-        energyPerRevolution={energyPerRevolution}
-        nextEnergyPerRevolution={nextEnergyPerRevolution}
-        onBuyEnergyUpgrade={buyEnergyUpgrade}
-        clockCount={clockCount}
-        clockAtMax={clockAtMax}
-        clock2SpeedBonus={clock2SpeedBonus}
-        clock3TeBonus={clock3TeBonus}
-        clock4EntropyReduction={clock4EntropyReduction}
-        clockUpgradeCost={clockUpgradeCost}
-        onBuyClockUpgrade={buyClockUpgrade}
-        boostLevel={boostLevel}
-        extraClockSpeedFactor={extraClockSpeedFactor}
-        nextExtraClockSpeedFactor={nextExtraClockSpeedFactor}
-        boostUpgradeCost={boostUpgradeCost}
-        boostAtMax={boostAtMax}
-        onBuyBoostUpgrade={buyBoostUpgrade}
-        entropy={entropy}
-        nextEntropy={nextEntropy}
-        stabilityLevel={stabilityLevel}
-        stabilityUpgradeCost={stabilityUpgradeCost}
-        onBuyStabilityUpgrade={buyStabilityUpgrade}
-      />
-
-      <button
-        onClick={() => setShowPrestige(true)}
-        className="px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200"
-        style={{
-          background: canPrestige
-            ? 'linear-gradient(135deg, #9d8fffcc, #7c6ff7)'
-            : 'transparent',
-          border: `1px solid ${canPrestige ? 'rgba(124,111,247,0.6)' : 'var(--color-border)'}`,
-          color: canPrestige ? '#fff' : 'var(--color-muted)',
-          cursor: 'pointer',
-          boxShadow: canPrestige ? '0 0 20px rgba(124,111,247,0.25)' : 'none',
-        }}
-      >
-        ✦ Prestige{prestigePoints > 0 ? ` · ${prestigePoints} PP` : ''}
-      </button>
-
-      <div className="flex gap-2">
-        <button
-          onClick={debugAddEnergy}
-          className="text-xs px-3 py-1.5 rounded-md transition-colors duration-150"
-          style={{
-            background: 'transparent',
-            border: '1px solid var(--color-border)',
-            color: 'var(--color-muted)',
-            cursor: 'pointer',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = 'var(--color-accent)';
-            e.currentTarget.style.color = 'var(--color-accent)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = 'var(--color-border)';
-            e.currentTarget.style.color = 'var(--color-muted)';
-          }}
-        >
-          +100k TE
-        </button>
-
-        <button
-          onClick={debugAddTimeDust}
-          className="text-xs px-3 py-1.5 rounded-md transition-colors duration-150"
-          style={{
-            background: 'transparent',
-            border: '1px solid var(--color-border)',
-            color: 'var(--color-muted)',
-            cursor: 'pointer',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = '#5ecfb0';
-            e.currentTarget.style.color = '#5ecfb0';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = 'var(--color-border)';
-            e.currentTarget.style.color = 'var(--color-muted)';
-          }}
-        >
-          +100 TD
-        </button>
-
-        <button
-          onClick={() => {
-            if (window.confirm('Reset all progress and start fresh?')) resetGame();
-          }}
-          className="text-xs px-3 py-1.5 rounded-md transition-colors duration-150"
-          style={{
-            background: 'transparent',
-            border: '1px solid var(--color-border)',
-            color: 'var(--color-muted)',
-            cursor: 'pointer',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = '#c0392b';
-            e.currentTarget.style.color = '#e74c3c';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = 'var(--color-border)';
-            e.currentTarget.style.color = 'var(--color-muted)';
-          }}
-        >
-          Reset Game
-        </button>
+        <EnergyDisplay energy={energy} energyPerSecond={energyPerSecond} timeDust={timeDust} />
       </div>
 
       {showPrestige && (

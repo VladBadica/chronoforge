@@ -94,15 +94,8 @@ export function UpgradePanel({
 }) {
 
   return (
-    <div className="w-full max-w-lg flex flex-col gap-3">
-      <h2
-        className="text-xs font-semibold uppercase tracking-widest text-center"
-        style={{ color: 'var(--color-muted)' }}
-      >
-        Upgrades
-      </h2>
-
-      <div className="grid grid-cols-2 gap-3">
+    <div className="w-full flex flex-col gap-3">
+      <div className="grid grid-cols-1 gap-3">
 
         <UpgradeCard
           title="Accelerate Time"
@@ -174,22 +167,20 @@ export function UpgradePanel({
           accentGlow="rgba(42,157,143,0.10)"
         />
 
-        <div className="col-span-2">
-          <UpgradeCard
-            title="Anchor Time"
-            description="Reduce Time Entropy — stabilize the timeline"
-            level={stabilityLevel}
-            statLabel="Entropy"
-            statCurrent={`${(entropy * 100).toFixed(1)}%`}
-            statNext={`${(nextEntropy * 100).toFixed(1)}%`}
-            statNextColor="#5ecfb0"
-            cost={stabilityUpgradeCost}
-            canAfford={energy >= stabilityUpgradeCost}
-            onBuy={onBuyStabilityUpgrade}
-            accentColor="#2a9d8f"
-            accentGlow="rgba(42,157,143,0.10)"
-          />
-        </div>
+        <UpgradeCard
+          title="Anchor Time"
+          description="Reduce Time Entropy — stabilize the timeline"
+          level={stabilityLevel}
+          statLabel="Entropy"
+          statCurrent={`${(entropy * 100).toFixed(1)}%`}
+          statNext={`${(nextEntropy * 100).toFixed(1)}%`}
+          statNextColor="#5ecfb0"
+          cost={stabilityUpgradeCost}
+          canAfford={energy >= stabilityUpgradeCost}
+          onBuy={onBuyStabilityUpgrade}
+          accentColor="#2a9d8f"
+          accentGlow="rgba(42,157,143,0.10)"
+        />
 
       </div>
     </div>

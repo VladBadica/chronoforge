@@ -156,7 +156,7 @@ export function PrestigeModal({
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
-        className="w-full max-w-md flex flex-col gap-6 rounded-2xl overflow-y-auto"
+        className="w-full max-w-2xl flex flex-col gap-6 rounded-2xl overflow-y-auto custom-scrollbar"
         style={{
           padding: '1rem',
           maxHeight: '90vh',
