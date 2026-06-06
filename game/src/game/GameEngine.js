@@ -132,6 +132,13 @@ export class GameEngine {
     // Ascension — saved, never reset by prestige or ascend
     this._singularities = 0;
 
+    // Lifetime stats — saved, only reset on full game reset
+    this._totalClicks = 0;
+    this._timesPrestiged = 0;
+    this._totalPPEarned = 0;
+    this._maxSpeedReached = 0;
+    this._timesAscended = 0;
+
     // Prestige — saved, never reset by prestige itself
     this._prestigePoints = 0;
     this._lifetimePPSpent = 0;  // cumulative PP invested in upgrades across all runs
@@ -184,6 +191,7 @@ export class GameEngine {
   /** Simulate one second of game time passing instantly — main clock only.
    *  Sub-steps so the second hand never skips over a 5° event window. */
   addSecond() {
+    this._totalClicks++;
     const sm = this.getSpeedMultiplier() + this._clock2SpeedBonus;
     const degsPerMs = 360 / (BASE_REVOLUTION_MS / sm);
     // Step < event window (FAST_TIME_THRESHOLD_DEG = 5°) so no overlap can be skipped.
@@ -250,6 +258,11 @@ export class GameEngine {
     this._ascendUnlocked = false;
     this._timeDust = 0;
     this._singularities = 0;
+    this._totalClicks = 0;
+    this._timesPrestiged = 0;
+    this._totalPPEarned = 0;
+    this._maxSpeedReached = 0;
+    this._timesAscended = 0;
     this._prestigePoints = 0;
     this._lifetimePPSpent = 0;
     this._prestigeSpeedLevel = 0;
@@ -274,7 +287,10 @@ export class GameEngine {
   prestige() {
     if (this._timeDust < PRESTIGE_COST_TD) return false;
     const ppEntropyCoeff = 1 + this._prestigeAscendLevel * PRESTIGE_ASCEND_BOOST;
-    this._prestigePoints += Math.floor(this._timeDust * (1 + this.getEntropy() * ppEntropyCoeff));
+    const ppGain = Math.floor(this._timeDust * (1 + this.getEntropy() * ppEntropyCoeff));
+    this._prestigePoints += ppGain;
+    this._totalPPEarned += ppGain;
+    this._timesPrestiged++;
     this._angle = 0;
     this._energy = 0;
     this._speedLevel = this._prestigeSpeedLevel;
@@ -332,6 +348,7 @@ export class GameEngine {
   ascend() {
     if (!this.canAscend()) return false;
     this._singularities += this.getSingularityGain();
+    this._timesAscended++;
     // Reset run state
     this._angle = 0;
     this._energy = 0;
@@ -742,6 +759,11 @@ export class GameEngine {
       clock4EntropyReduction: this._clock4EntropyReduction,
       timeDust: this._timeDust,
       singularities: this._singularities,
+      totalClicks: this._totalClicks,
+      timesPrestiged: this._timesPrestiged,
+      totalPPEarned: this._totalPPEarned,
+      maxSpeedReached: this._maxSpeedReached,
+      timesAscended: this._timesAscended,
       prestigePoints: this._prestigePoints,
       lifetimePPSpent: this._lifetimePPSpent,
       prestigeSpeedLevel: this._prestigeSpeedLevel,
@@ -793,6 +815,11 @@ export class GameEngine {
       this._extraClockRunning = Array(extras).fill(true);
       this._timeDust = data.timeDust ?? 0;
       this._singularities = data.singularities ?? 0;
+      this._totalClicks = data.totalClicks ?? 0;
+      this._timesPrestiged = data.timesPrestiged ?? 0;
+      this._totalPPEarned = data.totalPPEarned ?? 0;
+      this._maxSpeedReached = data.maxSpeedReached ?? 0;
+      this._timesAscended = data.timesAscended ?? 0;
       this._prestigePoints = data.prestigePoints ?? 0;
       this._lifetimePPSpent = data.lifetimePPSpent ?? 0;
       this._prestigeSpeedLevel = data.prestigeSpeedLevel ?? 0;
@@ -881,6 +908,7 @@ export class GameEngine {
       : 1;
 
     const speedMult = (this.getSpeedMultiplier() + this._clock2SpeedBonus) * fastTimeMult * (isSurge ? SURGE_SPEED_MULTIPLIER : 1);
+    if (speedMult > this._maxSpeedReached) this._maxSpeedReached = speedMult;
     const surgeEnergyMult = isSurge ? SURGE_ENERGY_MULTIPLIER : 1;
     const degreesPerMs = 360 / (BASE_REVOLUTION_MS / speedMult);
     const deltaDegrees = degreesPerMs * deltaMs;
@@ -1071,6 +1099,11 @@ export class GameEngine {
         singularities: this._singularities,
         singularityGain: this.getSingularityGain(),
         canAscend: this.canAscend(),
+        totalClicks: this._totalClicks,
+        timesPrestiged: this._timesPrestiged,
+        totalPPEarned: this._totalPPEarned,
+        maxSpeedReached: this._maxSpeedReached,
+        timesAscended: this._timesAscended,
         prestigePoints: this._prestigePoints,
         lifetimePPSpent: this._lifetimePPSpent,
         canPrestige: this._timeDust >= PRESTIGE_COST_TD,

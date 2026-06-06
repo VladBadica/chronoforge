@@ -8,12 +8,15 @@ import { UpgradePanel } from './components/UpgradePanel.jsx';
 import { StatsBar } from './components/StatsBar.jsx';
 import { PrestigeModal } from './components/PrestigeModal.jsx';
 import { AscendModal } from './components/AscendModal.jsx';
+import { SettingsModal } from './components/SettingsModal.jsx';
 import { FAST_TIME_MULTIPLIER, FAST_TIME_DEBUFF_MULTIPLIER } from './game/constants.js';
 
 export default function App() {
   useGameEngine();
   const [showPrestige, setShowPrestige] = useState(false);
   const [showAscend, setShowAscend] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [debugEnabled, setDebugEnabled] = useState(false);
 
   const {
     angle,
@@ -67,6 +70,11 @@ export default function App() {
     singularityGain,
     canAscend,
     ascend,
+    totalClicks,
+    timesPrestiged,
+    totalPPEarned,
+    maxSpeedReached,
+    timesAscended,
     prestigeSpeedLevel, prestigeSpeedCost, buyPrestigeSpeed,
     prestigeEnergyLevel, prestigeEnergyCost, buyPrestigeEnergy,
     prestigeClockLevel, prestigeClockCost, buyPrestigeClock, prestigeClockAtMax, prestigeClockRefund, refundPrestigeClock,
@@ -81,6 +89,7 @@ export default function App() {
     prestigeSingularityLevel, prestigeSingularityCost, buyPrestigeSingularity, prestigeSingularityAtMax,
     addSecond,
     resetGame,
+    saveGame,
     debugAddEnergy,
     debugAddTimeDust,
   } = useGameStore();
@@ -93,9 +102,23 @@ export default function App() {
       {/* ── LHS — upgrades + actions ───────────────────────────────────── */}
       <div className="flex flex-col gap-5 p-5 overflow-y-auto items-center justify-center">
 
-        <h2 className="text-xs font-semibold uppercase tracking-widest shrink-0" style={{ color: 'var(--color-muted)' }}>
-          Upgrades
-        </h2>
+        <div className="flex items-center justify-between w-full shrink-0">
+          <h2 className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--color-muted)' }}>
+            Upgrades
+          </h2>
+          <button
+            onClick={() => setShowSettings(true)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-muted)', lineHeight: 1, padding: 2 }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--color-text)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--color-muted)'; }}
+            title="Settings"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
+          </button>
+        </div>
 
         <UpgradePanel
           energy={energy}
@@ -162,29 +185,31 @@ export default function App() {
           </button>
         )}
 
-        <div className="flex gap-2 flex-wrap">
-          <button
-            onClick={debugAddEnergy}
-            className="text-xs rounded-md transition-colors duration-150"
-            style={{ background: 'transparent', border: '1px solid var(--color-border)', color: 'var(--color-muted)', cursor: 'pointer' }}
-            onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--color-accent)'; e.currentTarget.style.color = 'var(--color-accent)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.color = 'var(--color-muted)'; }}
-          >+100k TE</button>
-          <button
-            onClick={debugAddTimeDust}
-            className="text-xs rounded-md transition-colors duration-150"
-            style={{ background: 'transparent', border: '1px solid var(--color-border)', color: 'var(--color-muted)', cursor: 'pointer' }}
-            onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#5ecfb0'; e.currentTarget.style.color = '#5ecfb0'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.color = 'var(--color-muted)'; }}
-          >+100 TD</button>
-          <button
-            onClick={() => { if (window.confirm('Reset all progress and start fresh?')) resetGame(); }}
-            className="text-xs rounded-md transition-colors duration-150"
-            style={{ background: 'transparent', border: '1px solid var(--color-border)', color: 'var(--color-muted)', cursor: 'pointer' }}
-            onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#c0392b'; e.currentTarget.style.color = '#e74c3c'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.color = 'var(--color-muted)'; }}
-          >Reset Game</button>
-        </div>
+        {debugEnabled && (
+          <div className="flex gap-2 flex-wrap">
+            <button
+              onClick={debugAddEnergy}
+              className="text-xs rounded-md transition-colors duration-150"
+              style={{ background: 'transparent', border: '1px solid var(--color-border)', color: 'var(--color-muted)', cursor: 'pointer' }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--color-accent)'; e.currentTarget.style.color = 'var(--color-accent)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.color = 'var(--color-muted)'; }}
+            >+100k TE</button>
+            <button
+              onClick={debugAddTimeDust}
+              className="text-xs rounded-md transition-colors duration-150"
+              style={{ background: 'transparent', border: '1px solid var(--color-border)', color: 'var(--color-muted)', cursor: 'pointer' }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#5ecfb0'; e.currentTarget.style.color = '#5ecfb0'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.color = 'var(--color-muted)'; }}
+            >+100 TD</button>
+            <button
+              onClick={() => { if (window.confirm('Reset all progress and start fresh?')) resetGame(); }}
+              className="text-xs rounded-md transition-colors duration-150"
+              style={{ background: 'transparent', border: '1px solid var(--color-border)', color: 'var(--color-muted)', cursor: 'pointer' }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#c0392b'; e.currentTarget.style.color = '#e74c3c'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.color = 'var(--color-muted)'; }}
+            >Reset Game</button>
+          </div>
+        )}
       </div>
 
       {/* ── RHS — game view ────────────────────────────────────────────── */}
@@ -300,6 +325,22 @@ export default function App() {
           canAscend={canAscend}
           onAscend={() => { ascend(); setShowAscend(false); }}
           onClose={() => setShowAscend(false)}
+        />
+      )}
+
+      {showSettings && (
+        <SettingsModal
+          totalRevolutions={totalRevolutions}
+          speedMultiplier={speedMultiplier}
+          totalClicks={totalClicks}
+          timesPrestiged={timesPrestiged}
+          totalPPEarned={totalPPEarned}
+          maxSpeedReached={maxSpeedReached}
+          timesAscended={timesAscended}
+          singularities={singularities}
+          onSave={saveGame}
+          onClose={() => setShowSettings(false)}
+          onDebugUnlock={() => setDebugEnabled(true)}
         />
       )}
     </div>

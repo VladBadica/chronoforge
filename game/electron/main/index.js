@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu } from 'electron'
+import { app, BrowserWindow, Menu, ipcMain } from 'electron'
 import { join } from 'path'
 
 function createWindow() {
@@ -26,6 +26,8 @@ function createWindow() {
     win.loadFile(join(__dirname, '../renderer/index.html'))
   }
 }
+
+ipcMain.on('quit-app', () => app.quit())
 
 app.whenReady().then(() => {
   createWindow()
