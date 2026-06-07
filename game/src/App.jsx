@@ -8,6 +8,7 @@ import { UpgradePanel } from './components/UpgradePanel.jsx';
 import { StatsBar } from './components/StatsBar.jsx';
 import { PrestigeModal } from './components/PrestigeModal.jsx';
 import { AscendModal } from './components/AscendModal.jsx';
+import { UnlockAlertModal } from './components/UnlockAlertModal.jsx';
 import { SettingsModal } from './components/SettingsModal.jsx';
 import { FAST_TIME_MULTIPLIER, FAST_TIME_DEBUFF_MULTIPLIER, SAVE_KEY } from './game/constants.js';
 import { fmt } from './utils/format.js';
@@ -83,6 +84,8 @@ export default function App() {
     singularityGain,
     canAscend,
     ascend,
+    pendingUnlockAlert,
+    acknowledgeUnlockAlert,
     totalClicks,
     timesPrestiged,
     totalPPEarned,
@@ -344,6 +347,10 @@ export default function App() {
           onAscend={() => { ascend(); setShowAscend(false); }}
           onClose={() => setShowAscend(false)}
         />
+      )}
+
+      {pendingUnlockAlert && (
+        <UnlockAlertModal unlockKey={pendingUnlockAlert} onClose={acknowledgeUnlockAlert} />
       )}
 
       {showSettings && (

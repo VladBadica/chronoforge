@@ -46,6 +46,7 @@ export const useGameStore = create((set) => {
       singularities: snapshot.singularities,
       singularityGain: snapshot.singularityGain,
       canAscend: snapshot.canAscend,
+      pendingUnlockAlert: snapshot.pendingUnlockAlert,
       totalClicks: snapshot.totalClicks,
       timesPrestiged: snapshot.timesPrestiged,
       totalPPEarned: snapshot.totalPPEarned,
@@ -136,6 +137,7 @@ export const useGameStore = create((set) => {
     singularities: 0,
     singularityGain: 0,
     canAscend: false,
+    pendingUnlockAlert: null,
     totalClicks: 0,
     timesPrestiged: 0,
     totalPPEarned: 0,
@@ -249,6 +251,10 @@ export const useGameStore = create((set) => {
 
     ascend: () => {
       gameEngine.ascend();
+    },
+
+    acknowledgeUnlockAlert: () => {
+      gameEngine.acknowledgeUnlockAlert();
     },
 
     buyPrestigeSpeed: () => { gameEngine.buyPrestigeSpeed(); },

@@ -76,6 +76,7 @@ export const FAST_TIME_THRESHOLD_DEG = 5;
 export const FAST_TIME_DURATION_MS = 3_000;
 export const FAST_TIME_MULTIPLIER = 2;            // speed multiplier while active (buff)
 export const FAST_TIME_DEBUFF_MULTIPLIER = 0.5;   // speed multiplier when entropy corrupts it (debuff)
+export const FAST_TIME_UNLOCK_PRESTIGE_COUNT = 2; // event stays dormant until this many lifetime prestiges
 
 // Time Fracture — TE loss when minute and hour hands overlap at high entropy
 export const FRACTURE_ENTROPY_THRESHOLD = 0.4;

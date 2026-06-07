@@ -60,6 +60,7 @@ import {
   FAST_TIME_MULTIPLIER,
   FAST_TIME_DEBUFF_MULTIPLIER,
   FAST_TIME_THRESHOLD_DEG,
+  FAST_TIME_UNLOCK_PRESTIGE_COUNT,
   ENTROPY_CAP_WITHOUT_SINGULARITY,
   ENTROPY_DEBUFF_THRESHOLD,
   ENTROPY_DEBUFF_CHANCE_MIN,
@@ -124,6 +125,12 @@ export class GameEngine {
 
     // Ascend unlock latch — transient; once true stays true for the rest of the run
     this._ascendUnlocked = false;
+
+    // Mechanic unlock notices — `_seenUnlocks` is saved (so a notice never repeats
+    // across sessions); `_pendingUnlockAlerts` is a transient queue of keys waiting
+    // to be shown to the player as a modal (see `_checkMechanicUnlocks`).
+    this._seenUnlocks = new Set();
+    this._pendingUnlockAlerts = [];
 
     // TimeDust — saved
     this._timeDust = 0;
@@ -254,6 +261,8 @@ export class GameEngine {
     this._clock4EntropyReduction = 0;
     this._extraClockRunning = [];
     this._ascendUnlocked = false;
+    this._seenUnlocks = new Set();
+    this._pendingUnlockAlerts = [];
     this._timeDust = 0;
     this._singularities = 0;
     this._totalClicks = 0;
@@ -281,6 +290,28 @@ export class GameEngine {
     this._emitSnapshot();
   }
 
+  /**
+   * Mechanics that stay dormant until the player reaches some progression
+   * milestone are listed here. Each newly-met gate is recorded in `_seenUnlocks`
+   * (saved, so it can never fire twice) and, when `announce` is true, queued in
+   * `_pendingUnlockAlerts` so the UI can show a one-time "mechanic unlocked" modal.
+   *
+   * Called with `announce = false` from `load()` to silently grandfather in saves
+   * that already cleared a gate before the notice existed (or before this session),
+   * and with `announce = true` from `prestige()` to surface freshly-crossed gates.
+   */
+  _checkMechanicUnlocks(announce) {
+    const gates = [
+      { key: 'fastTime', met: this._timesPrestiged >= FAST_TIME_UNLOCK_PRESTIGE_COUNT },
+    ];
+    for (const { key, met } of gates) {
+      if (met && !this._seenUnlocks.has(key)) {
+        this._seenUnlocks.add(key);
+        if (announce) this._pendingUnlockAlerts.push(key);
+      }
+    }
+  }
+
   /** Prestige — converts TD to PP and resets all non-prestige progress */
   prestige() {
     if (this._timeDust < PRESTIGE_COST_TD) return false;
@@ -289,6 +320,7 @@ export class GameEngine {
     this._prestigePoints += ppGain;
     this._totalPPEarned += ppGain;
     this._timesPrestiged++;
+    this._checkMechanicUnlocks(true);
     this._angle = 0;
     this._energy = 0;
     this._speedLevel = this._prestigeSpeedLevel;
@@ -315,6 +347,13 @@ export class GameEngine {
     this.save();
     this._emitSnapshot();
     return true;
+  }
+
+  /** Dismiss the currently-shown "mechanic unlocked" alert and advance the queue. */
+  acknowledgeUnlockAlert() {
+    this._pendingUnlockAlerts.shift();
+    this.save();
+    this._emitSnapshot();
   }
 
   // ---- Ascension ----
@@ -779,6 +818,7 @@ export class GameEngine {
       totalRevolutions: this._totalRevolutions,
       extraRevolutions: this._extraRevolutions,
       extraClockRunning: this._extraClockRunning,
+      seenUnlocks: Array.from(this._seenUnlocks),
       savedAt: Date.now(),
     };
     try {
@@ -818,6 +858,11 @@ export class GameEngine {
       this._singularities = data.singularities ?? 0;
       this._totalClicks = data.totalClicks ?? 0;
       this._timesPrestiged = data.timesPrestiged ?? 0;
+      this._seenUnlocks = new Set(Array.isArray(data.seenUnlocks) ? data.seenUnlocks : []);
+      this._pendingUnlockAlerts = [];
+      // Silently grandfather in any gates already cleared by this save —
+      // only freshly-crossed gates (via prestige()) should pop a notice.
+      this._checkMechanicUnlocks(false);
       this._totalPPEarned = data.totalPPEarned ?? 0;
       this._maxSpeedReached = data.maxSpeedReached ?? 0;
       this._timesAscended = data.timesAscended ?? 0;
@@ -1038,7 +1083,7 @@ export class GameEngine {
     const distance = Math.min(diff, 360 - diff);
     const isNear = distance < FAST_TIME_THRESHOLD_DEG;
 
-    if (isNear && !this._prevNear[slotIndex]) {
+    if (isNear && !this._prevNear[slotIndex] && this._timesPrestiged >= FAST_TIME_UNLOCK_PRESTIGE_COUNT) {
       const entropy = this.getEntropy();
       const debuffChance = entropy >= ENTROPY_DEBUFF_THRESHOLD
         ? (ENTROPY_DEBUFF_CHANCE_MIN + (entropy - ENTROPY_DEBUFF_THRESHOLD) / (1 - ENTROPY_DEBUFF_THRESHOLD) * (ENTROPY_DEBUFF_CHANCE_MAX - ENTROPY_DEBUFF_CHANCE_MIN)) * this._entropyReduceFactor()
@@ -1092,6 +1137,7 @@ export class GameEngine {
         singularities: this._singularities,
         singularityGain: this.getSingularityGain(),
         canAscend: this.canAscend(),
+        pendingUnlockAlert: this._pendingUnlockAlerts[0] ?? null,
         totalClicks: this._totalClicks,
         timesPrestiged: this._timesPrestiged,
         totalPPEarned: this._totalPPEarned,

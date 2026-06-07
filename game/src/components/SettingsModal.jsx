@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { FAST_TIME_UNLOCK_PRESTIGE_COUNT } from '../game/constants';
 
 function formatInGameTime(totalRevolutions) {
   const totalMinutes = Math.floor(totalRevolutions);
@@ -12,12 +13,13 @@ function formatInGameTime(totalRevolutions) {
   return parts.join(' ');
 }
 
-const TUTORIAL_PAGES = [
+function getTutorialPages(fastTimeUnlocked) {
+  return [
   {
     title: 'The Clock',
     body: [
       'Time flows through the clock face. Every full revolution of the second hand generates Time Energy (TE) — the fuel for everything you build. Click the clock to nudge it forward by one second, and spend TE on upgrades that speed it up, raise its yield, or hold back its decay.',
-      'Fast Time — when the second and minute hands meet, the clock leaps to double speed for a few seconds. (At high entropy this can backfire into a slowdown instead)',
+      ...(fastTimeUnlocked ? ['Fast Time — when the second and minute hands meet, the clock leaps to double speed for a few seconds. (At high entropy this can backfire into a slowdown instead)'] : []),
       'Time Dust & Time Fracture — when the minute and hour hands meet, roughly once every 65 revolutions, you may earn Time Dust, a rare resource spent on Prestige. (At high entropy, that same alignment can instead fracture the clock and burn away a portion of your stored TE.)',
       'Temporal Surge — once every 720 revolutions, all three hands sweep through 12 o’clock together. When they align, the clock surges to 5× speed and 3× Time Energy for a full 30 seconds.',
     ],
@@ -26,7 +28,9 @@ const TUTORIAL_PAGES = [
     title: 'Time Entropy',
     body: [
       'Speed has a price. The faster the clock spins, the more it destabilizes — measured as Time Entropy, shown as a bar beneath the clock. It sits at zero near base speed and climbs the harder you push.',
-      "High entropy turns your own events against you: Fast Time's buff can curdle into a debuff that halves your speed instead of doubling it, Time Fractures start eating into your stored TE, and the clock may suddenly lurch backwards on its own — Reverse Time.",
+      fastTimeUnlocked
+        ? "High entropy turns your own events against you: Fast Time's buff can curdle into a debuff that halves your speed instead of doubling it, Time Fractures start eating into your stored TE, and the clock may suddenly lurch backwards on its own — Reverse Time."
+        : 'High entropy turns your own events against you: Time Fractures start eating into your stored TE, and the clock may suddenly lurch backwards on its own — Reverse Time.',
     ],
   },
   {
@@ -54,7 +58,8 @@ const TUTORIAL_PAGES = [
       "No one who has done it has ever fully explained why they keep going back for more.",
     ],
   },
-];
+  ];
+}
 
 const NAV_ARROW_STYLE = {
   background: 'none',
@@ -169,8 +174,9 @@ export function SettingsModal({ totalRevolutions, speedMultiplier, totalClicks, 
           )}
 
           {tab === 'tutorial' && (() => {
-            const total = TUTORIAL_PAGES.length;
-            const page = TUTORIAL_PAGES[tutorialPage];
+            const pages = getTutorialPages(timesPrestiged >= FAST_TIME_UNLOCK_PRESTIGE_COUNT);
+            const total = pages.length;
+            const page = pages[tutorialPage];
             return (
               <div className="flex flex-col" style={{ flex: 1, minHeight: 0 }}>
                 <h3
@@ -205,7 +211,7 @@ export function SettingsModal({ totalRevolutions, speedMultiplier, totalClicks, 
                   </button>
 
                   <div className="flex items-center gap-2">
-                    {TUTORIAL_PAGES.map((_, i) => (
+                    {pages.map((_, i) => (
                       <span
                         key={i}
                         onClick={() => setTutorialPage(i)}
