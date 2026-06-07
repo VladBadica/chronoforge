@@ -2,17 +2,47 @@
 // No face, no tick marks — just a glowing ring track, a thin arm, and a dot
 // with a short comet trail showing direction of travel.
 // Click to toggle the clock on/off; stopped clocks drain no TE but earn no bonus.
+//
+// The center pivot doubles as a glyph identifying what the clock's
+// accumulated bonus does: a forward arrow for speed, a diamond for TE,
+// a containment ring for entropy reduction.
 
 const CX = 100;
 const CY = 100;
 const R  = 82;
+
+const EFFECT_DESCRIPTIONS = {
+  speed:   'Speeds up the main clock',
+  energy:  'Adds bonus Time Energy per main-clock revolution',
+  entropy: 'Reduces Time Entropy',
+};
+
+// Short form shown as a persistent label above the drain rate.
+const EFFECT_LABELS = {
+  speed:   '+Speed/rev',
+  energy:  '+TE/rev',
+  entropy: '−Entropy/rev',
+};
 
 function polarToCartesian(r, angleDeg) {
   const rad = ((angleDeg - 90) * Math.PI) / 180;
   return { x: CX + r * Math.cos(rad), y: CY + r * Math.sin(rad) };
 }
 
-export function ExtraClock({ angle, size = 160, running = true, onClick, maintenanceCost = 0 }) {
+function PivotGlyph({ kind, color, opacity }) {
+  switch (kind) {
+    case 'speed':
+      return <path d={`M ${CX - 2.5} ${CY - 3} L ${CX + 3} ${CY} L ${CX - 2.5} ${CY + 3} Z`} fill={color} opacity={opacity} />;
+    case 'energy':
+      return <path d={`M ${CX} ${CY - 3.5} L ${CX + 3.5} ${CY} L ${CX} ${CY + 3.5} L ${CX - 3.5} ${CY} Z`} fill={color} opacity={opacity} />;
+    case 'entropy':
+      return <circle cx={CX} cy={CY} r={3} fill="none" stroke={color} strokeWidth={1.2} opacity={opacity} />;
+    default:
+      return <circle cx={CX} cy={CY} r={2.5} fill={color} opacity={opacity * 0.75} />;
+  }
+}
+
+export function ExtraClock({ angle, size = 160, running = true, onClick, maintenanceCost = 0, kind = null, effectValue = null }) {
   const dot = polarToCartesian(R, angle);
   const dotColor  = running ? '#4dd0e1' : '#556';
   const trackGlow = running ? 'rgba(77,208,225,0.18)' : 'rgba(85,85,102,0.15)';
@@ -25,12 +55,19 @@ export function ExtraClock({ angle, size = 160, running = true, onClick, mainten
     ? `${maintenanceCost >= 1 ? maintenanceCost.toFixed(1) : maintenanceCost.toFixed(2)} TE/s`
     : null;
 
+  const effectDescription = EFFECT_DESCRIPTIONS[kind];
+  const effectLabel = EFFECT_LABELS[kind];
+  const tooltipLines = [
+    effectDescription && effectValue ? `${effectDescription} (${effectValue})` : effectDescription,
+    running ? 'Click to pause' : 'Click to resume',
+  ].filter(Boolean);
+
   return (
     <div
-      className="relative flex flex-col items-center justify-center"
+      className="relative flex flex-row items-center"
       style={{ userSelect: 'none', cursor: 'pointer' }}
       onClick={onClick}
-      title={running ? 'Click to pause' : 'Click to resume'}
+      title={tooltipLines.join(' — ')}
     >
       {/* Ambient glow */}
       <div
@@ -86,21 +123,42 @@ export function ExtraClock({ angle, size = 160, running = true, onClick, mainten
           </g>
         )}
 
-        {/* Center pivot */}
-        <circle cx={CX} cy={CY} r={2.5} fill={dotColor} opacity={0.45} />
+        {/* Center pivot — doubles as a glyph for this clock's effect */}
+        <PivotGlyph kind={kind} color={dotColor} opacity={running ? 0.6 : 0.4} />
       </svg>
 
-      {/* Drain rate label — shown when running and there is a cost */}
-      {running && drainLabel && (
-        <span style={{
-          fontSize: 9,
-          color: 'rgba(231,76,60,0.75)',
-          marginTop: -2,
-          letterSpacing: '0.03em',
-          pointerEvents: 'none',
-        }}>
-          -{drainLabel}
-        </span>
+      {/* Labels — stacked to the right of the clock.
+          Fixed minWidth keeps every row the same total width so centering
+          the row doesn't shift the clock disc left/right between clocks
+          whose effect label text differs in length (e.g. "−Entropy/rev"
+          is wider than "+TE/rev"). */}
+      {(effectLabel || (running && drainLabel)) && (
+        <div className="flex flex-col" style={{ marginLeft: 6, minWidth: 70 }}>
+          {effectLabel && (
+            <span style={{
+              fontSize: 9,
+              color: dotColor,
+              opacity: running ? 0.7 : 0.45,
+              letterSpacing: '0.03em',
+              pointerEvents: 'none',
+              whiteSpace: 'nowrap',
+            }}>
+              {effectLabel}
+            </span>
+          )}
+
+          {running && drainLabel && (
+            <span style={{
+              fontSize: 9,
+              color: 'rgba(231,76,60,0.75)',
+              letterSpacing: '0.03em',
+              pointerEvents: 'none',
+              whiteSpace: 'nowrap',
+            }}>
+              -{drainLabel}
+            </span>
+          )}
+        </div>
       )}
     </div>
   );

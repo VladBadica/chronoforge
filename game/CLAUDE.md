@@ -120,7 +120,7 @@ Up to 3 extra clocks. Each has a fixed base speed and a unique permanent effect 
 
 **Maintenance drain:** Every frame a running extra clock deducts TE proportional to its accumulated bonus. If energy hits 0 the clock auto-stops. Rate constants (`CLOCK2_MAINTENANCE_RATE = 0.5`, `CLOCK3_MAINTENANCE_RATE = 0.2`, `CLOCK4_MAINTENANCE_RATE = 5`) live in `constants.js`.
 
-Running state (`_extraClockRunning[]`) is **transient** — not saved, always resets to `true` on load/prestige/reset.
+Running state (`_extraClockRunning[]`) is **transient** — not saved. It resets to all-`true` on prestige/reset and on first load (when no in-memory state exists or the clock count changed); a mid-session `load()` (e.g. visibility-change resume crediting offline progress) preserves the player's current pause toggles instead of clobbering them.
 
 All extra clock speeds are scaled by the boost ratio: `speed = BASE_SPEED × (getExtraClockSpeedFactor() / CLOCK_SPEED_FACTOR)`.
 

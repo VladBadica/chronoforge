@@ -812,7 +812,12 @@ export class GameEngine {
       this._clock2SpeedBonus = data.clock2SpeedBonus ?? 0;
       this._clock3TeBonus = data.clock3TeBonus ?? 0;
       this._clock4EntropyReduction = data.clock4EntropyReduction ?? 0;
-      this._extraClockRunning = Array(extras).fill(true);
+      // Transient and not persisted — preserve the player's current pause
+      // toggles across reloads (e.g. visibility-change resume) instead of
+      // resetting them, falling back to all-running only on first load.
+      this._extraClockRunning = (Array.isArray(this._extraClockRunning) && this._extraClockRunning.length === extras)
+        ? this._extraClockRunning.slice()
+        : Array(extras).fill(true);
       this._timeDust = data.timeDust ?? 0;
       this._singularities = data.singularities ?? 0;
       this._totalClicks = data.totalClicks ?? 0;

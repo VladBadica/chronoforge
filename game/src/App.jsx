@@ -10,6 +10,16 @@ import { PrestigeModal } from './components/PrestigeModal.jsx';
 import { AscendModal } from './components/AscendModal.jsx';
 import { SettingsModal } from './components/SettingsModal.jsx';
 import { FAST_TIME_MULTIPLIER, FAST_TIME_DEBUFF_MULTIPLIER } from './game/constants.js';
+import { fmt } from './utils/format.js';
+
+// Extra clocks (by index) each accumulate one permanent bonus per revolution.
+// `kind` selects the ExtraClock pivot glyph; `value` is the current
+// accumulated total shown in its tooltip.
+const EXTRA_CLOCK_EFFECTS = [
+  { kind: 'speed',   value: (b) => `currently +${fmt(b.clock2SpeedBonus, 2)} speed` },
+  { kind: 'energy',  value: (b) => `currently +${fmt(b.clock3TeBonus, 2)} TE/rev` },
+  { kind: 'entropy', value: (b) => `currently -${fmt(b.clock4EntropyReduction * 100, 1)}% entropy` },
+];
 
 export default function App() {
   useGameEngine();
@@ -278,16 +288,21 @@ export default function App() {
 
           {extraAngles.length > 0 && (
             <div className="flex flex-col items-center gap-2">
-              {extraAngles.map((a, i) => (
-                <ExtraClock
-                  key={i}
-                  angle={a}
-                  size={90}
-                  running={extraClockRunning[i] ?? true}
-                  maintenanceCost={extraClockMaintenanceCosts[i] ?? 0}
-                  onClick={() => toggleExtraClock(i)}
-                />
-              ))}
+              {extraAngles.map((a, i) => {
+                const effect = EXTRA_CLOCK_EFFECTS[i];
+                return (
+                  <ExtraClock
+                    key={i}
+                    angle={a}
+                    size={90}
+                    running={extraClockRunning[i] ?? true}
+                    maintenanceCost={extraClockMaintenanceCosts[i] ?? 0}
+                    onClick={() => toggleExtraClock(i)}
+                    kind={effect?.kind}
+                    effectValue={effect?.value({ clock2SpeedBonus, clock3TeBonus, clock4EntropyReduction })}
+                  />
+                );
+              })}
             </div>
           )}
         </div>
