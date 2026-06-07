@@ -53,6 +53,12 @@ export const STABILITY_UPGRADE_COST_EXPONENT = 2;
 
 // ── Entropy ───────────────────────────────────────────────────────────────────
 
+// 100% entropy is reserved as the Singularity-override signal (see
+// PRESTIGE_SINGULARITY_SPEED_THRESHOLD) that gates Ascension. Without
+// Temporal Stabilization unlocked, entropy is capped just below the
+// display-rounding threshold so it can never read as "100.0%".
+export const ENTROPY_CAP_WITHOUT_SINGULARITY = 0.999;
+
 // Debuff chance scales linearly from MIN at THRESHOLD up to MAX at entropy 1.0
 export const ENTROPY_DEBUFF_THRESHOLD = 0.4;
 export const ENTROPY_DEBUFF_CHANCE_MIN = 0.10;
@@ -81,8 +87,8 @@ export const FRACTURE_FLASH_MS = 2_000;
 export const TIMEDUST_THRESHOLD_DEG = 5;
 export const TIMEDUST_BASE_YIELD = 1;           // TD awarded to main clock per overlap
 
-// Temporal Surge — triggered when all three hands align at 12 o'clock
-export const SURGE_THRESHOLD_DEG = 5;
+// Temporal Surge — triggered when totalRevolutions crosses a multiple of 720
+// (the instant all three hands align at 12 o'clock; see GameEngine._update)
 export const SURGE_DURATION_MS = 30_000;
 export const SURGE_SPEED_MULTIPLIER = 5;
 export const SURGE_ENERGY_MULTIPLIER = 3;

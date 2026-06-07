@@ -1,3 +1,5 @@
+import { PRESTIGE_ASCEND_BOOST } from '../game/constants.js';
+
 const UPGRADES_TIER1 = [
   {
     key: 'speed',
@@ -138,7 +140,9 @@ export function PrestigeModal({
   prestigeAscendLevel, prestigeAscendCost, buyPrestigeAscend, prestigeAscendAtMax,
   prestigeSingularityLevel, prestigeSingularityCost, buyPrestigeSingularity, prestigeSingularityAtMax,
 }) {
-  const ppGain = Math.floor(timeDust * (1 + entropy));
+  // Mirrors GameEngine.prestige()'s formula so the preview matches the actual award.
+  const ppEntropyCoeff = 1 + prestigeAscendLevel * PRESTIGE_ASCEND_BOOST;
+  const ppGain = Math.floor(timeDust * (1 + entropy * ppEntropyCoeff));
   const ppBase = Math.floor(timeDust);
   const ppBonus = ppGain - ppBase;
   const totalAfter = prestigePoints + ppGain;

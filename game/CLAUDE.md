@@ -39,10 +39,10 @@ The singleton `gameEngine` is exported and used everywhere.
 **Save encoding:** `save()` writes `btoa(JSON.stringify(data))` — base64-encoded so the save is not human-readable. `load()` tries `atob(raw)` first, falls back to plain JSON for saves written before encoding was added.
 
 **Saved state fields** (persisted to `localStorage`):
-`energy`, `speedLevel`, `energyLevel`, `clockCount`, `boostLevel`, `stabilityLevel`, `timeDust`, `totalRevolutions`, `extraRevolutions`, `clock2SpeedBonus`, `clock3TeBonus`, `clock4EntropyReduction`, `prestigePoints`, `lifetimePPSpent`, all prestige upgrade levels (`prestigeSpeedLevel`, `prestigeEnergyLevel`, `prestigeClockLevel`, `prestigeBoostLevel`, `prestigeAnchorLevel`, `prestigeMirrorLevel`, `prestigeTdLevel`, `prestigeEntropyReduceLevel`, `prestigeEntropyTeLevel`, `prestigeEntropyTdLevel`, `prestigeAscendLevel`, `prestigeSingularityLevel`), `singularities`, `totalClicks`, `timesPrestiged`, `totalPPEarned`, `maxSpeedReached`, `timesAscended`, `savedAt`
+`energy`, `speedLevel`, `energyLevel`, `clockCount`, `boostLevel`, `stabilityLevel`, `timeDust`, `totalRevolutions`, `extraRevolutions`, `extraClockRunning`, `clock2SpeedBonus`, `clock3TeBonus`, `clock4EntropyReduction`, `prestigePoints`, `lifetimePPSpent`, all prestige upgrade levels (`prestigeSpeedLevel`, `prestigeEnergyLevel`, `prestigeClockLevel`, `prestigeBoostLevel`, `prestigeAnchorLevel`, `prestigeMirrorLevel`, `prestigeTdLevel`, `prestigeEntropyReduceLevel`, `prestigeEntropyTeLevel`, `prestigeEntropyTdLevel`, `prestigeAscendLevel`, `prestigeSingularityLevel`), `singularities`, `totalClicks`, `timesPrestiged`, `totalPPEarned`, `maxSpeedReached`, `timesAscended`, `savedAt`
 
 **Transient state** (not saved, reset on load):
-`_fastTimeRemaining`, `_fastTimeIsDebuff`, `_fractureFlash`, `_surgeRemaining`, `_reverseTimeRemaining`, `_extraAngles`, `_extraClockRunning`, `_ascendUnlocked`, `_prevNear`, `_prevHourMinNear`, `_prevSurgeNear`
+`_fastTimeRemaining`, `_fastTimeIsDebuff`, `_fractureFlash`, `_surgeRemaining`, `_reverseTimeRemaining`, `_extraAngles`, `_ascendUnlocked`, `_prevNear`, `_prevHourMinNear`
 
 **`_update(deltaMs, skipExtraClocks = false, silent = false)`** — core loop step. `skipExtraClocks = true` means extra clocks don't advance (used by `addSecond()`). `silent = true` skips `_emitSnapshot()` — used for intermediate sub-steps inside `addSecond()`.
 
@@ -120,7 +120,7 @@ Up to 3 extra clocks. Each has a fixed base speed and a unique permanent effect 
 
 **Maintenance drain:** Every frame a running extra clock deducts TE proportional to its accumulated bonus. If energy hits 0 the clock auto-stops. Rate constants (`CLOCK2_MAINTENANCE_RATE = 0.5`, `CLOCK3_MAINTENANCE_RATE = 0.2`, `CLOCK4_MAINTENANCE_RATE = 5`) live in `constants.js`.
 
-Running state (`_extraClockRunning[]`) is **transient** — not saved. It resets to all-`true` on prestige/reset and on first load (when no in-memory state exists or the clock count changed); a mid-session `load()` (e.g. visibility-change resume crediting offline progress) preserves the player's current pause toggles instead of clobbering them.
+Running state (`_extraClockRunning[]`) is **persisted** (`extraClockRunning` save field) — pause toggles survive reloads, visibility-change resumes, and app restarts. It resets to all-`true` on prestige/reset/ascend and falls back to all-`true` on `load()` only when the saved array is missing or its length doesn't match the current clock count (e.g. older saves, or a clock count change).
 
 All extra clock speeds are scaled by the boost ratio: `speed = BASE_SPEED × (getExtraClockSpeedFactor() / CLOCK_SPEED_FACTOR)`.
 
@@ -165,7 +165,7 @@ Awards TD per overlap using the full TD yield formula (see Resources section abo
 
 #### Temporal Surge
 
-All three hands within `SURGE_THRESHOLD_DEG` (3°) of 12 o'clock. 5× speed + 3× TE for 30 s. The timer is reset to `SURGE_DURATION_MS` on every tick the hands are aligned (not just the rising edge), so a second alignment while a surge is active always resets to the full duration.
+Triggered exactly when `totalRevolutions` crosses a multiple of 720 (= 60 × 12 — the only point where the second, minute, and hour hands all align at 12 simultaneously). Detected via integer-division crossing (`Math.floor(newTotal / 720) > Math.floor(prevTotal / 720)`) so it can never be skipped over, no matter how many revolutions land within a single frame. 5× speed + 3× TE for 30 s, reset to the full `SURGE_DURATION_MS` on every crossing (so a crossing while already active extends it back to full).
 
 #### Reverse Time
 

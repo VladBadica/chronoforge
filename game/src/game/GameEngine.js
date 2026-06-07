@@ -60,6 +60,7 @@ import {
   FAST_TIME_MULTIPLIER,
   FAST_TIME_DEBUFF_MULTIPLIER,
   FAST_TIME_THRESHOLD_DEG,
+  ENTROPY_CAP_WITHOUT_SINGULARITY,
   ENTROPY_DEBUFF_THRESHOLD,
   ENTROPY_DEBUFF_CHANCE_MIN,
   ENTROPY_DEBUFF_CHANCE_MAX,
@@ -73,7 +74,6 @@ import {
   SURGE_DURATION_MS,
   SURGE_SPEED_MULTIPLIER,
   SURGE_ENERGY_MULTIPLIER,
-  SURGE_THRESHOLD_DEG,
   TIMEDUST_THRESHOLD_DEG,
   TIMEDUST_BASE_YIELD,
   ENTROPY_BASE_STABILITY,
@@ -109,7 +109,6 @@ export class GameEngine {
     this._surgeRemaining = 0;
     // Reverse Time state — transient, not saved
     this._reverseTimeRemaining = 0;
-    this._prevSurgeNear = [true]; // start true so the initial 12-o'clock doesn't trigger
     // Start all clocks as "already near" so the initial 12-o'clock position
     // doesn't immediately fire the event on the first frame.
     this._prevNear = [true];         // second vs minute; index 0 = main, i+1 = extra i
@@ -120,7 +119,7 @@ export class GameEngine {
     this._clock3TeBonus = 0;          // accumulated TE/rev bonus from clock 3 revolutions
     this._clock4EntropyReduction = 0; // accumulated entropy reduction from clock 4 revolutions
 
-    // Running state — transient, not saved; true = clock is active
+    // Running state — persisted; true = clock is active
     this._extraClockRunning = [];
 
     // Ascend unlock latch — transient; once true stays true for the rest of the run
@@ -250,7 +249,6 @@ export class GameEngine {
     this._reverseTimeRemaining = 0;
     this._prevNear = [true];
     this._prevHourMinNear = [true];
-    this._prevSurgeNear = [true];
     this._clock2SpeedBonus = 0;
     this._clock3TeBonus = 0;
     this._clock4EntropyReduction = 0;
@@ -308,7 +306,6 @@ export class GameEngine {
     this._reverseTimeRemaining = 0;
     this._prevNear = Array(this._clockCount).fill(true);
     this._prevHourMinNear = Array(this._clockCount).fill(true);
-    this._prevSurgeNear = Array(this._clockCount).fill(true);
     this._clock2SpeedBonus = 0;
     this._clock3TeBonus = 0;
     this._clock4EntropyReduction = 0;
@@ -368,7 +365,6 @@ export class GameEngine {
     this._reverseTimeRemaining = 0;
     this._prevNear = [true];
     this._prevHourMinNear = [true];
-    this._prevSurgeNear = [true];
     this._clock2SpeedBonus = 0;
     this._clock3TeBonus = 0;
     this._clock4EntropyReduction = 0;
@@ -432,7 +428,6 @@ export class GameEngine {
       this._extraClockRunning.push(true);
       this._prevNear.push(true);
       this._prevHourMinNear.push(true);
-      this._prevSurgeNear.push(true);
     });
   }
 
@@ -475,7 +470,6 @@ export class GameEngine {
         this._extraClockRunning.pop();
         this._prevNear.pop();
         this._prevHourMinNear.pop();
-        this._prevSurgeNear.pop();
       }
     });
   }
@@ -591,7 +585,6 @@ export class GameEngine {
     // New clock starts at 0 (all hands overlapping) — mark near so no immediate trigger.
     this._prevNear.push(true);
     this._prevHourMinNear.push(true);
-    this._prevSurgeNear.push(true);
     this._emitSnapshot();
     return true;
   }
@@ -677,8 +670,13 @@ export class GameEngine {
     if (this._prestigeSingularityLevel > 0) {
       const sm = this.getSpeedMultiplier() + this._clock2SpeedBonus;
       if (sm >= PRESTIGE_SINGULARITY_SPEED_THRESHOLD) return 1.0;
+      return this._entropyAt(this._stabilityLevel);
     }
-    return this._entropyAt(this._stabilityLevel);
+    // 100% entropy is reserved as the Singularity-override signal above —
+    // without it unlocked, cap below the display-rounding threshold so
+    // floating-point precision at extreme speeds can't show "100.0%"
+    // (which would look like the Ascend condition has been met).
+    return Math.min(this._entropyAt(this._stabilityLevel), ENTROPY_CAP_WITHOUT_SINGULARITY);
   }
 
   /** TE multiplier penalty from entropy — 0 (no penalty) to ENTROPY_TE_PENALTY_AT_MAX */
@@ -780,6 +778,7 @@ export class GameEngine {
       prestigeSingularityLevel: this._prestigeSingularityLevel,
       totalRevolutions: this._totalRevolutions,
       extraRevolutions: this._extraRevolutions,
+      extraClockRunning: this._extraClockRunning,
       savedAt: Date.now(),
     };
     try {
@@ -812,11 +811,8 @@ export class GameEngine {
       this._clock2SpeedBonus = data.clock2SpeedBonus ?? 0;
       this._clock3TeBonus = data.clock3TeBonus ?? 0;
       this._clock4EntropyReduction = data.clock4EntropyReduction ?? 0;
-      // Transient and not persisted — preserve the player's current pause
-      // toggles across reloads (e.g. visibility-change resume) instead of
-      // resetting them, falling back to all-running only on first load.
-      this._extraClockRunning = (Array.isArray(this._extraClockRunning) && this._extraClockRunning.length === extras)
-        ? this._extraClockRunning.slice()
+      this._extraClockRunning = Array.isArray(data.extraClockRunning) && data.extraClockRunning.length === extras
+        ? data.extraClockRunning.slice()
         : Array(extras).fill(true);
       this._timeDust = data.timeDust ?? 0;
       this._singularities = data.singularities ?? 0;
@@ -843,7 +839,6 @@ export class GameEngine {
       this._surgeRemaining = 0;
       this._prevNear = Array(this._clockCount).fill(true);
       this._prevHourMinNear = Array(this._clockCount).fill(true);
-      this._prevSurgeNear = Array(this._clockCount).fill(true);
       this._totalRevolutions = data.totalRevolutions ?? 0;
 
       // --- Offline progress ---
@@ -944,7 +939,17 @@ export class GameEngine {
         const mirrorMult = this._prestigeMirrorLevel >= 1 ? 2 : 1;
         const teMult = this.getEntropyTeMultiplier() * surgeEnergyMult * mirrorMult;
         this._energy += crossings * this.getEnergyPerRevolution() * teMult;
+
+        // Temporal Surge — all three hands point to 12 only when totalRevolutions
+        // is an exact multiple of 720 (= 60 × 12, satisfying the minute- and
+        // hour-hand alignment simultaneously at the instant the second hand
+        // resets to 0). Detecting the *crossing* with integer division means
+        // it can never be skipped, however many revolutions land in one frame.
+        const prevTotalRevs = this._totalRevolutions;
         this._totalRevolutions += crossings;
+        if (Math.floor(this._totalRevolutions / 720) > Math.floor(prevTotalRevs / 720)) {
+          this._surgeRemaining = SURGE_DURATION_MS;
+        }
 
         // Roll for reverse trigger once we complete a forward revolution.
         const entropy = this.getEntropy();
@@ -958,10 +963,9 @@ export class GameEngine {
         }
       }
 
-      // Fast Time, TimeDust, Temporal Surge — main clock only (not while reversing).
+      // Fast Time, TimeDust — main clock only (not while reversing).
       this._checkOverlap(0, this._angle, this._totalRevolutions);
       this._checkHourMinuteOverlap(0, this._angle, this._totalRevolutions, TIMEDUST_BASE_YIELD);
-      this._checkAllHandsAtTwelve(0, this._angle, this._totalRevolutions);
     }
 
     if (!skipExtraClocks) {
@@ -1043,22 +1047,6 @@ export class GameEngine {
       this._fastTimeRemaining = FAST_TIME_DURATION_MS;
     }
     this._prevNear[slotIndex] = isNear;
-  }
-
-  _checkAllHandsAtTwelve(slotIndex, secondAngle, totalRevs) {
-    const minuteAngle = ((totalRevs % 60) + secondAngle / 360) * 6;
-    const hourAngle = ((totalRevs % 720) + secondAngle / 360) * 0.5;
-    const secondDist = Math.min(secondAngle, 360 - secondAngle);
-    const minuteDist = Math.min(minuteAngle, 360 - minuteAngle);
-    const hourDist = Math.min(hourAngle, 360 - hourAngle);
-    const isNear = secondDist < SURGE_THRESHOLD_DEG && minuteDist < SURGE_THRESHOLD_DEG && hourDist < SURGE_THRESHOLD_DEG;
-
-    // Reset timer every tick the hands are aligned — this means a surge-within-a-surge
-    // always resets to the full duration rather than being ignored.
-    if (isNear) {
-      this._surgeRemaining = SURGE_DURATION_MS;
-    }
-    this._prevSurgeNear[slotIndex] = isNear;
   }
 
   /** Push a lightweight snapshot to the store each frame */
