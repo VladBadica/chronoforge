@@ -97,6 +97,12 @@ export const SURGE_UNLOCK_PRESTIGE_COUNT = 4; // event stays dormant until this 
 
 // ── Prestige ──────────────────────────────────────────────────────────────────
 
+// Prestige upgrade tiers unlock progressively as the player accumulates lifetime
+// prestiges — tier 1 is always available; tier N requires (N-1) prior prestiges.
+export const PRESTIGE_TIER2_UNLOCK_PRESTIGE_COUNT = 1;
+export const PRESTIGE_TIER3_UNLOCK_PRESTIGE_COUNT = 2;
+export const PRESTIGE_TIER4_UNLOCK_PRESTIGE_COUNT = 3;
+
 export const PRESTIGE_COST_TD = 10;               // minimum TD required to prestige
 export const PRESTIGE_ENTROPY_PP_SCALING = 0.01;  // K in: effectiveEntropy = 1 - (1 - raw)^(1 + ppSpent * K)
 

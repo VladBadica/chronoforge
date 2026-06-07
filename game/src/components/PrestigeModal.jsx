@@ -1,4 +1,9 @@
-import { PRESTIGE_ASCEND_BOOST } from '../game/constants.js';
+import {
+  PRESTIGE_ASCEND_BOOST,
+  PRESTIGE_TIER2_UNLOCK_PRESTIGE_COUNT,
+  PRESTIGE_TIER3_UNLOCK_PRESTIGE_COUNT,
+  PRESTIGE_TIER4_UNLOCK_PRESTIGE_COUNT,
+} from '../game/constants.js';
 
 const UPGRADES_TIER1 = [
   {
@@ -124,6 +129,7 @@ export function PrestigeModal({
   timeDust,
   entropy,
   prestigePoints,
+  timesPrestiged,
   canPrestige,
   onPrestige,
   onClose,
@@ -292,6 +298,31 @@ export function PrestigeModal({
               </div>
             );
           };
+          // Tiers 2–4 stay locked until the player has prestiged enough times —
+          // shown as a dashed placeholder with a progress readout instead of cards.
+          const renderTier = (upgrades, requiredCount) => {
+            if (timesPrestiged < requiredCount) {
+              return (
+                <div
+                  className="flex flex-col items-center justify-center gap-1 rounded-xl text-center"
+                  style={{ background: 'rgba(124,111,247,0.03)', border: '1px dashed rgba(124,111,247,0.18)', padding: '14px' }}
+                >
+                  <span style={{ fontSize: 16 }}>🔒</span>
+                  <span className="text-xs font-semibold" style={{ color: 'var(--color-muted)' }}>
+                    Unlocks after prestiging {requiredCount} time{requiredCount === 1 ? '' : 's'}
+                  </span>
+                  <span className="text-xs" style={{ color: 'var(--color-muted)', opacity: 0.6 }}>
+                    {timesPrestiged} / {requiredCount}
+                  </span>
+                </div>
+              );
+            }
+            return (
+              <div className="grid grid-cols-2 gap-2">
+                {upgrades.map(renderCard)}
+              </div>
+            );
+          };
           return (
             <div className="flex flex-col gap-2">
               <h3
@@ -306,16 +337,13 @@ export function PrestigeModal({
                 </div>
 
                 <div style={{ borderTop: '1px solid rgba(124,111,247,0.2)', margin: '2px 0' }} />
-                <div className="grid grid-cols-2 gap-2">
-                  {UPGRADES_TIER2.map(renderCard)}
-                </div>
+                {renderTier(UPGRADES_TIER2, PRESTIGE_TIER2_UNLOCK_PRESTIGE_COUNT)}
 
                 <div style={{ borderTop: '1px solid rgba(124,111,247,0.2)', margin: '2px 0' }} />
-                <div className="grid grid-cols-2 gap-2">
-                  {UPGRADES_TIER3.map(renderCard)}
-                </div>
+                {renderTier(UPGRADES_TIER3, PRESTIGE_TIER3_UNLOCK_PRESTIGE_COUNT)}
+
                 <div style={{ borderTop: '1px solid rgba(124,111,247,0.2)', margin: '2px 0' }} />
-                {UPGRADES_TIER4.map(renderCard)}
+                {renderTier(UPGRADES_TIER4, PRESTIGE_TIER4_UNLOCK_PRESTIGE_COUNT)}
               </div>
             </div>
           );

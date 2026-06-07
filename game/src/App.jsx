@@ -321,6 +321,7 @@ export default function App() {
           timeDust={timeDust}
           entropy={entropy}
           prestigePoints={prestigePoints}
+          timesPrestiged={timesPrestiged}
           canPrestige={canPrestige}
           onPrestige={() => { prestige(); }}
           onClose={() => setShowPrestige(false)}
