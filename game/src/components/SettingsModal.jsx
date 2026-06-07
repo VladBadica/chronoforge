@@ -92,8 +92,8 @@ const TAB_STYLE = (active) => ({
   borderBottom: active ? '2px solid var(--color-accent)' : '2px solid transparent',
 });
 
-export function SettingsModal({ totalRevolutions, speedMultiplier, totalClicks, timesPrestiged, totalPPEarned, maxSpeedReached, timesAscended, singularities, onSave, onClose, onDebugUnlock }) {
-  const [tab, setTab] = useState('stats');
+export function SettingsModal({ totalRevolutions, speedMultiplier, totalClicks, timesPrestiged, totalPPEarned, maxSpeedReached, timesAscended, singularities, defaultTab = 'stats', onSave, onClose, onDebugUnlock }) {
+  const [tab, setTab] = useState(defaultTab);
   const [tutorialPage, setTutorialPage] = useState(0);
   const [saved, setSaved] = useState(false);
   const savedTimer = useRef(null);

@@ -9,7 +9,7 @@ import { StatsBar } from './components/StatsBar.jsx';
 import { PrestigeModal } from './components/PrestigeModal.jsx';
 import { AscendModal } from './components/AscendModal.jsx';
 import { SettingsModal } from './components/SettingsModal.jsx';
-import { FAST_TIME_MULTIPLIER, FAST_TIME_DEBUFF_MULTIPLIER } from './game/constants.js';
+import { FAST_TIME_MULTIPLIER, FAST_TIME_DEBUFF_MULTIPLIER, SAVE_KEY } from './game/constants.js';
 import { fmt } from './utils/format.js';
 
 // Extra clocks (by index) each accumulate one permanent bonus per revolution.
@@ -25,7 +25,10 @@ export default function App() {
   useGameEngine();
   const [showPrestige, setShowPrestige] = useState(false);
   const [showAscend, setShowAscend] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
+  // First launch (no save yet) — greet the player with the tutorial instead
+  // of leaving them to discover the mechanics on their own.
+  const [isFirstLaunch] = useState(() => typeof window !== 'undefined' && !localStorage.getItem(SAVE_KEY));
+  const [showSettings, setShowSettings] = useState(() => isFirstLaunch);
   const [debugEnabled, setDebugEnabled] = useState(false);
 
   const {
@@ -353,6 +356,7 @@ export default function App() {
           maxSpeedReached={maxSpeedReached}
           timesAscended={timesAscended}
           singularities={singularities}
+          defaultTab={isFirstLaunch ? 'tutorial' : 'stats'}
           onSave={saveGame}
           onClose={() => setShowSettings(false)}
           onDebugUnlock={() => setDebugEnabled(true)}
