@@ -10,6 +10,14 @@ const UNLOCK_INFO = {
       "At high Time Entropy, that same alignment can curdle into a slowdown instead — a red 🔻 debuff that halves your speed for the same span. Watch the entropy bar to know which one you're due for.",
     ],
   },
+  surge: {
+    title: 'Temporal Surge',
+    accent: '#a88fff',
+    body: [
+      'From now on, once every 720 revolutions, the second, minute, and hour hands sweep through 12 o’clock together — and when they align, the clock surges to 5× speed and 3× Time Energy for a full 30 seconds.',
+      'A purple ✦ glow marks the surge. Crossing the alignment again while it’s active resets the timer back to full, so a lucky run can chain surges back to back.',
+    ],
+  },
 };
 
 export function UnlockAlertModal({ unlockKey, onClose }) {

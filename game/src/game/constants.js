@@ -93,6 +93,7 @@ export const TIMEDUST_BASE_YIELD = 1;           // TD awarded to main clock per 
 export const SURGE_DURATION_MS = 30_000;
 export const SURGE_SPEED_MULTIPLIER = 5;
 export const SURGE_ENERGY_MULTIPLIER = 3;
+export const SURGE_UNLOCK_PRESTIGE_COUNT = 4; // event stays dormant until this many lifetime prestiges
 
 // ── Prestige ──────────────────────────────────────────────────────────────────
 

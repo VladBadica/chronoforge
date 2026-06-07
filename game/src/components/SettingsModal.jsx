@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { FAST_TIME_UNLOCK_PRESTIGE_COUNT } from '../game/constants';
+import { FAST_TIME_UNLOCK_PRESTIGE_COUNT, SURGE_UNLOCK_PRESTIGE_COUNT } from '../game/constants';
 
 function formatInGameTime(totalRevolutions) {
   const totalMinutes = Math.floor(totalRevolutions);
@@ -13,7 +13,7 @@ function formatInGameTime(totalRevolutions) {
   return parts.join(' ');
 }
 
-function getTutorialPages(fastTimeUnlocked) {
+function getTutorialPages(fastTimeUnlocked, surgeUnlocked) {
   return [
   {
     title: 'The Clock',
@@ -21,7 +21,7 @@ function getTutorialPages(fastTimeUnlocked) {
       'Time flows through the clock face. Every full revolution of the second hand generates Time Energy (TE) — the fuel for everything you build. Click the clock to nudge it forward by one second, and spend TE on upgrades that speed it up, raise its yield, or hold back its decay.',
       ...(fastTimeUnlocked ? ['Fast Time — when the second and minute hands meet, the clock leaps to double speed for a few seconds. (At high entropy this can backfire into a slowdown instead)'] : []),
       'Time Dust & Time Fracture — when the minute and hour hands meet, roughly once every 65 revolutions, you may earn Time Dust, a rare resource spent on Prestige. (At high entropy, that same alignment can instead fracture the clock and burn away a portion of your stored TE.)',
-      'Temporal Surge — once every 720 revolutions, all three hands sweep through 12 o’clock together. When they align, the clock surges to 5× speed and 3× Time Energy for a full 30 seconds.',
+      ...(surgeUnlocked ? ['Temporal Surge — once every 720 revolutions, all three hands sweep through 12 o’clock together. When they align, the clock surges to 5× speed and 3× Time Energy for a full 30 seconds.'] : []),
     ],
   },
   {
@@ -174,7 +174,10 @@ export function SettingsModal({ totalRevolutions, speedMultiplier, totalClicks, 
           )}
 
           {tab === 'tutorial' && (() => {
-            const pages = getTutorialPages(timesPrestiged >= FAST_TIME_UNLOCK_PRESTIGE_COUNT);
+            const pages = getTutorialPages(
+              timesPrestiged >= FAST_TIME_UNLOCK_PRESTIGE_COUNT,
+              timesPrestiged >= SURGE_UNLOCK_PRESTIGE_COUNT,
+            );
             const total = pages.length;
             const page = pages[tutorialPage];
             return (

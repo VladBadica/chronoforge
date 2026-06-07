@@ -73,6 +73,7 @@ import {
   FRACTURE_LOSS_AT_MAX,
   FRACTURE_FLASH_MS,
   SURGE_DURATION_MS,
+  SURGE_UNLOCK_PRESTIGE_COUNT,
   SURGE_SPEED_MULTIPLIER,
   SURGE_ENERGY_MULTIPLIER,
   TIMEDUST_THRESHOLD_DEG,
@@ -303,6 +304,7 @@ export class GameEngine {
   _checkMechanicUnlocks(announce) {
     const gates = [
       { key: 'fastTime', met: this._timesPrestiged >= FAST_TIME_UNLOCK_PRESTIGE_COUNT },
+      { key: 'surge', met: this._timesPrestiged >= SURGE_UNLOCK_PRESTIGE_COUNT },
     ];
     for (const { key, met } of gates) {
       if (met && !this._seenUnlocks.has(key)) {
@@ -992,7 +994,8 @@ export class GameEngine {
         // it can never be skipped, however many revolutions land in one frame.
         const prevTotalRevs = this._totalRevolutions;
         this._totalRevolutions += crossings;
-        if (Math.floor(this._totalRevolutions / 720) > Math.floor(prevTotalRevs / 720)) {
+        if (this._timesPrestiged >= SURGE_UNLOCK_PRESTIGE_COUNT
+          && Math.floor(this._totalRevolutions / 720) > Math.floor(prevTotalRevs / 720)) {
           this._surgeRemaining = SURGE_DURATION_MS;
         }
 
