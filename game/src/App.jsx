@@ -138,6 +138,7 @@ export default function App() {
 
         <UpgradePanel
           energy={energy}
+          timesPrestiged={timesPrestiged}
           upgradeCost={upgradeCost}
           speedLevel={speedLevel}
           speedMultiplier={speedMultiplier}

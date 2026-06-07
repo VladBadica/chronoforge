@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { FAST_TIME_UNLOCK_PRESTIGE_COUNT, SURGE_UNLOCK_PRESTIGE_COUNT } from '../game/constants';
+import { FAST_TIME_UNLOCK_PRESTIGE_COUNT, SURGE_UNLOCK_PRESTIGE_COUNT, RUN_UPGRADES_UNLOCK_PRESTIGE_COUNT } from '../game/constants';
 
 function formatInGameTime(totalRevolutions) {
   const totalMinutes = Math.floor(totalRevolutions);
@@ -13,7 +13,7 @@ function formatInGameTime(totalRevolutions) {
   return parts.join(' ');
 }
 
-function getTutorialPages(fastTimeUnlocked, surgeUnlocked) {
+function getTutorialPages(fastTimeUnlocked, surgeUnlocked, extraClocksUnlocked) {
   return [
   {
     title: 'The Clock',
@@ -33,14 +33,14 @@ function getTutorialPages(fastTimeUnlocked, surgeUnlocked) {
         : 'High entropy turns your own events against you: Time Fractures start eating into your stored TE, and the clock may suddenly lurch backwards on its own — Reverse Time.',
     ],
   },
-  {
+  ...(extraClocksUnlocked ? [{
     title: 'Extra Clocks',
     body: [
       'Spend enough TE to add extra clocks beside the main one. Each spins on its own and banks a unique, permanently accumulating bonus every revolution — extra speed, bonus TE, or reduced entropy.',
       "Click an extra clock's face to pause or resume it. A stopped clock earns nothing, but it also costs nothing.",
       'Running clocks drain TE as upkeep, and the drain grows with how much bonus they have already banked. Let the cost outpace your income for too long, and the clock will stop itself.',
     ],
-  },
+  }] : []),
   {
     title: 'Prestige',
     body: [
@@ -177,6 +177,7 @@ export function SettingsModal({ totalRevolutions, speedMultiplier, totalClicks, 
             const pages = getTutorialPages(
               timesPrestiged >= FAST_TIME_UNLOCK_PRESTIGE_COUNT,
               timesPrestiged >= SURGE_UNLOCK_PRESTIGE_COUNT,
+              timesPrestiged >= RUN_UPGRADES_UNLOCK_PRESTIGE_COUNT,
             );
             const total = pages.length;
             const page = pages[tutorialPage];

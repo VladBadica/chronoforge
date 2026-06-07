@@ -1,5 +1,6 @@
 import {
   PRESTIGE_ASCEND_BOOST,
+  PRESTIGE_COST_TD,
   PRESTIGE_TIER2_UNLOCK_PRESTIGE_COUNT,
   PRESTIGE_TIER3_UNLOCK_PRESTIGE_COUNT,
   PRESTIGE_TIER4_UNLOCK_PRESTIGE_COUNT,
@@ -199,7 +200,7 @@ export function PrestigeModal({
           and Time Energy — but your{' '}
           <span style={{ color: '#c0b8ff' }}>Prestige Points</span> and{' '}
           <span style={{ color: '#c0b8ff' }}>Prestige Upgrades</span> persist across every age.
-          Requires <span style={{ color: '#5ecfb0' }}>10 TD</span> to prestige.
+          Requires <span style={{ color: '#5ecfb0' }}>{PRESTIGE_COST_TD} TD</span> to prestige.
         </p>
         <p className="text-xs text-center leading-relaxed" style={{ color: 'var(--color-muted)', opacity: 0.7 }}>
           Every point spent on prestige upgrades makes time more unstable —{' '}

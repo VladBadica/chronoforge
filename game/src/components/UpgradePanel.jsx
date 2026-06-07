@@ -1,4 +1,5 @@
 import { fmt } from '../utils/format.js';
+import { RUN_UPGRADES_UNLOCK_PRESTIGE_COUNT } from '../game/constants.js';
 
 function UpgradeCard({ title, description, level, statLabel, statCurrent, statNext, statNextColor, cost, canAfford, onBuy, accentColor, accentGlow, maxed = false }) {
   const effectiveCanAfford = canAfford && !maxed;
@@ -82,12 +83,14 @@ function UpgradeCard({ title, description, level, statLabel, statCurrent, statNe
 
 export function UpgradePanel({
   energy,
+  timesPrestiged,
   upgradeCost, speedLevel, speedMultiplier, nextSpeedMultiplier, onBuyUpgrade,
   energyUpgradeCost, energyLevel, energyPerRevolution, nextEnergyPerRevolution, onBuyEnergyUpgrade,
   clockCount, clockAtMax, clock2SpeedBonus, clock3TeBonus, clock4EntropyReduction, clockUpgradeCost, onBuyClockUpgrade,
   boostLevel, boostAtMax, extraClockSpeedFactor, nextExtraClockSpeedFactor, boostUpgradeCost, onBuyBoostUpgrade,
   entropy, nextEntropy, stabilityLevel, stabilityUpgradeCost, onBuyStabilityUpgrade,
 }) {
+  const runUpgradesUnlocked = timesPrestiged >= RUN_UPGRADES_UNLOCK_PRESTIGE_COUNT;
 
   return (
     <div className="w-full flex flex-col gap-3">
@@ -123,60 +126,64 @@ export function UpgradePanel({
           accentGlow="rgba(42,157,143,0.10)"
         />
 
-        <UpgradeCard
-          title="Add Clock"
-          description={
-            clockAtMax
-              ? `Clk2 +${(clock2SpeedBonus * 100).toFixed(0)}% spd | Clk3 +${clock3TeBonus.toFixed(2)} TE/rev | Clk4 -${(clock4EntropyReduction * 100).toFixed(0)}% ent`
-              : clockCount === 1
-                ? 'Clock 2: +10% speed per revolution'
-                : clockCount === 2
-                  ? 'Clock 3: +1 TE/rev per revolution'
-                  : 'Clock 4: -1% entropy per revolution'
-          }
-          level={clockCount - 1}
-          statLabel="Clocks"
-          statCurrent={String(clockCount)}
-          statNext={clockAtMax ? String(clockCount) : String(clockCount + 1)}
-          statNextColor="#5ecfb0"
-          cost={clockUpgradeCost}
-          canAfford={energy >= clockUpgradeCost}
-          maxed={clockAtMax}
-          onBuy={onBuyClockUpgrade}
-          accentColor="#2a9d8f"
-          accentGlow="rgba(42,157,143,0.10)"
-        />
+        {runUpgradesUnlocked && (
+          <>
+            <UpgradeCard
+              title="Add Clock"
+              description={
+                clockAtMax
+                  ? `Clk2 +${(clock2SpeedBonus * 100).toFixed(0)}% spd | Clk3 +${clock3TeBonus.toFixed(2)} TE/rev | Clk4 -${(clock4EntropyReduction * 100).toFixed(0)}% ent`
+                  : clockCount === 1
+                    ? 'Clock 2: +10% speed per revolution'
+                    : clockCount === 2
+                      ? 'Clock 3: +1 TE/rev per revolution'
+                      : 'Clock 4: -1% entropy per revolution'
+              }
+              level={clockCount - 1}
+              statLabel="Clocks"
+              statCurrent={String(clockCount)}
+              statNext={clockAtMax ? String(clockCount) : String(clockCount + 1)}
+              statNextColor="#5ecfb0"
+              cost={clockUpgradeCost}
+              canAfford={energy >= clockUpgradeCost}
+              maxed={clockAtMax}
+              onBuy={onBuyClockUpgrade}
+              accentColor="#2a9d8f"
+              accentGlow="rgba(42,157,143,0.10)"
+            />
 
-        <UpgradeCard
-          title="Boost Clocks"
-          description="Increase base speed to all extra clocks"
-          level={boostLevel}
-          statLabel="Factor"
-          statCurrent={`${(extraClockSpeedFactor * 100).toFixed(0)}%`}
-          statNext={`${(nextExtraClockSpeedFactor * 100).toFixed(0)}%`}
-          statNextColor="#5ecfb0"
-          cost={boostUpgradeCost}
-          canAfford={energy >= boostUpgradeCost}
-          maxed={boostAtMax}
-          onBuy={onBuyBoostUpgrade}
-          accentColor="#2a9d8f"
-          accentGlow="rgba(42,157,143,0.10)"
-        />
+            <UpgradeCard
+              title="Boost Clocks"
+              description="Increase base speed to all extra clocks"
+              level={boostLevel}
+              statLabel="Factor"
+              statCurrent={`${(extraClockSpeedFactor * 100).toFixed(0)}%`}
+              statNext={`${(nextExtraClockSpeedFactor * 100).toFixed(0)}%`}
+              statNextColor="#5ecfb0"
+              cost={boostUpgradeCost}
+              canAfford={energy >= boostUpgradeCost}
+              maxed={boostAtMax}
+              onBuy={onBuyBoostUpgrade}
+              accentColor="#2a9d8f"
+              accentGlow="rgba(42,157,143,0.10)"
+            />
 
-        <UpgradeCard
-          title="Anchor Time"
-          description="Reduce Time Entropy — stabilize the timeline"
-          level={stabilityLevel}
-          statLabel="Entropy"
-          statCurrent={`${(entropy * 100).toFixed(1)}%`}
-          statNext={`${(nextEntropy * 100).toFixed(1)}%`}
-          statNextColor="#5ecfb0"
-          cost={stabilityUpgradeCost}
-          canAfford={energy >= stabilityUpgradeCost}
-          onBuy={onBuyStabilityUpgrade}
-          accentColor="#2a9d8f"
-          accentGlow="rgba(42,157,143,0.10)"
-        />
+            <UpgradeCard
+              title="Anchor Time"
+              description="Reduce Time Entropy — stabilize the timeline"
+              level={stabilityLevel}
+              statLabel="Entropy"
+              statCurrent={`${(entropy * 100).toFixed(1)}%`}
+              statNext={`${(nextEntropy * 100).toFixed(1)}%`}
+              statNextColor="#5ecfb0"
+              cost={stabilityUpgradeCost}
+              canAfford={energy >= stabilityUpgradeCost}
+              onBuy={onBuyStabilityUpgrade}
+              accentColor="#2a9d8f"
+              accentGlow="rgba(42,157,143,0.10)"
+            />
+          </>
+        )}
 
       </div>
     </div>

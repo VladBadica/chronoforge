@@ -13,6 +13,10 @@ export const ENERGY_PER_REVOLUTION = 1;
 
 // ── Upgrades ─────────────────────────────────────────────────────────────────
 
+// Add Clock, Boost Clocks, and Anchor Time stay hidden in the upgrade panel
+// until the player has prestiged this many times.
+export const RUN_UPGRADES_UNLOCK_PRESTIGE_COUNT = 1;
+
 // Accelerate Time — increases main clock speed multiplier
 export const UPGRADE_BASE_COST = 2;
 export const UPGRADE_COST_EXPONENT = 1.3;
@@ -103,7 +107,7 @@ export const PRESTIGE_TIER2_UNLOCK_PRESTIGE_COUNT = 1;
 export const PRESTIGE_TIER3_UNLOCK_PRESTIGE_COUNT = 2;
 export const PRESTIGE_TIER4_UNLOCK_PRESTIGE_COUNT = 3;
 
-export const PRESTIGE_COST_TD = 10;               // minimum TD required to prestige
+export const PRESTIGE_COST_TD = 5;                // minimum TD required to prestige
 export const PRESTIGE_ENTROPY_PP_SCALING = 0.01;  // K in: effectiveEntropy = 1 - (1 - raw)^(1 + ppSpent * K)
 
 // Costs paid in Prestige Points; scale exponentially per level
