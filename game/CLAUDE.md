@@ -39,10 +39,12 @@ The singleton `gameEngine` is exported and used everywhere.
 **Save encoding:** `save()` writes `btoa(JSON.stringify(data))` — base64-encoded so the save is not human-readable. `load()` tries `atob(raw)` first, falls back to plain JSON for saves written before encoding was added.
 
 **Saved state fields** (persisted to `localStorage`):
-`energy`, `speedLevel`, `energyLevel`, `clockCount`, `boostLevel`, `stabilityLevel`, `timeDust`, `totalRevolutions`, `extraRevolutions`, `extraClockRunning`, `clock2SpeedBonus`, `clock3TeBonus`, `clock4EntropyReduction`, `prestigePoints`, `lifetimePPSpent`, all prestige upgrade levels (`prestigeSpeedLevel`, `prestigeEnergyLevel`, `prestigeClockLevel`, `prestigeBoostLevel`, `prestigeAnchorLevel`, `prestigeMirrorLevel`, `prestigeTdLevel`, `prestigeEntropyReduceLevel`, `prestigeEntropyTeLevel`, `prestigeEntropyTdLevel`, `prestigeAscendLevel`, `prestigeSingularityLevel`), `singularities`, `totalClicks`, `timesPrestiged`, `totalPPEarned`, `maxSpeedReached`, `timesAscended`, `savedAt`
+`energy`, `speedLevel`, `energyLevel`, `clockCount`, `boostLevel`, `stabilityLevel`, `timeDust`, `totalRevolutions`, `extraRevolutions`, `extraClockRunning`, `clock2SpeedBonus`, `clock3TeBonus`, `clock4EntropyReduction`, `prestigePoints`, `lifetimePPSpent`, all prestige upgrade levels (`prestigeSpeedLevel`, `prestigeEnergyLevel`, `prestigeClockLevel`, `prestigeBoostLevel`, `prestigeAnchorLevel`, `prestigeMirrorLevel`, `prestigeTdLevel`, `prestigeEntropyReduceLevel`, `prestigeEntropyTeLevel`, `prestigeEntropyTdLevel`, `prestigeAscendLevel`, `prestigeSingularityLevel`), `singularities`, `totalClicks`, `timesPrestiged`, `totalPPEarned`, `maxSpeedReached`, `timesAscended`, `seenUnlocks`, `savedAt`
 
 **Transient state** (not saved, reset on load):
-`_fastTimeRemaining`, `_fastTimeIsDebuff`, `_fractureFlash`, `_surgeRemaining`, `_reverseTimeRemaining`, `_extraAngles`, `_ascendUnlocked`, `_prevNear`, `_prevHourMinNear`
+`_fastTimeRemaining`, `_fastTimeIsDebuff`, `_fractureFlash`, `_surgeRemaining`, `_reverseTimeRemaining`, `_extraAngles`, `_ascendUnlocked`, `_prevNear`, `_prevHourMinNear`, `_pendingUnlockAlerts`
+
+Note: `_seenUnlocks` (backing the saved `seenUnlocks` field) is **persisted**, not transient — see "Mechanic unlock notices" below.
 
 **`_update(deltaMs, skipExtraClocks = false, silent = false)`** — core loop step. `skipExtraClocks = true` means extra clocks don't advance (used by `addSecond()`). `silent = true` skips `_emitSnapshot()` — used for intermediate sub-steps inside `addSecond()`.
 
@@ -57,6 +59,15 @@ The singleton `gameEngine` is exported and used everywhere.
 **`getEntropyTeMultiplier()`** — combined TE multiplier for each revolution: `max(0, 1 − getEntropyTePenalty() + entropy × prestigeEntropyTeLevel × PRESTIGE_ENTROPY_TE_BONUS)`. Can exceed 1.0 when Temporal Resonance is active at high entropy. Used everywhere `(1 − tePenalty)` was previously used.
 
 **`_entropyReduceFactor()`** — returns `1 − prestigeEntropyReduceLevel / PRESTIGE_ENTROPY_REDUCE_MAX`. Multiplied into every negative entropy effect (TE penalty, debuff chance, fracture loss, reverse time chance). At Entropy Shield Lv10 = 0 (all negative effects suppressed).
+
+**Mechanic unlock notices.** As the player prestiges, dormant mechanics (Fast Time, Temporal Surge, …) come online and the engine surfaces a one-time "you just unlocked X" alert via a small data-driven system:
+- `_seenUnlocks` (a `Set`, persisted as the `seenUnlocks` array) tracks which unlock keys have already been shown to the player, so a notice never repeats across sessions.
+- `_pendingUnlockAlerts` (transient array) is a FIFO queue of unlock keys waiting to be displayed; the snapshot exposes only its head as `pendingUnlockAlert`.
+- `_checkMechanicUnlocks(announce)` walks a `gates` array of `{ key, met }` pairs (one entry per gated mechanic, `met` driven by the same `*_UNLOCK_PRESTIGE_COUNT` constant used elsewhere). For each newly-met gate not already in `_seenUnlocks`, it marks the key seen and — only `if (announce)` — pushes it onto `_pendingUnlockAlerts`.
+- `prestige()` calls `_checkMechanicUnlocks(true)` so freshly-crossed gates pop an alert; `load()` calls `_checkMechanicUnlocks(false)` to silently "grandfather in" gates an existing save has already cleared, so returning players are never spammed with alerts for mechanics they unlocked long ago.
+- `acknowledgeUnlockAlert()` shifts the queue, saves, and re-emits the snapshot — called by the UI when the player dismisses `UnlockAlertModal`.
+
+To gate a new mechanic behind a prestige milestone: add a `*_UNLOCK_PRESTIGE_COUNT` constant, one entry in the `gates` array, one entry in `UnlockAlertModal`'s `UNLOCK_INFO` table, and (optionally) wrap its tutorial paragraph(s) in `SettingsModal`'s `getTutorialPages` behind the same constant. The engine-side gameplay check (e.g. in `_checkOverlap` or `_update`) must use the identical constant so the trigger and the UI can never drift out of sync.
 
 ### `src/store/useGameStore.js`
 
@@ -81,11 +92,12 @@ All purely presentational — receive props, render, no game state, no engine ca
 - **`Clock.jsx`** — SVG analog clock, three hands (no tail — hands start at centre), tick marks, glow. Receives `angle` (0–360°), `totalRevolutions`, `entropy` (0–1), `showMirror`, and `suppressWarp`. Mirror hand (when `showMirror`) is fractured at two points. **Turbulence warp**: above `WARP_THRESHOLD` (0.40 entropy) an `feTurbulence + feDisplacementMap` SVG filter warps the clock. Suppressed entirely when `suppressWarp = true` (set when Temporal Stabilization is purchased).
 - **`ExtraClock.jsx`** — Minimal orbiting-dot display for extra clocks. Receives `angle`, `size`, `running` (bool), `maintenanceCost`, and `onClick`. Dims and shows a pause icon when stopped; displays drain rate in red when running and cost > 0.
 - **`EnergyDisplay.jsx`** — Shows TE, net TE/s (after maintenance), and TimeDust count.
-- **`UpgradePanel.jsx`** — Five upgrade cards in a **single-column** list (no heading — heading lives in App.jsx LHS).
+- **`UpgradePanel.jsx`** — Up to five upgrade cards in a **single-column** list (no heading — heading lives in App.jsx LHS). Add Clock / Boost Clocks / Anchor Time are conditionally rendered based on `runUpgradesUnlocked` (see Upgrades table below).
 - **`StatsBar.jsx`** — Top bar: total revolutions and current speed %. Shows gold ⚡ for Fast Time buff, red 🔻 for Fast Time debuff, with matching border/shadow colors.
 - **`PrestigeModal.jsx`** — Modal (`max-w-2xl`) for prestiging and spending PP on prestige upgrades across four tiers. Upgrade list is independently scrollable (`custom-scrollbar`, `max-h: 40vh`). Stays open after prestiging.
 - **`AscendModal.jsx`** — Gold-themed modal shown when `canAscend` is true. Displays entropy → singularity gain conversion. Ascending resets everything including the prestige layer.
-- **`SettingsModal.jsx`** — Opened by the cogwheel button (top-right of LHS "Upgrades" heading). Fixed `80vh` height, two tabs: **Stats** (in-game time, speeds, lifetime stats) and **Options** (Save Game with inline confirmation feedback, Exit in Electron). Clicking the Singularities row 5 times unlocks the debug buttons in the LHS (in-memory only, not saved).
+- **`UnlockAlertModal.jsx`** — One-time "mechanic unlocked" notice, shown when the engine's `pendingUnlockAlert` snapshot field is non-null. Looks up `unlockKey` in a local `UNLOCK_INFO` table (`{ title, accent, body[] }` per mechanic — currently `fastTime` gold, `surge` purple) and renders a fixed-overlay modal matching the `AscendModal` pattern, with a "Got it" button in the entry's accent color. `onClose` calls the store's `acknowledgeUnlockAlert`, which advances the engine's alert queue.
+- **`SettingsModal.jsx`** — Opened by the cogwheel button (top-right of LHS "Upgrades" heading). Fixed `80vh` height, three tabs: **Stats** (in-game time, speeds, lifetime stats), **Tutorial** (paged explainer; pages/paragraphs for not-yet-unlocked mechanics — Fast Time, Temporal Surge, Extra Clocks — are conditionally omitted by `getTutorialPages(fastTimeUnlocked, surgeUnlocked, extraClocksUnlocked)`, driven by the same `*_UNLOCK_PRESTIGE_COUNT` constants as the engine gates), and **Options** (Save Game with inline confirmation feedback, Exit in Electron). Clicking the Singularities row 5 times unlocks the debug buttons in the LHS (in-memory only, not saved).
 
 **Layout:** 30/70 CSS grid split (`app-grid` class in `index.css`; switches to 20/80 at ≥ 1500 px). LHS: upgrades heading + cogwheel, `UpgradePanel`, prestige/ascend buttons, debug buttons (hidden until unlocked). RHS: header, stats bar, entropy bar, clocks, energy display. Modal-layer components (Prestige, Ascend, Settings) are rendered inside the root grid div and use `position: fixed`.
 
@@ -105,6 +117,8 @@ All purely presentational — receive props, render, no game state, no engine ca
 | Add Clock | Adds an extra clock (max 3 extra) | `CLOCK_UPGRADE_BASE_COST`, `CLOCK_UPGRADE_COST_EXPONENT`, `CLOCK_MAX_EXTRA` |
 | Boost Clocks | Increases base speed factor for all extra clocks | `BOOST_UPGRADE_BASE_COST`, `BOOST_UPGRADE_COST_EXPONENT`, `BOOST_MAX_LEVEL` |
 | Anchor Time | Reduces Time Entropy by increasing stability | `STABILITY_UPGRADE_BASE_COST`, `STABILITY_UPGRADE_COST_EXPONENT`, `ENTROPY_BASE_STABILITY`, `ENTROPY_STABILITY_SCALING` |
+
+**Add Clock, Boost Clocks, and Anchor Time stay hidden** in `UpgradePanel` until `_timesPrestiged ≥ RUN_UPGRADES_UNLOCK_PRESTIGE_COUNT` (1) — same constant also gates the "Extra Clocks" tutorial page in `SettingsModal`, so the cards and the explanatory text unlock together.
 
 ### Extra clocks
 
@@ -154,6 +168,8 @@ All events fire only for the main clock. Every event's negative component is sca
 
 Debuff chance = `(ENTROPY_DEBUFF_CHANCE_MIN + linear_ramp) × _entropyReduceFactor()`. At Entropy Shield Lv10: debuff chance = 0.
 
+**Dormant until `FAST_TIME_UNLOCK_PRESTIGE_COUNT`** (2) lifetime prestiges — `_checkOverlap()` only fires the trigger once `_timesPrestiged` reaches the threshold, the tutorial paragraphs describing it stay hidden until then (`SettingsModal.getTutorialPages`), and crossing the threshold queues an `UnlockAlertModal` ("fastTime") covering both the buff and the entropy-driven debuff.
+
 #### Time Fracture (minute ↔ hour hand overlap)
 
 Same trigger as TimeDust. Only fires when `entropy ≥ FRACTURE_ENTROPY_THRESHOLD` (0.4).
@@ -167,6 +183,8 @@ Awards TD per overlap using the full TD yield formula (see Resources section abo
 
 Triggered exactly when `totalRevolutions` crosses a multiple of 720 (= 60 × 12 — the only point where the second, minute, and hour hands all align at 12 simultaneously). Detected via integer-division crossing (`Math.floor(newTotal / 720) > Math.floor(prevTotal / 720)`) so it can never be skipped over, no matter how many revolutions land within a single frame. 5× speed + 3× TE for 30 s, reset to the full `SURGE_DURATION_MS` on every crossing (so a crossing while already active extends it back to full).
 
+**Dormant until `SURGE_UNLOCK_PRESTIGE_COUNT`** (4) lifetime prestiges — gated the same way as Fast Time: the crossing check in `_update` is skipped below the threshold, its tutorial paragraph stays hidden until then, and crossing the threshold queues an `UnlockAlertModal` ("surge").
+
 #### Reverse Time
 
 Fires per forward revolution when `entropy ≥ REVERSE_ENTROPY_THRESHOLD` (0.6).
@@ -174,7 +192,7 @@ Chance = `(base_chance) × _entropyReduceFactor()`. Duration unchanged. At Entro
 
 ### Prestige
 
-**Cost:** 10 TD (`PRESTIGE_COST_TD`).
+**Cost:** 5 TD (`PRESTIGE_COST_TD`).
 
 **PP gain:** `floor(TD × (1 + entropy × ppEntropyCoeff))` where `ppEntropyCoeff = 1 + prestigeAscendLevel × PRESTIGE_ASCEND_BOOST`. At Entropy Ascendance Lv10: coefficient = 2.0 (doubles the entropy bonus on PP).
 
@@ -183,6 +201,8 @@ Prestige resets: energy, speed/energy/clock/boost/stability levels, clock angles
 Prestige preserves: `prestigePoints`, `lifetimePPSpent`, all prestige upgrade levels.
 
 `lifetimePPSpent` is only reset by full game reset, not by prestige.
+
+**Tier unlocking:** Tier 1 is always available; tiers 2–4 stay locked (rendered as a 🔒 placeholder card showing `N / required`) until `_timesPrestiged` reaches `PRESTIGE_TIER{2,3,4}_UNLOCK_PRESTIGE_COUNT` (1, 2, 3 respectively — i.e. tier N requires N−1 prior lifetime prestiges). `PrestigeModal`'s `renderTier(upgrades, requiredCount)` helper drives this; `timesPrestiged` is passed down from `App.jsx`.
 
 #### Prestige Upgrades — Tier 1 (run boosters)
 
@@ -251,7 +271,7 @@ Tracked in the engine, saved, only reset by full game reset:
 
 ### Snapshot fields (engine → store each frame)
 
-`angle`, `energy`, `speedLevel`, `speedMultiplier`, `nextSpeedMultiplier`, `energyPerSecond` (net, after maintenance), `upgradeCost`, `energyLevel`, `energyPerRevolution`, `nextEnergyPerRevolution`, `energyUpgradeCost`, `clockCount`, `clockAtMax`, `clock2SpeedBonus`, `clock3TeBonus`, `clock4EntropyReduction`, `boostLevel`, `boostAtMax`, `extraClockSpeedFactor`, `nextExtraClockSpeedFactor`, `extraAngles[]`, `extraRevolutions[]`, `extraClockRunning[]`, `extraClockMaintenanceCosts[]`, `clockUpgradeCost`, `boostUpgradeCost`, `isFastTime`, `fastTimeIsDebuff`, `fastTimeRemaining`, `isFracture`, `isSurge`, `surgeRemaining`, `isReverse`, `reverseTimeRemaining`, `totalRevolutions`, `timeDust`, `singularities`, `singularityGain`, `canAscend`, `totalClicks`, `timesPrestiged`, `totalPPEarned`, `maxSpeedReached`, `timesAscended`, `prestigePoints`, `lifetimePPSpent`, `canPrestige`, `entropy`, `nextEntropy`, `entropyTePenalty`, `stabilityLevel`, `stabilityUpgradeCost`, `prestigeClockRefund`, `prestigeAnchorRefund`, all prestige levels/costs/atMax flags for every upgrade in tiers 1–4
+`angle`, `energy`, `speedLevel`, `speedMultiplier`, `nextSpeedMultiplier`, `energyPerSecond` (net, after maintenance), `upgradeCost`, `energyLevel`, `energyPerRevolution`, `nextEnergyPerRevolution`, `energyUpgradeCost`, `clockCount`, `clockAtMax`, `clock2SpeedBonus`, `clock3TeBonus`, `clock4EntropyReduction`, `boostLevel`, `boostAtMax`, `extraClockSpeedFactor`, `nextExtraClockSpeedFactor`, `extraAngles[]`, `extraRevolutions[]`, `extraClockRunning[]`, `extraClockMaintenanceCosts[]`, `clockUpgradeCost`, `boostUpgradeCost`, `isFastTime`, `fastTimeIsDebuff`, `fastTimeRemaining`, `isFracture`, `isSurge`, `surgeRemaining`, `isReverse`, `reverseTimeRemaining`, `totalRevolutions`, `timeDust`, `singularities`, `singularityGain`, `canAscend`, `totalClicks`, `timesPrestiged`, `totalPPEarned`, `maxSpeedReached`, `timesAscended`, `prestigePoints`, `lifetimePPSpent`, `canPrestige`, `entropy`, `nextEntropy`, `entropyTePenalty`, `stabilityLevel`, `stabilityUpgradeCost`, `prestigeClockRefund`, `prestigeAnchorRefund`, all prestige levels/costs/atMax flags for every upgrade in tiers 1–4, `pendingUnlockAlert` (head of the unlock-alert queue, or `null`)
 
 ## Styling conventions
 
