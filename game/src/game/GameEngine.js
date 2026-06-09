@@ -61,6 +61,8 @@ import {
   FAST_TIME_DEBUFF_MULTIPLIER,
   FAST_TIME_THRESHOLD_DEG,
   FAST_TIME_UNLOCK_PRESTIGE_COUNT,
+  RESEARCH_UNLOCK_PRESTIGE_COUNT,
+  RUN_UPGRADES_UNLOCK_PRESTIGE_COUNT,
   ENTROPY_CAP_WITHOUT_SINGULARITY,
   ENTROPY_DEBUFF_THRESHOLD,
   ENTROPY_DEBUFF_CHANCE_MIN,
@@ -305,6 +307,8 @@ export class GameEngine {
     const gates = [
       { key: 'fastTime', met: this._timesPrestiged >= FAST_TIME_UNLOCK_PRESTIGE_COUNT },
       { key: 'surge', met: this._timesPrestiged >= SURGE_UNLOCK_PRESTIGE_COUNT },
+      { key: 'runUpgrades', met: this._timesPrestiged >= RUN_UPGRADES_UNLOCK_PRESTIGE_COUNT },
+      { key: 'research', met: this._timesPrestiged >= RESEARCH_UNLOCK_PRESTIGE_COUNT },
     ];
     for (const { key, met } of gates) {
       if (met && !this._seenUnlocks.has(key)) {

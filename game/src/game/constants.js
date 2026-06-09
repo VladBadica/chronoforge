@@ -17,6 +17,9 @@ export const ENERGY_PER_REVOLUTION = 1;
 // until the player has prestiged this many times.
 export const RUN_UPGRADES_UNLOCK_PRESTIGE_COUNT = 1;
 
+// Temporal Studies research lab — hidden until this many lifetime prestiges.
+export const RESEARCH_UNLOCK_PRESTIGE_COUNT = 2;
+
 // Accelerate Time — increases main clock speed multiplier
 export const UPGRADE_BASE_COST = 2;
 export const UPGRADE_COST_EXPONENT = 1.3;
