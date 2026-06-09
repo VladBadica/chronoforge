@@ -9,6 +9,7 @@
 //   • Notify the Zustand store of state changes via callbacks
 // ---------------------------------------------------------------------------
 
+import { RESEARCH_TREE, RESEARCH_SAVE_KEY } from './researchTree.js';
 import {
   BASE_REVOLUTION_MS,
   ENERGY_PER_REVOLUTION,
@@ -134,6 +135,7 @@ export class GameEngine {
     // to be shown to the player as a modal (see `_checkMechanicUnlocks`).
     this._seenUnlocks = new Set();
     this._pendingUnlockAlerts = [];
+    this._researchStudied = new Set();
 
     // TimeDust — saved
     this._timeDust = 0;
@@ -328,7 +330,7 @@ export class GameEngine {
     this._timesPrestiged++;
     this._checkMechanicUnlocks(true);
     this._angle = 0;
-    this._energy = 0;
+    this._energy = this._getResearchStartingTe();
     this._speedLevel = this._prestigeSpeedLevel;
     this._energyLevel = this._prestigeEnergyLevel;
     this._clockCount = 1 + this._prestigeClockLevel;
@@ -393,7 +395,7 @@ export class GameEngine {
     this._timesAscended++;
     // Reset run state
     this._angle = 0;
-    this._energy = 0;
+    this._energy = this._getResearchStartingTe();
     this._speedLevel = 0;
     this._energyLevel = 0;
     this._clockCount = 1;
@@ -751,8 +753,44 @@ export class GameEngine {
   }
 
   /** TE earned per full revolution — includes upgrade levels and clock 3 accumulated bonus */
+  _loadResearch() {
+    try {
+      const raw = localStorage.getItem(RESEARCH_SAVE_KEY);
+      if (raw) {
+        const data = JSON.parse(raw);
+        this._researchStudied = new Set(Array.isArray(data.studied) ? data.studied : []);
+        return;
+      }
+    } catch { /* corrupt save — start fresh */ }
+    this._researchStudied = new Set();
+  }
+
+  setResearchStudied(ids) {
+    this._researchStudied = new Set(ids);
+  }
+
+  _getResearchTeMultiplier() {
+    let bonus = 0;
+    for (const node of RESEARCH_TREE) {
+      if (node.effect?.type === 'te_multiplier' && this._researchStudied.has(node.id)) {
+        bonus += node.effect.value - 1;
+      }
+    }
+    return 1 + bonus;
+  }
+
+  _getResearchStartingTe() {
+    let total = 0;
+    for (const node of RESEARCH_TREE) {
+      if (node.effect?.type === 'starting_te' && this._researchStudied.has(node.id)) {
+        total += node.effect.value;
+      }
+    }
+    return total;
+  }
+
   getEnergyPerRevolution() {
-    return this._energyPerRevAt(this._energyLevel) + this._clock3TeBonus;
+    return (this._energyPerRevAt(this._energyLevel) + this._clock3TeBonus) * this._getResearchTeMultiplier();
   }
 
   _energyPerRevAt(level) {
@@ -869,6 +907,7 @@ export class GameEngine {
       // Silently grandfather in any gates already cleared by this save —
       // only freshly-crossed gates (via prestige()) should pop a notice.
       this._checkMechanicUnlocks(false);
+      this._loadResearch();
       this._totalPPEarned = data.totalPPEarned ?? 0;
       this._maxSpeedReached = data.maxSpeedReached ?? 0;
       this._timesAscended = data.timesAscended ?? 0;
